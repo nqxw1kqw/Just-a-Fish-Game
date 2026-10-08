@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Entity">
+      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{c3d4e5f6-a7b8-9012-cdef-123456789012}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Consts.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector3.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="DxConv.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Render3DUtil.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerFish.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Enemy.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Bullet.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePrototype.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Stats.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Card.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="CardDatabase.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="CardManager.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Boss.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugController.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraController.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="UIRenderer.h">
+      <Filter>System</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Effects.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerFish.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Enemy.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Bullet.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePrototype.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="CardManager.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="Boss.cpp">
+      <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugController.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraController.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="UIRenderer.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

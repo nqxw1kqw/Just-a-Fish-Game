@@ -1,0 +1,27 @@
+# Visual Studio and build output
+.vs/
+obj/
+*.exe
+*.pdb
+*.ilk
+*.obj
+*.pch
+*.idb
+*.log
+*.tlog/
+*.lastbuildstate
+*.VC.db
+*.VC.VC.opendb
+*.suo
+*.user
+
+# Local runtime/debug artifacts
+/Log.txt
+/Data/highscore.dat
+/test_screenshot.png
+/fish_zoom*.png
+/Review_Bundle.md
+/Project_Architecture_And_Refactor_Plan.md
+
+# Archived and vendor experiments not part of the active game project
+/_Archive/
