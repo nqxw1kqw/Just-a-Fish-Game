@@ -1,4 +1,5 @@
 #pragma once
+#include "Vector3.h"
 #include "Scene.h"
 
 enum TitleMenu
@@ -50,7 +51,17 @@ private:
 	int Title_Bg_Handle = -1;;
 	int Title_BGM_Handle = -1;;
 
+	//Color
+	Vec3Int None_Color{ 255,255,255 };
+	Vec3Int Select_Color{ 255,255,0 };
 
+	Vec3Int Game_Color{ Select_Color };
+	Vec3Int Tutorial_Color{ None_Color };
+	Vec3Int Option_Color{ None_Color };
+	Vec3Int Credit_Color{ None_Color };
+
+	//Count
+	int selectCount = 0;
 
 };
 
