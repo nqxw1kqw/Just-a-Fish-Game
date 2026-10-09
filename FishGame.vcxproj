@@ -104,6 +104,9 @@
     <ClInclude Include="GamePrototype.h" />
     <ClInclude Include="PlayerFish.h" />
     <ClInclude Include="Render3DUtil.h" />
+    <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="Title.h" />
+    <ClInclude Include="TitleScene.h" />
     <ClInclude Include="Vector3.h" />
     <ClInclude Include="Stats.h" />
     <ClInclude Include="Card.h" />
@@ -127,6 +130,9 @@
     <ClCompile Include="FontManager.cpp" />
     <ClCompile Include="DebugController.cpp" />
     <ClCompile Include="CameraController.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Title.cpp" />
+    <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="UIRenderer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
