@@ -10,6 +10,12 @@
     <Filter Include="System">
       <UniqueIdentifier>{c3d4e5f6-a7b8-9012-cdef-123456789012}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DxPlus">
+      <UniqueIdentifier>{02c53661-5593-4b48-8ee1-3f89f096b8d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{a52b680e-df05-46af-83a1-56cd93616553}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Consts.h">
@@ -63,6 +69,57 @@
     <ClInclude Include="UIRenderer.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="Title.h" />
+    <ClInclude Include="TitleScene.h" />
+    <ClInclude Include="FontManager.h" />
+    <ClInclude Include="DxPlus\Debug.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\DxPlus.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\DxPlusConstants.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\DxWrapper.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\FadeController.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\HighResolutionTimer.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\Input.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\InputConstants.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\InputManager.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\Primitive2D.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\Sprite.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\Text.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\TextAnimator.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\Utils.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="DxPlus\Vector2.h">
+      <Filter>DxPlus</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneManager.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -97,6 +154,45 @@
     </ClCompile>
     <ClCompile Include="UIRenderer.cpp">
       <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="FontManager.cpp" />
+    <ClCompile Include="Title.cpp" />
+    <ClCompile Include="TitleScene.cpp" />
+    <ClCompile Include="DxPlus\Debug.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\DxPlus.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\DxWrapper.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\FadeController.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\Input.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\InputManager.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\Primitive2D.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\Sprite.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\Text.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\TextAnimator.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="DxPlus\Utils.cpp">
+      <Filter>DxPlus</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneManager.cpp">
+      <Filter>Scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

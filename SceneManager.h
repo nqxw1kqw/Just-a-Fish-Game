@@ -6,6 +6,8 @@
 enum class SceneType
 {
     Title,
+    Select,
+    Credit,
     Option,
     Game,
     Tutorial,
@@ -26,6 +28,6 @@ private:
 
 public:
     SceneManager();
-    void Update();
+    void Update(float dt);
     void Draw();
 };

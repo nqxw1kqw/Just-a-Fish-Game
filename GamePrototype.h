@@ -52,6 +52,10 @@ public:
     const HighscoreData& GetHighscore() const { return highscore_; }
     int GetTotalKills() const { return enemies_.GetTotalKills(); }
 
+    //--------
+    GameState GetState() const { return state_; }
+
+
 private:
     void StartWave(int wave);
     void StartBossFight();

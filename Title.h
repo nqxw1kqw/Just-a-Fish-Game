@@ -1,4 +1,5 @@
 #pragma once
+#include "Scene.h"
 
 enum TitleMenu
 {
@@ -29,12 +30,26 @@ public:
 
 
 private:
+	TitleMenu currentMenu = TitleMenu::GamePlay;
+
+
 	bool finished{ false };
 
 	bool goSelect{ false };
 	bool goOption{ false };
 	bool goCredit{ false };
 	bool goTutorial{ false };
+
+	bool IsKeyPressed(int key);
+
+
+	char keyState[256] = { 0 };
+	char oldKeyState[256] = { 0 };
+
+	//Handle
+	int Title_Bg_Handle = -1;;
+	int Title_BGM_Handle = -1;;
+
 
 
 };

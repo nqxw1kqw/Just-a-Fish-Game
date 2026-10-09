@@ -74,7 +74,7 @@ void GamePrototype::Init()
     boss_.Init();
     LoadHighscore();
     Reset();
-    state_ = GameState::Title; // Luôn bắt đầu từ màn Title (G1, Task 10 T4a)
+    //state_ = GameState::Title; // Luôn bắt đầu từ màn Title (G1, Task 10 T4a)
 }
 
 void GamePrototype::Shutdown()

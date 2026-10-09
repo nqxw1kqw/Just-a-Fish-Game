@@ -99,6 +99,21 @@
     <ClInclude Include="Bullet.h" />
     <ClInclude Include="Consts.h" />
     <ClInclude Include="DxConv.h" />
+    <ClInclude Include="DxPlus\Debug.h" />
+    <ClInclude Include="DxPlus\DxPlus.h" />
+    <ClInclude Include="DxPlus\DxPlusConstants.h" />
+    <ClInclude Include="DxPlus\DxWrapper.h" />
+    <ClInclude Include="DxPlus\FadeController.h" />
+    <ClInclude Include="DxPlus\HighResolutionTimer.h" />
+    <ClInclude Include="DxPlus\Input.h" />
+    <ClInclude Include="DxPlus\InputConstants.h" />
+    <ClInclude Include="DxPlus\InputManager.h" />
+    <ClInclude Include="DxPlus\Primitive2D.h" />
+    <ClInclude Include="DxPlus\Sprite.h" />
+    <ClInclude Include="DxPlus\Text.h" />
+    <ClInclude Include="DxPlus\TextAnimator.h" />
+    <ClInclude Include="DxPlus\Utils.h" />
+    <ClInclude Include="DxPlus\Vector2.h" />
     <ClInclude Include="Effects.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="GamePrototype.h" />
@@ -120,6 +135,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bullet.cpp" />
+    <ClCompile Include="DxPlus\Debug.cpp" />
+    <ClCompile Include="DxPlus\DxPlus.cpp" />
+    <ClCompile Include="DxPlus\DxWrapper.cpp" />
+    <ClCompile Include="DxPlus\FadeController.cpp" />
+    <ClCompile Include="DxPlus\Input.cpp" />
+    <ClCompile Include="DxPlus\InputManager.cpp" />
+    <ClCompile Include="DxPlus\Primitive2D.cpp" />
+    <ClCompile Include="DxPlus\Sprite.cpp" />
+    <ClCompile Include="DxPlus\Text.cpp" />
+    <ClCompile Include="DxPlus\TextAnimator.cpp" />
+    <ClCompile Include="DxPlus\Utils.cpp" />
     <ClCompile Include="Effects.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="GamePrototype.cpp" />

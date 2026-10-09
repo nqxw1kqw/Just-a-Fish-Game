@@ -6,6 +6,7 @@
 #include "Consts.h"
 #include "GamePrototype.h"
 #include "FontManager.h"
+#include "SceneManager.h"
 
 #ifdef _DEBUG
 std::atomic<size_t> g_gameplayAllocCount{ 0 };
@@ -80,8 +81,11 @@ int WINAPI WinMain(
     CreateDirLightHandle(VGet(0.5f, -0.8f, 0.4f));
 
     // Khởi tạo Prototype Game
-    GamePrototype game;
-    game.Init();
+
+    SceneManager scene;
+
+    //GamePrototype game;
+    //game.Init();
 
 #ifdef _DEBUG
     // Bắt đầu theo dõi cấp phát bộ nhớ động trong vòng lặp game loop (B3)
@@ -107,17 +111,19 @@ int WINAPI WinMain(
         // Cập nhật logic với bước thời gian cố định
         while (acc >= kStep)
         {
-            game.Update(kStep);
+            //game.Update(kStep);
+            scene.Update(kStep);
             acc -= kStep;
         }
 
         // Kết xuất hình ảnh
         ClearDrawScreen();
-        game.Draw();
+        scene.Draw();
         ScreenFlip();
     }
 
-    game.Shutdown();
+    //game.Shutdown();
+    
     FontManager::Shutdown();
     DxLib_End();
     return 0;
