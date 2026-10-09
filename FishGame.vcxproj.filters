@@ -63,6 +63,9 @@
     <ClInclude Include="UIRenderer.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="SoundManager.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -96,6 +99,9 @@
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="UIRenderer.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="SoundManager.cpp">
       <Filter>System</Filter>
     </ClCompile>
   </ItemGroup>

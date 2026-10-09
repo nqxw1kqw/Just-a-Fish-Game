@@ -1,6 +1,7 @@
 #include "DebugController.h"
 #include "GamePrototype.h"
 #include "FontManager.h"
+#include "SoundManager.h"
 #include "Consts.h"
 #include "DxLib.h"
 #include <algorithm>
@@ -10,6 +11,12 @@
 #include <atomic>
 extern std::atomic<size_t> g_gameplayAllocCount;
 #endif
+
+namespace
+{
+    int s_debugSfxIdx = 0;
+    int s_debugBgmIdx = 0;
+}
 
 void DebugController::Reset()
 {
@@ -304,6 +311,48 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 }
             }
             f7Prev = f7Now;
+
+            // F3: Test SFX lần lượt
+            static bool f3Prev = false;
+            bool f3Now = CheckHitKey(KEY_INPUT_F3) != 0;
+            if (f3Now && !f3Prev)
+            {
+                s_debugSfxIdx = (s_debugSfxIdx + 1) % SoundManager::SFX_COUNT;
+                SoundManager::Instance().PlaySFX(static_cast<SfxId>(s_debugSfxIdx));
+            }
+            f3Prev = f3Now;
+
+            // F5: Test BGM lần lượt
+            static bool f5Prev = false;
+            bool f5Now = CheckHitKey(KEY_INPUT_F5) != 0;
+            if (f5Now && !f5Prev)
+            {
+                s_debugBgmIdx = (s_debugBgmIdx + 1) % SoundManager::BGM_COUNT;
+                SoundManager::Instance().PlayBGM(static_cast<BgmId>(s_debugBgmIdx));
+            }
+            f5Prev = f5Now;
+
+            // Chỉnh âm lượng: C/V (Master), Z/X (BGM), H/J (SFX)
+            static bool cPrev = false, vPrev = false;
+            bool cNow = CheckHitKey(KEY_INPUT_C) != 0;
+            bool vNow = CheckHitKey(KEY_INPUT_V) != 0;
+            if (cNow && !cPrev) SoundManager::Instance().SetVolume(SoundChannel::Master, SoundManager::Instance().GetVolume(SoundChannel::Master) - 5);
+            if (vNow && !vPrev) SoundManager::Instance().SetVolume(SoundChannel::Master, SoundManager::Instance().GetVolume(SoundChannel::Master) + 5);
+            cPrev = cNow; vPrev = vNow;
+
+            static bool zPrev = false, xPrev = false;
+            bool zNow = CheckHitKey(KEY_INPUT_Z) != 0;
+            bool xNow = CheckHitKey(KEY_INPUT_X) != 0;
+            if (zNow && !zPrev) SoundManager::Instance().SetVolume(SoundChannel::BGM, SoundManager::Instance().GetVolume(SoundChannel::BGM) - 5);
+            if (xNow && !xPrev) SoundManager::Instance().SetVolume(SoundChannel::BGM, SoundManager::Instance().GetVolume(SoundChannel::BGM) + 5);
+            zPrev = zNow; xPrev = xNow;
+
+            static bool hPrev = false, jPrev = false;
+            bool hNow = CheckHitKey(KEY_INPUT_H) != 0;
+            bool jNow = CheckHitKey(KEY_INPUT_J) != 0;
+            if (hNow && !hPrev) SoundManager::Instance().SetVolume(SoundChannel::SFX, SoundManager::Instance().GetVolume(SoundChannel::SFX) - 5);
+            if (jNow && !jPrev) SoundManager::Instance().SetVolume(SoundChannel::SFX, SoundManager::Instance().GetVolume(SoundChannel::SFX) + 5);
+            hPrev = hNow; jPrev = jNow;
         }
     }
 }
@@ -326,7 +375,7 @@ void DebugController::DrawHUD(const GamePrototype& game) const
     if (showDebugHUD_)
     {
         int panW = 460;
-        int panH = (game.state_ == GameState::Boss) ? 690 : 590;
+        int panH = (game.state_ == GameState::Boss) ? 770 : 670;
         int panX = sw - panW - 30;
         int panY = 24;
 
@@ -472,7 +521,26 @@ void DebugController::DrawHUD(const GamePrototype& game) const
             L"Summary: %s", game.GetLastSummary());
         textY += 18;
 
+        // Thông tin âm thanh & kiểm thử
+        FontManager::Draw(textX, textY, L"--- AUDIO (TASK 12 SOUND MANAGER) ---", GetColor(120, 240, 255), FontSize::Small);
+        textY += 17;
+        FontManager::DrawFormat(textX, textY, GetColor(200, 230, 255), FontSize::Small,
+            L"Master: %d%% (C/V) | BGM: %d%% (Z/X) | SFX: %d%% (H/J)",
+            SoundManager::Instance().GetVolume(SoundChannel::Master),
+            SoundManager::Instance().GetVolume(SoundChannel::BGM),
+            SoundManager::Instance().GetVolume(SoundChannel::SFX));
+        textY += 17;
+        FontManager::DrawFormat(textX, textY, GetColor(255, 220, 140), FontSize::Small,
+            L"F3 SFX [%d]: %s",
+            s_debugSfxIdx, SoundManager::Instance().GetSfxNameW(static_cast<SfxId>(s_debugSfxIdx)));
+        textY += 17;
+        FontManager::DrawFormat(textX, textY, GetColor(255, 200, 180), FontSize::Small,
+            L"F5 BGM: %s",
+            SoundManager::Instance().GetBgmNameW(SoundManager::Instance().GetCurrentBgm()));
+        textY += 18;
+
         FontManager::Draw(textX, textY, L"[DEBUG TEST KEYS]:", GetColor(255, 205, 80), FontSize::Small); textY += 17;
+        FontManager::Draw(textX, textY, L"F3: Test SFX  |  F5: Test BGM  |  C/V, Z/X, H/J: Vol", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F8: Skip Wave  |  Shift+F8: Kill Boss/Skip Card", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"Ctrl+1..5: Jump Wave  |  F6/Ctrl+6: Go To Boss", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F9: God Mode  |  Shift+F9: Instant Defeat", GetColor(255, 180, 120), FontSize::Small); textY += 16;

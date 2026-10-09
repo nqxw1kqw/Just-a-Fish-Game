@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include "CardManager.h"
 #include "Consts.h"
+#include "SoundManager.h"
 #include "DxLib.h"
 #include "FontManager.h"
 
@@ -265,12 +266,14 @@ bool CardManager::Update(float dt)
     if (leftNow && !leftPrev)
     {
         selectedIndex_ = (selectedIndex_ + offeredCount_ - 1) % offeredCount_;
+        SoundManager::Instance().PlaySFX(SfxId::UiHover);
     }
     leftPrev = leftNow;
 
     if (rightNow && !rightPrev)
     {
         selectedIndex_ = (selectedIndex_ + 1) % offeredCount_;
+        SoundManager::Instance().PlaySFX(SfxId::UiHover);
     }
     rightPrev = rightNow;
 
@@ -293,6 +296,7 @@ bool CardManager::Update(float dt)
 
     if (chooseSlot >= 0 && chooseSlot < offeredCount_)
     {
+        SoundManager::Instance().PlaySFX(SfxId::CardSelect);
         activeCards_.push_back(currentOffer_[chooseSlot]);
         return true; // Đã chọn xong 1 thẻ!
     }

@@ -9,6 +9,7 @@
 #include "Enemy.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
+#include "SoundManager.h"
 #include "DxLib.h"
 
 void WhaleBoss::Init()
@@ -111,6 +112,8 @@ void WhaleBoss::StartTsunamiTelegraph(PlayerFish& player, float gapDeg)
     action_ = BossAction::TelegraphRadialTsunami;
     actionTimer_ = 0.0f;
     timeSinceLastTsunami_ = 0.0f;
+
+    SoundManager::Instance().PlaySFX(SfxId::TsunamiCharge);
 
     if (gapDeg > 0.0f)
     {
@@ -435,6 +438,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
 
             effects.AddTrauma(0.55f);
             effects.SpawnShockwave(pos_, slamRadius_);
+            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
 
             Vec3 pDiff = player.GetPosition() - pos_;
             pDiff.y = 0.0f;
@@ -527,6 +531,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             pos_.y = 0.0f;
             effects.AddTrauma(0.55f);
             effects.SpawnShockwave(pos_, slamRadius_);
+            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
 
             Vec3 pDiff = player.GetPosition() - pos_;
             pDiff.y = 0.0f;
@@ -584,6 +589,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         {
             // Phóng vòng sóng thần tỏa tròn từ vị trí hiện tại của boss (Task 10 T3c)
             SpawnRing(currentTsunamiGapDeg_, player.GetPosition());
+            SoundManager::Instance().PlaySFX(SfxId::TsunamiSurge);
 
             timeSinceLastJumpAttack_ = 0.0f;
             timeSinceLastRingLaunch_ = 0.0f;

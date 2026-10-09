@@ -6,6 +6,7 @@
 #include "Consts.h"
 #include "GamePrototype.h"
 #include "FontManager.h"
+#include "SoundManager.h"
 
 #ifdef _DEBUG
 std::atomic<size_t> g_gameplayAllocCount{ 0 };
@@ -67,6 +68,9 @@ int WINAPI WinMain(
     // Khởi tạo Font tùy chỉnh (Yabikoma)
     FontManager::Init();
 
+    // Khởi tạo Module Âm thanh (SoundManager)
+    SoundManager::Instance().Init();
+
     SetDrawScreen(DX_SCREEN_BACK);
 
     // Bật Z-buffer cho đồ họa 3D theo mục 3.10 của fish game.md
@@ -118,6 +122,7 @@ int WINAPI WinMain(
     }
 
     game.Shutdown();
+    SoundManager::Instance().Shutdown();
     FontManager::Shutdown();
     DxLib_End();
     return 0;

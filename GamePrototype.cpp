@@ -10,6 +10,7 @@
 #include "Render3DUtil.h"
 #include "DxLib.h"
 #include "FontManager.h"
+#include "SoundManager.h"
 
 void GamePrototype::LoadHighscore()
 {
@@ -151,6 +152,7 @@ void GamePrototype::StartWave(int wave)
     player_.ResetDamageTakenThisWave();
     enemies_.SetWave(wave, mode_ == GameMode::Endless);
     enemies_.SetAutoSpawn(true);
+    SoundManager::Instance().PlayBGM(BgmId::Battle, true);
 }
 
 void GamePrototype::StartBossFight()
@@ -161,6 +163,7 @@ void GamePrototype::StartBossFight()
     enemies_.SetAutoSpawn(false); // Trong trận Boss, quái chỉ xuất hiện theo đòn của Boss
     boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
     effects_.AddTrauma(0.5f);
+    SoundManager::Instance().PlayBGM(BgmId::Boss, true);
 }
 
 void GamePrototype::OnWaveComplete()
@@ -200,6 +203,8 @@ void GamePrototype::OnWaveComplete()
             bossIntroTimer_ = 2.0f;
             int bossIdx = currentWave_ / 5;
             boss_.SetBossDifficulty(bossIdx);
+            SoundManager::Instance().PlayBGM(BgmId::Boss, true);
+            SoundManager::Instance().PlaySFX(SfxId::WhaleGroan);
         }
         else
         {
@@ -210,6 +215,7 @@ void GamePrototype::OnWaveComplete()
 
     // Chuyển sang CardPick
     state_ = GameState::CardPick;
+    SoundManager::Instance().PlaySFX(SfxId::CardFlip);
     cardManager_.Roll3Cards(currentWave_);
 }
 
@@ -284,6 +290,9 @@ void GamePrototype::SkipToBoss()
 
 void GamePrototype::Update(float dt)
 {
+    // Cập nhật hệ thống âm thanh (Fade BGM mỗi tick 120Hz)
+    SoundManager::Instance().Update(dt);
+
     // Phím Reset (R)
     if (CheckHitKey(KEY_INPUT_R))
     {
@@ -297,6 +306,8 @@ void GamePrototype::Update(float dt)
     // 0. Màn hình Tiêu đề (Title - G1, Task 10 T4a)
     if (state_ == GameState::Title)
     {
+        SoundManager::Instance().PlayBGM(BgmId::Title, true);
+
         static bool upPrev = false, downPrev = false, k1Prev = false, k2Prev = false;
         bool upNow = (CheckHitKey(KEY_INPUT_UP) || CheckHitKey(KEY_INPUT_W)) != 0;
         bool downNow = (CheckHitKey(KEY_INPUT_DOWN) || CheckHitKey(KEY_INPUT_S)) != 0;
@@ -343,6 +354,7 @@ void GamePrototype::Update(float dt)
         {
             state_ = GameState::GameOver;
             effects_.AddTrauma(0.85f);
+            SoundManager::Instance().PlayBGM(BgmId::GameOver, true);
             if (mode_ == GameMode::Endless)
             {
                 SaveHighscore();
@@ -363,6 +375,7 @@ void GamePrototype::Update(float dt)
         {
             Reset();
             state_ = GameState::Title;
+            SoundManager::Instance().PlayBGM(BgmId::Title, true);
             return;
         }
 
@@ -464,6 +477,8 @@ void GamePrototype::Update(float dt)
                     state_ = GameState::BossIntro;
                     bossIntroTimer_ = 2.0f; // 2 giây giới thiệu Boss (G1, B4)
                     enemies_.KillAll(effects_);
+                    SoundManager::Instance().PlayBGM(BgmId::Boss, true);
+                    SoundManager::Instance().PlaySFX(SfxId::WhaleGroan);
                 }
                 else
                 {
@@ -480,6 +495,8 @@ void GamePrototype::Update(float dt)
                     enemies_.KillAll(effects_);
                     int bossIdx = currentWave_ / 5;
                     boss_.SetBossDifficulty(bossIdx);
+                    SoundManager::Instance().PlayBGM(BgmId::Boss, true);
+                    SoundManager::Instance().PlaySFX(SfxId::WhaleGroan);
                 }
                 else
                 {
@@ -578,6 +595,7 @@ void GamePrototype::Update(float dt)
                     state_ = GameState::Victory;
                     effects_.AddTrauma(0.7f);
                     enemies_.KillAll(effects_);
+                    SoundManager::Instance().PlayBGM(BgmId::Victory, true);
                     swprintf_s(lastSummaryBuffer_, L"Boss: %.1f giây", boss_.GetBossFightTimer());
                     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
                 }

@@ -9,6 +9,7 @@
 #include "PlayerFish.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
+#include "SoundManager.h"
 #include "DxLib.h"
 
 namespace
@@ -620,6 +621,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                         e.chargeTimer = 0.65f; // Khựng báo hiệu 0.65s
                         e.chargeDir = (distToPlayer > 0.1f) ? (toPlayer / distToPlayer) : Vec3{ 0, 0, 1 };
                         e.yaw = std::atan2(e.chargeDir.x, e.chargeDir.z);
+                        SoundManager::Instance().PlaySFX(SfxId::SharkTelegraph);
                     }
                 }
                 else if (e.chargeState == 1) // Khựng nạp lực báo hiệu
@@ -629,6 +631,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                     {
                         e.chargeState = 2;
                         e.chargeTimer = 0.65f; // Lao tới trong 0.65s
+                        SoundManager::Instance().PlaySFX(SfxId::SharkDash);
                     }
                 }
                 else if (e.chargeState == 2) // Lao thẳng tốc độ cực nhanh
@@ -803,6 +806,7 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
                 killedThisWave_++;
                 totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
                 effects.SpawnHitParticles(e.pos + Vec3{ 0, 12, 0 }, 18, GetColor(255, 120, 40));
+                SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                 // G3: Bỏ EXP, quái chết có tỉ lệ 10% rơi vật hồi máu nhỏ (+10 HP)
                 if ((rand() % 100) < 10)
                 {
@@ -863,6 +867,7 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
                     killedThisWave_++;
                     totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
                     effects.SpawnHitParticles(e.pos + Vec3{ 0, 12, 0 }, 20, GetColor(255, 90, 70));
+                    SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                     if ((rand() % 100) < 10)
                     {
                         effects.SpawnExpOrb(e.pos, 10.0f);

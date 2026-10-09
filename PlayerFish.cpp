@@ -8,6 +8,7 @@
 #include "Effects.h"
 #include "Render3DUtil.h"
 #include "DxLib.h"
+#include "SoundManager.h"
 
 void PlayerFish::Init()
 {
@@ -321,6 +322,9 @@ void PlayerFish::StartJump(const Vec3& inputDir)
     predictedLandPos_.x = std::clamp(predictedLandPos_.x, -limit, limit);
     predictedLandPos_.y = 0.5f;
     predictedLandPos_.z = std::clamp(predictedLandPos_.z, -limit, limit);
+
+    // Phát âm thanh nhảy vút lên
+    SoundManager::Instance().PlaySFX(SfxId::JumpLaunch);
 }
 
 void PlayerFish::OnLand(EffectSystem& effects)
@@ -329,6 +333,9 @@ void PlayerFish::OnLand(EffectSystem& effects)
     jumpPhase_ = 0.0f;
     isJumping_ = false;
     justLanded_ = true;
+
+    // Phát âm thanh đập đất uy lực (Slam Impact)
+    SoundManager::Instance().PlaySFX(SfxId::SlamImpact);
 
     // J2: Hồi chiêu 1.2s bắt đầu tính từ thời điểm tiếp đất
     jumpCooldownTimer_ = jumpCooldown_;
@@ -412,10 +419,18 @@ void PlayerFish::Update(float dt, EffectSystem& effects)
 
             swimTimer_ += dt;
             tailWagAngle_ = std::sin(swimTimer_ * 14.0f) * 0.25f;
+
+            swimSoundTimer_ += dt;
+            if (swimSoundTimer_ >= 0.35f)
+            {
+                swimSoundTimer_ = 0.0f;
+                SoundManager::Instance().PlaySFX(SfxId::SwimPaddle);
+            }
         }
         else
         {
             tailWagAngle_ *= 0.85f;
+            swimSoundTimer_ = 0.30f;
         }
 
         pos_.x = std::clamp(pos_.x, -arenaLimit, arenaLimit);
@@ -548,10 +563,14 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
     effects.AddTrauma(0.28f); // Rung nhẹ vừa phải tạo phản hồi va đập
     effects.SpawnHitParticles(pos_ + Vec3{ 0, 10, 0 }, 8, GetColor(255, 60, 60));
 
+    // Phát âm thanh khi người chơi bị trúng đòn
+    SoundManager::Instance().PlaySFX(SfxId::PlayerHit);
+
     // Hook 6: Cá nóc - khi trúng đòn, bắn gai phản đòn
     if (hasPufferfishHook_)
     {
         triggerPufferfishSpikes_ = true;
+        SoundManager::Instance().PlaySFX(SfxId::PufferSpikes);
     }
 
     if (hp_ <= 0.0f)
@@ -564,6 +583,7 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
 void PlayerFish::AddExp(int amount)
 {
     exp_ += amount;
+    SoundManager::Instance().PlaySFX(SfxId::ExpPickup);
     if (exp_ >= expNext_)
     {
         exp_ -= expNext_;

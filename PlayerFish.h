@@ -160,6 +160,7 @@ private:
     // Hiệu ứng
     float hitFlashTimer_ = 0.0f;
     float tailWagAngle_ = 0.0f;
+    float swimSoundTimer_ = 0.0f;
 
     // Mô hình 3D Cá Chính
     int fishModelHandle_ = -1;
