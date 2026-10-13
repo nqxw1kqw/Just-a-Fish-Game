@@ -501,6 +501,7 @@ void DebugController::DrawHUD(const GamePrototype& game) const
         FontManager::Draw(textX, textY, L"F8: Skip Wave  |  Shift+F8: Kill Boss/Skip Card", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"Ctrl+1..5: Jump Wave  |  F6/Ctrl+6: Go To Boss", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F9: God Mode  |  Shift+F9: Instant Defeat", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, game.IsRenderInterpEnabled() ? L"F10: Render Interp ON" : L"F10: Render Interp OFF", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F4: Full HP + Reset CD  |  F7: Boss Tsunami", GetColor(255, 180, 120), FontSize::Small); textY += 16;
     }
 }

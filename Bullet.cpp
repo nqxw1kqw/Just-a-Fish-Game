@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include "Bullet.h"
+#include "RenderInterp.h"
 #include "Enemy.h"
 #include "PlayerFish.h"
 #include "Boss.h"
@@ -277,4 +278,28 @@ void WeaponSystem::Draw(const PlayerFish& player) const
         float bYaw = std::atan2(b.vel.x, b.vel.z);
         Render3D::DrawOrientedBox3D(b.pos, bulletHalfSize, bYaw, bulletColor, bulletEdge, true);
     }
+}
+
+void WeaponSystem::SavePrevTransforms()
+{
+    for (auto& b : bullets_)
+    {
+        b.prevPos = b.pos;
+        b.prevActive = b.active;
+    }
+}
+
+void WeaponSystem::BeginRenderInterp(float alpha)
+{
+    for (auto& b : bullets_)
+    {
+        b.savedPos = b.pos;
+        if (!b.active || !b.prevActive || RenderInterp::ShouldSnap(b.prevPos, b.pos)) continue;
+        b.pos = RenderInterp::Lerp(b.prevPos, b.pos, alpha);
+    }
+}
+
+void WeaponSystem::EndRenderInterp()
+{
+    for (auto& b : bullets_) b.pos = b.savedPos;
 }

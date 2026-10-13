@@ -14,6 +14,13 @@ struct Enemy
     Vec3 knockback{ 0, 0, 0 };
     float yaw = 0.0f;
 
+    // Render interpolation (#26)
+    Vec3 prevPos{ 0, 0, 0 };
+    float prevYaw = 0.0f;
+    bool prevActive = false;
+    Vec3 savedPos{ 0, 0, 0 };
+    float savedYaw = 0.0f;
+
     float hp = 25.0f;
     float maxHp = 25.0f;
     float speed = 100.0f;
@@ -59,6 +66,11 @@ public:
     void Reset();
     void Update(float dt, PlayerFish& player, EffectSystem& effects);
     void Draw() const;
+
+    // Render interpolation (#26)
+    void SavePrevTransforms();
+    void BeginRenderInterp(float alpha);
+    void EndRenderInterp();
 
     // Sinh quái (Task 10 T2: bool return, spawn có khoảng cách với Player)
     bool SpawnEnemy(EnemyType type, const Vec3& pos);
