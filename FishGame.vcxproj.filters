@@ -72,6 +72,9 @@
     <ClInclude Include="UIRenderer.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="SeabedFloor.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="SoundManager.h">
       <Filter>System</Filter>
     </ClInclude>
@@ -118,6 +121,9 @@
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="UIRenderer.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="SeabedFloor.cpp">
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="SoundManager.cpp">

@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include "GamePrototype.h"
+#include "SeabedFloor.h"
 #include "LowPolyModels.h"
 #include "DxConv.h"
 #include "Render3DUtil.h"
@@ -839,21 +840,24 @@ void GamePrototype::DrawArena() const
 {
     float half = GameConsts::ARENA_HALF_SIZE;
 
-    // 1. Mặt sàn chính
-    VECTOR floorP1 = VGet(-half, -2.0f, -half);
-    VECTOR floorP2 = VGet(half, 0.0f, half);
-    Render3D::DrawBox3D(floorP1, floorP2, GetColor(18, 26, 42), TRUE);
+    // 1. Mặt sàn chính: 海底の砂テクスチャ (fallback: hộp màu + lưới cũ nếu thiếu file)
+    if (!SeabedFloor::Draw(half))
+    {
+        VECTOR floorP1 = VGet(-half, -2.0f, -half);
+        VECTOR floorP2 = VGet(half, 0.0f, half);
+        Render3D::DrawBox3D(floorP1, floorP2, GetColor(18, 26, 42), TRUE);
 
-    // 2. Lưới ô vuông 3D trên sàn (Grid)
-    int gridColor = GetColor(35, 55, 85);
-    float step = 100.0f;
-    for (float x = -half; x <= half; x += step)
-    {
-        DrawLine3D(VGet(x, 0.2f, -half), VGet(x, 0.2f, half), gridColor);
-    }
-    for (float z = -half; z <= half; z += step)
-    {
-        DrawLine3D(VGet(-half, 0.2f, z), VGet(half, 0.2f, z), gridColor);
+        // 2. Lưới ô vuông 3D trên sàn (Grid)
+        int gridColor = GetColor(35, 55, 85);
+        float step = 100.0f;
+        for (float x = -half; x <= half; x += step)
+        {
+            DrawLine3D(VGet(x, 0.2f, -half), VGet(x, 0.2f, half), gridColor);
+        }
+        for (float z = -half; z <= half; z += step)
+        {
+            DrawLine3D(VGet(-half, 0.2f, z), VGet(half, 0.2f, z), gridColor);
+        }
     }
 
     // 3. Đường viền tâm sàn đấu
