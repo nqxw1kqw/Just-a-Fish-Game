@@ -45,8 +45,11 @@ namespace
     // Các buffer đỉnh tĩnh cố định: TUYỆT ĐỐI KHÔNG CẤP PHÁT ĐỘNG TRONG FRAME
     constexpr int CROWN_SEGMENTS = 48;
     constexpr int RING_SEGMENTS = 48;
+    constexpr int OCEAN_GRID_X = 14;
+    constexpr int OCEAN_GRID_Z = 14;
     VERTEX3D s_crownMesh[CROWN_SEGMENTS * 12];
     VERTEX3D s_ringMesh[RING_SEGMENTS * 12];
+    VERTEX3D s_oceanMesh[OCEAN_GRID_X * OCEAN_GRID_Z * 6];
 }
 
 WaterSplashSystem::~WaterSplashSystem()
@@ -64,6 +67,21 @@ void WaterSplashSystem::Init()
     {
         glowTexture_ = MakeTexture(false);
     }
+
+    // Khởi tạo 80 đốm sáng lấp lánh phản chiếu trên mặt nước biển nông
+    for (auto& s : sparkles_)
+    {
+        s.pos = Vec3{
+            RandomFloat(-640.0f, 640.0f),
+            0.38f,
+            RandomFloat(-640.0f, 640.0f)
+        };
+        s.phase = RandomFloat(0.0f, 6.28f);
+        s.pulseSpeed = RandomFloat(1.8f, 3.2f);
+        s.baseSize = RandomFloat(3.5f, 6.0f);
+        s.active = true;
+    }
+    waterTime_ = 0.0f;
     Reset();
 }
 
@@ -223,8 +241,62 @@ void WaterSplashSystem::SpawnSecondaryRipple(const Vec3& pos)
     }
 }
 
+void WaterSplashSystem::EmitSwimWake(const Vec3& fishPos, const Vec3& moveDir)
+{
+    Vec3 wakePos = fishPos - moveDir * 12.0f; // Điểm phát sóng sau đuôi cá
+    wakePos.y = 0.12f;
+
+    // Sinh 1 ripple nhỏ sau đuôi cá
+    for (auto& r : ripples_)
+    {
+        if (!r.active)
+        {
+            r.center = wakePos;
+            r.age = 0.0f;
+            r.lifetime = 0.45f;
+            r.startRadius = 3.5f;
+            r.endRadius = 18.0f;
+            r.opacity = 0.50f;
+            r.active = true;
+            break;
+        }
+    }
+
+    // Sinh 2 hạt bọt nước dạt hai bên sườn đuôi cá
+    Vec3 rightDir{ -moveDir.z, 0.0f, moveDir.x };
+    for (int side = -1; side <= 1; side += 2)
+    {
+        for (auto& f : foams_)
+        {
+            if (!f.active)
+            {
+                f.pos = wakePos + rightDir * (static_cast<float>(side) * 5.0f);
+                f.vel = rightDir * (static_cast<float>(side) * RandomFloat(15.0f, 30.0f)) - moveDir * 10.0f;
+                f.age = 0.0f;
+                f.lifetime = RandomFloat(0.30f, 0.50f);
+                f.sizeStart = RandomFloat(3.2f, 4.8f);
+                f.sizeEnd = 1.0f;
+                f.r = 210; f.g = 245; f.b = 255;
+                f.active = true;
+                break;
+            }
+        }
+    }
+}
+
 void WaterSplashSystem::Update(float dt)
 {
+    waterTime_ += dt;
+
+    // Cập nhật đốm sáng lấp lánh trôi nhẹ trên mặt biển nông
+    for (auto& s : sparkles_)
+    {
+        s.pos.x += dt * 6.0f;
+        s.pos.z += dt * 3.5f;
+        if (s.pos.x > 640.0f) s.pos.x = -640.0f;
+        if (s.pos.z > 640.0f) s.pos.z = -640.0f;
+    }
+
     // 1. Cập nhật Vành nước Crown
     for (auto& c : crowns_)
     {
@@ -442,6 +514,86 @@ void WaterSplashSystem::Draw() const
     }
 
     // Khôi phục lại trạng thái vẽ chuẩn của DxLib
+    SetDrawBright(255, 255, 255);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+    SetWriteZBuffer3D(TRUE);
+    SetUseLighting(TRUE);
+}
+
+void WaterSplashSystem::DrawShallowOcean(float arenaHalfSize) const
+{
+    SetUseLighting(FALSE);
+    SetUseZBuffer3D(TRUE);
+    SetWriteZBuffer3D(FALSE);
+    SetUseBackCulling(DX_CULLING_NONE);
+
+    // 1. VẼ MẶT PHẲNG NƯỚC BIỂN NÔNG 3D (SHALLOW OCEAN SURFACE)
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 140);
+    float stepX = (arenaHalfSize * 2.0f) / static_cast<float>(OCEAN_GRID_X);
+    float stepZ = (arenaHalfSize * 2.0f) / static_cast<float>(OCEAN_GRID_Z);
+    int vertIdx = 0;
+
+    auto makeOceanV = [&](float x, float z) {
+        float waveH = std::sin(x * 0.012f + waterTime_ * 1.6f) * 0.22f
+                    + std::cos(z * 0.012f + waterTime_ * 1.3f) * 0.22f;
+        VERTEX3D v{};
+        v.pos = VGet(x, 0.35f + waveH, z);
+        v.norm = VGet(0, 1, 0);
+
+        // Gradient màu: ở gần tâm xanh ngọc lam nhiệt đới sáng trong, ra mép sâu thẳm
+        float distCenter = std::sqrt(x * x + z * z) / arenaHalfSize;
+        float blend = std::clamp(distCenter, 0.0f, 1.0f);
+
+        int cr = static_cast<int>(32.0f * (1.0f - blend) + 14.0f * blend);
+        int cg = static_cast<int>(145.0f * (1.0f - blend) + 75.0f * blend);
+        int cb = static_cast<int>(215.0f * (1.0f - blend) + 160.0f * blend);
+        v.dif = GetColorU8(cr, cg, cb, 255);
+        return v;
+    };
+
+    for (int ix = 0; ix < OCEAN_GRID_X; ++ix)
+    {
+        float x0 = -arenaHalfSize + static_cast<float>(ix) * stepX;
+        float x1 = x0 + stepX;
+
+        for (int iz = 0; iz < OCEAN_GRID_Z; ++iz)
+        {
+            float z0 = -arenaHalfSize + static_cast<float>(iz) * stepZ;
+            float z1 = z0 + stepZ;
+
+            VERTEX3D v00 = makeOceanV(x0, z0);
+            VERTEX3D v10 = makeOceanV(x1, z0);
+            VERTEX3D v11 = makeOceanV(x1, z1);
+            VERTEX3D v01 = makeOceanV(x0, z1);
+
+            s_oceanMesh[vertIdx++] = v00;
+            s_oceanMesh[vertIdx++] = v10;
+            s_oceanMesh[vertIdx++] = v11;
+
+            s_oceanMesh[vertIdx++] = v00;
+            s_oceanMesh[vertIdx++] = v11;
+            s_oceanMesh[vertIdx++] = v01;
+        }
+    }
+    DrawPrimitive3D(s_oceanMesh, vertIdx, DX_PRIMTYPE_TRIANGLELIST, DX_NONE_GRAPH, TRUE);
+
+    // 2. VẼ CÁC ĐỐM SÁNG LẤP LÁNH NẮNG TRÊN MẶT BIỂN (CAUSTIC SPARKLES)
+    if (glowTexture_ >= 0)
+    {
+        for (const auto& s : sparkles_)
+        {
+            if (!s.active) continue;
+            float pulse = std::sin(waterTime_ * s.pulseSpeed + s.phase) * 0.5f + 0.5f;
+            float alpha = pulse * 185.0f;
+            if (alpha < 10.0f) continue;
+
+            float curSize = s.baseSize * (0.8f + 0.4f * pulse);
+            SetDrawBlendMode(DX_BLENDMODE_ADD, static_cast<int>(alpha));
+            SetDrawBright(220, 245, 255);
+            DrawBillboard3D(DxConv::ToVECTOR(s.pos), 0.5f, 0.5f, curSize, 0.0f, glowTexture_, TRUE);
+        }
+    }
+
     SetDrawBright(255, 255, 255);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     SetWriteZBuffer3D(TRUE);

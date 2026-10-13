@@ -856,6 +856,9 @@ void GamePrototype::DrawArena() const
     // 3. Đường viền tâm sàn đấu
     Render3D::DrawCircle3D(Vec3{ 0.0f, 0.4f, 0.0f }, 160.0f, 48, GetColor(50, 90, 130), false);
 
+    // 3b. Mặt nước biển nông 3D lấp lánh (Shallow Ocean Surface & Caustics)
+    effects_.DrawShallowOcean(half);
+
     // 4. Bờ tường rào 4 cạnh (3D box viền neon xanh ngọc)
     float wallThick = 18.0f;
     float wallHeight = 24.0f;

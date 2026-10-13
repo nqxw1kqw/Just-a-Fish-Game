@@ -49,6 +49,16 @@ void EffectSystem::SpawnWaterSplash(const Vec3& pos, float radius, float strengt
     waterSplash_.EmitImpact(pos, radius, strength);
 }
 
+void EffectSystem::SpawnSwimWake(const Vec3& fishPos, const Vec3& moveDir)
+{
+    waterSplash_.EmitSwimWake(fishPos, moveDir);
+}
+
+void EffectSystem::DrawShallowOcean(float arenaHalfSize) const
+{
+    waterSplash_.DrawShallowOcean(arenaHalfSize);
+}
+
 void EffectSystem::SpawnDamagePopup(const Vec3& pos, float damage, bool isCrit)
 {
     if (damage <= 0.01f) return;
