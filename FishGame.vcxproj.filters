@@ -54,6 +54,9 @@
     <ClInclude Include="Card.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="CardFrame.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="CardDatabase.h">
       <Filter>System</Filter>
     </ClInclude>
@@ -103,6 +106,9 @@
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="GamePrototype.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="CardFrame.cpp">
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="CardManager.cpp">
