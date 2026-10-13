@@ -10,6 +10,10 @@ public:
     void Reset(const Vec3& initialTargetPos = Vec3{ 0.0f, 0.0f, 0.0f });
     void Update(float dt, const Vec3& targetPos, const EffectSystem& effects);
 
+    // Render interpolation (#26): lưu eye/target tick trước; Apply đặt camera DxLib theo alpha
+    void SavePrev() { prevEye_ = camEye_; prevTarget_ = camTarget_; }
+    void ApplyInterpolated(float alpha, const EffectSystem& effects) const;
+
     const Vec3& GetEye() const { return camEye_; }
     const Vec3& GetTarget() const { return camTarget_; }
 
@@ -36,4 +40,6 @@ private:
     float camFollowSpeed_ = GameConsts::CAM_FOLLOW_SPEED;
     float camDeadZone_ = GameConsts::CAM_DEAD_ZONE;
     float camShakeScale_ = 1.0f;
+    Vec3 prevEye_{ 0.0f, 480.0f, -420.0f };
+    Vec3 prevTarget_{ 0.0f, 0.0f, 0.0f };
 };

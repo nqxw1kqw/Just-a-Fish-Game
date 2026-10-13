@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include "PlayerFish.h"
+#include "RenderInterp.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
 #include "DxLib.h"
@@ -828,3 +829,8 @@ void PlayerFish::Draw() const
     Render3D::DrawOrientedBox3D(tailCenter, tailHalfSize, yaw_ + tailWagAngle_, tailColor, edgeColor, true);
 }
 
+
+void PlayerFish::BeginRenderInterp(float alpha)
+{
+    RenderInterp::Apply(pos_, yaw_, prevPos_, prevYaw_, alpha, savedPos_, savedYaw_);
+}
