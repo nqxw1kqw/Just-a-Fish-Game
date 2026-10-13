@@ -288,8 +288,113 @@ void GamePrototype::SkipToBoss()
     StartBossFight();
 }
 
+bool GamePrototype::ConsumeWindowModeToggleRequest()
+{
+    bool requested = windowModeToggleRequested_;
+    windowModeToggleRequested_ = false;
+    return requested;
+}
+
+// Màn hình tạm dừng (Task #13): ESC / P để mở - đóng.
+// ESC ở các màn khác (Title, chọn thẻ, Boss Intro, Thắng/Thua) vẫn thoát game như trước.
+bool GamePrototype::UpdatePauseInput()
+{
+    static bool escPrev = true, pPrev = true, upPrev = true, downPrev = true;
+    static bool leftPrev = true, rightPrev = true, enterPrev = true;
+    bool escNow = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
+    bool pNow = CheckHitKey(KEY_INPUT_P) != 0;
+    bool upNow = (CheckHitKey(KEY_INPUT_UP) || CheckHitKey(KEY_INPUT_W)) != 0;
+    bool downNow = (CheckHitKey(KEY_INPUT_DOWN) || CheckHitKey(KEY_INPUT_S)) != 0;
+    bool leftNow = (CheckHitKey(KEY_INPUT_LEFT) || CheckHitKey(KEY_INPUT_A)) != 0;
+    bool rightNow = (CheckHitKey(KEY_INPUT_RIGHT) || CheckHitKey(KEY_INPUT_D)) != 0;
+    bool enterNow = CheckHitKey(KEY_INPUT_RETURN) != 0;
+
+    bool escPressed = escNow && !escPrev;
+    // Phím P cũng dùng để chỉnh scale model trong Debug HUD, nên chỉ dùng P khi Debug HUD tắt
+    bool pPressed = pNow && !pPrev && !debugController_.IsDebugHUDVisible();
+    bool upPressed = upNow && !upPrev;
+    bool downPressed = downNow && !downPrev;
+    bool leftPressed = leftNow && !leftPrev;
+    bool rightPressed = rightNow && !rightPrev;
+    // Xác nhận khi NHẢ Enter, để Enter không "lọt" sang màn Title (Title đọc Enter đang giữ)
+    bool enterReleased = !enterNow && enterPrev;
+
+    escPrev = escNow; pPrev = pNow; upPrev = upNow; downPrev = downNow;
+    leftPrev = leftNow; rightPrev = rightNow; enterPrev = enterNow;
+
+    if (!paused_)
+    {
+        bool canPause = (state_ == GameState::Wave || state_ == GameState::Boss || state_ == GameState::BossIntro)
+                        && player_.GetHp() > 0.0f;
+        if (canPause && (escPressed || pPressed))
+        {
+            paused_ = true;
+            pauseSelected_ = PauseItem_Resume;
+            return true;
+        }
+        if (escPressed && !canPause)
+        {
+            quitRequested_ = true;
+        }
+        return false;
+    }
+
+    if (escPressed || pPressed)
+    {
+        paused_ = false;
+        return true; // tick này vẫn bỏ qua để phím vừa nhấn không lọt vào game
+    }
+
+    if (upPressed) pauseSelected_ = (pauseSelected_ + PauseItem_Count - 1) % PauseItem_Count;
+    if (downPressed) pauseSelected_ = (pauseSelected_ + 1) % PauseItem_Count;
+
+    SoundManager& sound = SoundManager::Instance();
+    int volumeDelta = (rightPressed ? 5 : 0) - (leftPressed ? 5 : 0);
+    if (volumeDelta != 0)
+    {
+        if (pauseSelected_ == PauseItem_BgmVolume)
+        {
+            sound.SetVolume(SoundChannel::BGM, sound.GetVolume(SoundChannel::BGM) + volumeDelta);
+        }
+        else if (pauseSelected_ == PauseItem_SfxVolume)
+        {
+            sound.SetVolume(SoundChannel::SFX, sound.GetVolume(SoundChannel::SFX) + volumeDelta);
+            sound.PlaySFX(SfxId::CardFlip); // nghe thử âm lượng SFX
+        }
+    }
+
+    bool toggleWindow = (pauseSelected_ == PauseItem_WindowMode) && (enterReleased || leftPressed || rightPressed);
+    if (toggleWindow)
+    {
+        // Thực hiện ở main.cpp (ngoài vòng Update) vì ChangeWindowMode reset hệ thống đồ hoạ
+        windowModeToggleRequested_ = true;
+    }
+    else if (enterReleased)
+    {
+        if (pauseSelected_ == PauseItem_Resume)
+        {
+            paused_ = false;
+        }
+        else if (pauseSelected_ == PauseItem_Title)
+        {
+            paused_ = false;
+            Reset();
+            state_ = GameState::Title;
+            sound.PlayBGM(BgmId::Title, true);
+        }
+    }
+    return true;
+}
+
 void GamePrototype::Update(float dt)
 {
+    // Màn hình tạm dừng: đóng băng toàn bộ logic game (chỉ âm thanh vẫn cập nhật fade)
+    if (UpdatePauseInput())
+    {
+        SoundManager::Instance().Update(dt);
+        return;
+    }
+
     // Cập nhật hệ thống âm thanh (Fade BGM mỗi tick 120Hz)
     SoundManager::Instance().Update(dt);
 
@@ -730,5 +835,11 @@ void GamePrototype::Draw() const
     else if (state_ == GameState::GameOver)
     {
         uiRenderer_.DrawGameOverScreen(*this);
+    }
+
+    // 13. Màn hình tạm dừng (vẽ đè lên khung hình game đang đóng băng)
+    if (paused_)
+    {
+        uiRenderer_.DrawPauseScreen(*this);
     }
 }

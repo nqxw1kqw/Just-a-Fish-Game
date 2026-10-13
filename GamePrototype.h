@@ -52,6 +52,11 @@ public:
     const HighscoreData& GetHighscore() const { return highscore_; }
     int GetTotalKills() const { return enemies_.GetTotalKills(); }
 
+    // Màn hình tạm dừng (Task #13)
+    bool IsPaused() const { return paused_; }
+    bool IsQuitRequested() const { return quitRequested_; }
+    bool ConsumeWindowModeToggleRequest();
+
 private:
     void StartWave(int wave);
     void StartBossFight();
@@ -100,4 +105,20 @@ private:
 
     DebugController debugController_;
     UIRenderer uiRenderer_;
+
+    // Màn hình tạm dừng (Task #13)
+    enum PauseItem
+    {
+        PauseItem_Resume,
+        PauseItem_BgmVolume,
+        PauseItem_SfxVolume,
+        PauseItem_WindowMode,
+        PauseItem_Title,
+        PauseItem_Count
+    };
+    bool UpdatePauseInput(); // true = đang tạm dừng, bỏ qua logic game trong tick này
+    bool paused_ = false;
+    int pauseSelected_ = PauseItem_Resume;
+    bool quitRequested_ = false;
+    bool windowModeToggleRequested_ = false;
 };

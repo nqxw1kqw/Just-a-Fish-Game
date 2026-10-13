@@ -3,6 +3,7 @@
 #include "Boss.h"
 #include "FontManager.h"
 #include "Consts.h"
+#include "SoundManager.h"
 #include "DxLib.h"
 #include <algorithm>
 
@@ -295,4 +296,51 @@ void UIRenderer::DrawGameOverScreen(const GamePrototype& game) const
 
         FontManager::Draw(midX - 160, sh / 2 + 50, L"Press [R] to revive and try again! | [T] Title", GetColor(255, 255, 255), FontSize::Body);
     }
+}
+
+void UIRenderer::DrawPauseScreen(const GamePrototype& game) const
+{
+    int sw = GameConsts::SCREEN_WIDTH;
+    int sh = GameConsts::SCREEN_HEIGHT;
+
+    // Lớp phủ làm tối khung hình game đang đóng băng phía sau
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 170);
+    DrawBox(0, 0, sw, sh, GetColor(6, 14, 26), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+
+    int midX = sw / 2;
+    int boxW = 460;
+    int boxH = 330;
+    int boxX = midX - boxW / 2;
+    int boxY = (sh - boxH) / 2;
+
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
+    DrawBox(boxX, boxY, boxX + boxW, boxY + boxH, GetColor(12, 28, 48), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+    DrawBox(boxX, boxY, boxX + boxW, boxY + boxH, GetColor(80, 180, 255), FALSE);
+
+    FontManager::Draw(midX - 60, boxY + 22, L"PAUSED", GetColor(255, 225, 60), FontSize::Header);
+
+    const SoundManager& sound = SoundManager::Instance();
+    wchar_t labels[GamePrototype::PauseItem_Count][64] = {};
+    swprintf_s(labels[GamePrototype::PauseItem_Resume], L"Resume");
+    swprintf_s(labels[GamePrototype::PauseItem_BgmVolume], L"BGM Volume:  < %3d >", sound.GetVolume(SoundChannel::BGM));
+    swprintf_s(labels[GamePrototype::PauseItem_SfxVolume], L"SFX Volume:  < %3d >", sound.GetVolume(SoundChannel::SFX));
+    swprintf_s(labels[GamePrototype::PauseItem_WindowMode], L"Screen:  < %s >", GetWindowModeFlag() == TRUE ? L"Window" : L"Fullscreen");
+    swprintf_s(labels[GamePrototype::PauseItem_Title], L"Return to Title");
+
+    int itemY = boxY + 80;
+    for (int i = 0; i < GamePrototype::PauseItem_Count; ++i)
+    {
+        bool selected = (i == game.pauseSelected_);
+        unsigned int color = selected ? GetColor(255, 225, 60) : GetColor(200, 215, 235);
+        if (selected)
+        {
+            FontManager::Draw(boxX + 40, itemY, L">", color, FontSize::Medium);
+        }
+        FontManager::Draw(boxX + 70, itemY, labels[i], color, FontSize::Medium);
+        itemY += 40;
+    }
+
+    FontManager::Draw(boxX + 30, boxY + boxH - 40, L"[W/S]: Select  [A/D]: Adjust  [Enter]: OK  [ESC/P]: Resume", GetColor(140, 170, 200), FontSize::Small);
 }
