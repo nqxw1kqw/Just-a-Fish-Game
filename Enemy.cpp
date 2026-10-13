@@ -12,6 +12,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
+#include "LowPolyModels.h"
 
 namespace
 {
@@ -358,6 +359,8 @@ bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
             e.knockback = Vec3{ 0, 0, 0 };
             e.hitFlashTimer = 0.0f;
             e.animTime = 0.0f;
+            e.waterFxTimer = 0.0f;
+            e.hopperWasAirborne = false;
             e.active = true;
             spawnedThisWave_++;
 
@@ -524,6 +527,13 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                         e.yaw = std::atan2(moveDir.x, moveDir.z);
                         e.pos.x += moveDir.x * e.speed * dt;
                         e.pos.z += moveDir.z * e.speed * dt;
+
+                        e.waterFxTimer += dt;
+                        if (e.waterFxTimer >= 0.14f)
+                        {
+                            e.waterFxTimer = 0.0f;
+                            effects.SpawnFishSwim(e.pos, moveDir, e.speed, 1.1f, false);
+                        }
                     }
                     if (distToPlayer < 280.0f)
                     {
@@ -550,6 +560,15 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                     e.pos.x += e.chargeDir.x * (e.speed * 3.2f) * dt;
                     e.pos.z += e.chargeDir.z * (e.speed * 3.2f) * dt;
                     effects.SpawnHitParticles(e.pos + Vec3{ 0, 4, 0 }, 1, GetColor(255, 120, 60));
+
+                    // Cá mập quẫy đuôi dữ dội khi húc, sủi bọt trắng xóa
+                    e.waterFxTimer += dt;
+                    if (e.waterFxTimer >= 0.045f)
+                    {
+                        e.waterFxTimer = 0.0f;
+                        effects.SpawnFishSwim(e.pos, e.chargeDir, e.speed * 3.2f, 1.4f, true);
+                    }
+
                     if (e.chargeTimer <= 0.0f)
                     {
                         e.chargeState = 3;
@@ -578,22 +597,71 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                     // Di chuyển
                     e.pos.x += moveDir.x * e.speed * dt;
                     e.pos.z += moveDir.z * e.speed * dt;
+
+                    // Hiệu ứng nước riêng theo từng loài
+                    e.waterFxTimer += dt;
+                    if (e.type == EnemyType::Minion)
+                    {
+                        if (e.waterFxTimer >= 0.15f)
+                        {
+                            e.waterFxTimer = 0.0f;
+                            effects.SpawnFishSwim(e.pos, moveDir, e.speed, 0.7f, false);
+                        }
+                    }
+                    else if (e.type == EnemyType::Tanker)
+                    {
+                        if (e.waterFxTimer >= 0.45f)
+                        {
+                            e.waterFxTimer = 0.0f;
+                            effects.SpawnTurtlePaddle(e.pos, moveDir, e.radius);
+                        }
+                    }
                 }
             }
         }
 
-        // Quản lý cao độ Y
+        // Quản lý cao độ Y & hiệu ứng nhảy/bồng bềnh
         if (e.type == EnemyType::Hopper)
         {
+            float prevPhase = e.bouncePhase;
             e.bouncePhase += dt / e.bounceDuration;
-            if (e.bouncePhase >= 1.0f) e.bouncePhase -= 1.0f;
+            bool looped = false;
+            if (e.bouncePhase >= 1.0f)
+            {
+                e.bouncePhase -= 1.0f;
+                looped = true;
+            }
             float t = e.bouncePhase;
             e.pos.y = 4.0f * e.bounceHeight * t * (1.0f - t);
+
+            // Ếch đạp nước lúc bắt đầu nhảy
+            if (looped || (prevPhase < 0.05f && t >= 0.05f))
+            {
+                Vec3 hopDir{ std::sin(e.yaw), 0.0f, std::cos(e.yaw) };
+                effects.SpawnFrogHop(e.pos, hopDir, e.radius);
+            }
+
+            // Ếch tiếp đất tõm xuống nước
+            bool isAirborne = (e.pos.y > 3.0f);
+            if (e.hopperWasAirborne && !isAirborne)
+            {
+                effects.SpawnFrogLand(e.pos, e.radius);
+            }
+            e.hopperWasAirborne = isAirborne;
         }
         else if (e.type == EnemyType::Float)
         {
+            float prevPhase = e.floatPhase;
             e.floatPhase += dt * 3.5f;
             e.pos.y = 16.0f + 5.0f * std::sin(e.floatPhase); // Sứa bay lơ lửng
+
+            // Gợn sóng nhẹ dưới mặt biển khi sứa nhấp nhô
+            if (std::sin(prevPhase) > 0.0f && std::sin(e.floatPhase) <= 0.0f)
+            {
+                Vec3 ripplePos = e.pos;
+                ripplePos.y = 0.12f;
+                effects.SpawnWaterSplash(ripplePos, e.radius * 0.8f, 0.25f);
+            }
         }
         else
         {
@@ -824,6 +892,35 @@ void EnemyManager::Draw() const
         float heightRatio = e.pos.y / 35.0f;
         float shadowRad = e.radius * 1.3f * (1.0f - 0.35f * heightRatio);
         Render3D::DrawFlatShadow(e.pos, shadowRad, 0.9f);
+
+        // 2a. Mô hình low-poly (F11 để tắt, khi đó dùng mô hình cũ / khối box bên dưới)
+        int lowPolyHandle = LowPolyModels::GetHandle(static_cast<LowPolyId>(static_cast<int>(e.type)));
+        if (lowPolyHandle >= 0)
+        {
+            MV1SetPosition(lowPolyHandle, VGet(e.pos.x, e.pos.y, e.pos.z));
+            MV1SetRotationXYZ(lowPolyHandle, VGet(0.0f, e.yaw, 0.0f));
+            MV1SetScale(lowPolyHandle, VGet(1.0f, 1.0f, 1.0f));
+
+            if (e.hitFlashTimer > 0.0f)
+            {
+                MV1SetDifColorScale(lowPolyHandle, GetColorF(3.0f, 3.0f, 3.0f, 1.0f));
+            }
+            else if (e.type == EnemyType::Charge && e.chargeState == 1)
+            {
+                MV1SetDifColorScale(lowPolyHandle, GetColorF(2.8f, 0.35f, 0.35f, 1.0f));
+            }
+            else if (e.type == EnemyType::Charge && e.chargeState == 2)
+            {
+                MV1SetDifColorScale(lowPolyHandle, GetColorF(2.0f, 0.8f, 0.4f, 1.0f));
+            }
+            else
+            {
+                MV1SetDifColorScale(lowPolyHandle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
+            }
+
+            MV1DrawModel(lowPolyHandle);
+            continue;
+        }
 
         // 2. Mô hình 3D theo từng loại quái thay thế khối box
         size_t typeIdx = static_cast<size_t>(e.type);

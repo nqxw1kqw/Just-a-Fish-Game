@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include "GamePrototype.h"
+#include "LowPolyModels.h"
 #include "DxConv.h"
 #include "Render3DUtil.h"
 #include "DxLib.h"
@@ -159,6 +160,7 @@ void GamePrototype::SaveHighscoreIfEndlessRun()
 void GamePrototype::Init()
 {
     effects_.Init();
+    LowPolyModels::Load(); // Mô hình low-poly dùng chung (nạp 1 lần)
     player_.Init();
     enemies_.Init();
     weapon_.Init();
@@ -177,6 +179,7 @@ void GamePrototype::Shutdown()
     enemies_.Shutdown();
     cardManager_.Shutdown();
     effects_.Shutdown();
+    LowPolyModels::Release();
 }
 
 void GamePrototype::Reset()
@@ -855,6 +858,9 @@ void GamePrototype::DrawArena() const
 
     // 3. Đường viền tâm sàn đấu
     Render3D::DrawCircle3D(Vec3{ 0.0f, 0.4f, 0.0f }, 160.0f, 48, GetColor(50, 90, 130), false);
+
+    // 3b. Mặt nước biển nông 3D lấp lánh (Shallow Ocean Surface & Caustics)
+    effects_.DrawShallowOcean(half);
 
     // 4. Bờ tường rào 4 cạnh (3D box viền neon xanh ngọc)
     float wallThick = 18.0f;

@@ -50,7 +50,7 @@ void PlayerFish::Init()
                 if (ma.x > maxP.x) maxP.x = ma.x;
                 if (ma.y > maxP.y) maxP.y = ma.y;
                 if (ma.z > maxP.z) maxP.z = ma.z;
-            }
+            }   
             AppLogAdd(L"[FISH_MODEL] Meshes=%d, Min=(%.2f, %.2f, %.2f), Max=(%.2f, %.2f, %.2f)\n",
                 meshNum, minP.x, minP.y, minP.z, maxP.x, maxP.y, maxP.z);
             AppLogAdd(L"[FISH_MODEL] Size=(%.2f, %.2f, %.2f), Center=(%.2f, %.2f, %.2f)\n",
@@ -294,6 +294,8 @@ void PlayerFish::Reset()
 
     hitFlashTimer_ = 0.0f;
     tailWagAngle_ = 0.0f;
+    swimSoundTimer_ = 0.0f;
+    swimWakeTimer_ = 0.0f;
 }
 
 void PlayerFish::StartJump(const Vec3& inputDir)
@@ -434,11 +436,20 @@ void PlayerFish::Update(float dt, EffectSystem& effects)
                 swimSoundTimer_ = 0.0f;
                 SoundManager::Instance().PlaySFX(SfxId::SwimPaddle);
             }
+
+            // Kích hoạt vệt sóng rẽ nước và bọt sau đuôi cá
+            swimWakeTimer_ += dt;
+            if (swimWakeTimer_ >= 0.085f)
+            {
+                swimWakeTimer_ = 0.0f;
+                effects.SpawnFishSwim(pos_, moveDir_, speed_, 1.0f, false);
+            }
         }
         else
         {
             tailWagAngle_ *= 0.85f;
             swimSoundTimer_ = 0.30f;
+            swimWakeTimer_ = 0.0f;
         }
 
         pos_.x = std::clamp(pos_.x, -arenaLimit, arenaLimit);

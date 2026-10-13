@@ -1,6 +1,7 @@
 #pragma once
 #include "Vector3.h"
 #include "Consts.h"
+#include "TsunamiWaterEffect.h"
 #include <array>
 
 class PlayerFish;
@@ -131,6 +132,7 @@ private:
 
     // Đòn 2: Sóng thần tỏa tròn (Radial Tsunami - Phần A)
     std::array<TsunamiRing, GameConsts::TSUNAMI_MAX_ACTIVE> tsunamiRings_{};
+    TsunamiWaterEffect tsunamiWater_; // Hiệu ứng nước sóng thần (pool hạt riêng)
     float timeSinceLastJumpAttack_ = 5.0f; // Theo dõi giãn cách đòn bắt buộc nhảy (A5 >= 2.0s)
     float timeSinceLastRingLaunch_ = 5.0f; // Giãn cách giữa 2 lần phóng vòng sóng (A5 >= 2.3s)
     bool needSecondRing_ = false;          // Hỗ trợ gọi 2 vòng liên tiếp ở Phase 2
@@ -138,6 +140,7 @@ private:
     // Hiệu ứng & Hit flash
     float hitFlashTimer_ = 0.0f;
     float phaseTransitionTimer_ = 0.0f;
+    float waterFxTimer_ = 0.0f;
 
     // Đo đạc & Lịch sử chiêu (Task 10 T1)
     float bossFightTimer_ = 0.0f;

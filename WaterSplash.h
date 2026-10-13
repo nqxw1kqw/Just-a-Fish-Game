@@ -64,6 +64,16 @@ struct WaterFoamParticle
     bool active = false;
 };
 
+// Đốm sáng lấp lánh phản chiếu ánh nắng trên mặt biển nông 3D (Caustic Sparkles)
+struct OceanSparkle
+{
+    Vec3 pos{};
+    float phase = 0.0f;
+    float pulseSpeed = 2.5f;
+    float baseSize = 4.0f;
+    bool active = true;
+};
+
 class WaterSplashSystem
 {
 public:
@@ -80,25 +90,49 @@ public:
     // Kích hoạt cú tiếp đất va chạm mặt nước (cá đập đất / slam)
     void EmitImpact(const Vec3& origin, float radius, float strength = 1.0f);
 
+    // Kích hoạt vệt sóng rẽ nước và bọt khi cá bơi (giữ lại tương thích)
+    void EmitSwimWake(const Vec3& fishPos, const Vec3& moveDir);
+
+    // 1. Hiệu ứng cá quẫy đuôi bơi (Tail beat & V-Wake): PlayerFish, Minion, Shark, WhaleBoss
+    void EmitFishSwim(const Vec3& pos, const Vec3& dir, float speed, float sizeMul = 1.0f, bool isDashing = false);
+
+    // 2. Hiệu ứng rùa bơi chèo 2 bên (Turtle Paddle & Heavy Water Surge): Tanker
+    void EmitTurtlePaddle(const Vec3& pos, const Vec3& dir, float radius);
+
+    // 3. Hiệu ứng ếch đạp nước phóng nhảy (Frog Hop Takeoff): Hopper
+    void EmitFrogHop(const Vec3& pos, const Vec3& dir, float radius);
+
+    // 4. Hiệu ứng ếch đáp nước bắn tung tóe (Frog Landing Splash): Hopper
+    void EmitFrogLand(const Vec3& pos, float radius);
+
+    // 5. Hiệu ứng cua bò ngang cào bọt nước (Crab Scuttle): Quái đi ngang / Kani
+    void EmitCrabScuttle(const Vec3& pos, const Vec3& moveDir, const Vec3& facingDir, float radius);
+
     // Cập nhật vật lý hạt mỗi tick logic
     void Update(float dt);
 
-    // Kết xuất đồ họa 3D
+    // Kết xuất đồ họa 3D mặt nước biển nông và các đốm sáng lấp lánh
+    void DrawShallowOcean(float arenaHalfSize) const;
+
+    // Kết xuất đồ họa 3D các hạt bắn tung tóe, vành nước và sóng gợn
     void Draw() const;
 
 private:
-    static constexpr std::size_t MAX_DROPS = 180;
-    static constexpr std::size_t MAX_RIPPLES = 48;
+    static constexpr std::size_t MAX_DROPS = 320;
+    static constexpr std::size_t MAX_RIPPLES = 128;
     static constexpr std::size_t MAX_CROWNS = 8;
-    static constexpr std::size_t MAX_FOAMS = 64;
+    static constexpr std::size_t MAX_FOAMS = 160;
+    static constexpr std::size_t MAX_SPARKLES = 80;
 
     std::array<WaterDropParticle, MAX_DROPS> drops_{};
     std::array<WaterRipple, MAX_RIPPLES> ripples_{};
     std::array<WaterCrown, MAX_CROWNS> crowns_{};
     std::array<WaterFoamParticle, MAX_FOAMS> foams_{};
+    std::array<OceanSparkle, MAX_SPARKLES> sparkles_{};
 
     int dropTexture_ = -1;
     int glowTexture_ = -1;
+    float waterTime_ = 0.0f;
 
     void SpawnSecondaryRipple(const Vec3& pos);
 };
