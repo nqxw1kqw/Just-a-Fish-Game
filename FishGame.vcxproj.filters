@@ -69,8 +69,6 @@
     <ClInclude Include="UIRenderer.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="Title.h" />
-    <ClInclude Include="TitleScene.h" />
     <ClInclude Include="FontManager.h" />
     <ClInclude Include="DxPlus\Debug.h">
       <Filter>DxPlus</Filter>
@@ -120,6 +118,19 @@
     <ClInclude Include="SceneManager.h">
       <Filter>Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Title.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Tutorial.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="OptionMenu.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="CreditMenu.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Slider.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -156,8 +167,6 @@
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="FontManager.cpp" />
-    <ClCompile Include="Title.cpp" />
-    <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="DxPlus\Debug.cpp">
       <Filter>DxPlus</Filter>
     </ClCompile>
@@ -194,5 +203,18 @@
     <ClCompile Include="SceneManager.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Title.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="OptionMenu.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Tutorial.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="CreditMenu.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Slider.cpp" />
   </ItemGroup>
 </Project>

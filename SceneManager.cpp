@@ -2,7 +2,7 @@
 
 SceneManager::SceneManager()
 {
-	current = SceneType::Title;
+	current = SceneType::Title_Scene;
 	title.Init();
 	title.Reset();
 }
@@ -13,7 +13,7 @@ void SceneManager::Update(float dt)
     switch (current)
 
     {
-    case SceneType::Title:
+    case SceneType::Title_Scene:
         title.Update();
 
         if (title.IsFinished())
@@ -27,7 +27,7 @@ void SceneManager::Update(float dt)
 
                 //current = SceneType::Select;
                 //Debug
-                current = SceneType::Game;
+                current = SceneType::Game_Scene;
             }
             //kari
 
@@ -36,36 +36,61 @@ void SceneManager::Update(float dt)
             {
                 title.StopBGM();
                 //Ç±Ç±Ç…ÅZÅZ.Reset()Ç∆Init()
-
-                current = SceneType::Option;
+                
+                option.Init();
+                option.Reset();
+                current = SceneType::Option_Scene;
             }
             else if (title.GoCredit())
             {
                 title.StopBGM();
                 //Ç±Ç±Ç…ÅZÅZ.Reset()Ç∆Init()
 
-                current = SceneType::Credit;
+                credit.Init();
+                credit.Reset();
+
+                current = SceneType::Credit_Scene;
             }
             else if (title.GoTutorial())
             {
                 title.StopBGM();
                 //Ç±Ç±Ç…ÅZÅZ.Reset()Ç∆Init()
 
-                current = SceneType::Tutorial;
+                current = SceneType::Tutorial_Scene;
             }
-
-    case SceneType::Game:
+            break;
+        }
+    case SceneType::Game_Scene:
         game.Update(dt);
         if (game.GetState() == GameState::Title)
         {
-            current = SceneType::Title;
-            title.Reset();
+            current = SceneType::Title_Scene;
             title.Init();
+            title.Reset();
         }
         break;
 
-        }
 
+    case SceneType::Option_Scene:
+        option.Update();
+        if (option.IsFinished())
+        {
+            option.Reset();
+            current = SceneType::Title_Scene;
+            title.Init();
+            title.Reset();
+        }
+        break;
+    case SceneType::Credit_Scene:
+        credit.Update();
+        if (credit.IsFinished())
+        {
+            credit.Reset();
+            current = SceneType::Title_Scene;
+            title.Init();
+            title.Reset();
+        }
+        break;
     }
 
 
@@ -75,18 +100,22 @@ void SceneManager::Draw()
 {
     switch (current)
     {
-    case SceneType::Title:
+    case SceneType::Title_Scene:
         title.Draw();
         break;
-    case SceneType::Game:
+    case SceneType::Game_Scene:
         game.Draw();
         break;
 
-    /*case SceneType::Option:
+    case SceneType::Option_Scene:
         option.Draw();
         break;
 
-    case SceneType::Tutorial:
+    case SceneType::Credit_Scene:
+        credit.Draw();
+        break;
+
+  /*  case SceneType::Tutorial:
         tutorial.Draw();
         break;*/
     }

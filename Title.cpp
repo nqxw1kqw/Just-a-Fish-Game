@@ -13,6 +13,7 @@ Title::Title()
 
 void Title::Init()
 {
+	DxLib::SetBackgroundColor(16, 28, 38);
 
 }
 
@@ -108,6 +109,11 @@ void Title::Update()
 
 void Title::Reset()
 {
+	finished = false;
+	goSelect = false;
+	goOption = false;
+	goCredit = false;
+	goTutorial = false;
 }
 
 void Title::Draw()

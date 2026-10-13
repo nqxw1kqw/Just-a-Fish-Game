@@ -98,6 +98,7 @@
   <ItemGroup>
     <ClInclude Include="Bullet.h" />
     <ClInclude Include="Consts.h" />
+    <ClInclude Include="CreditMenu.h" />
     <ClInclude Include="DxConv.h" />
     <ClInclude Include="DxPlus\Debug.h" />
     <ClInclude Include="DxPlus\DxPlus.h" />
@@ -117,11 +118,13 @@
     <ClInclude Include="Effects.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="GamePrototype.h" />
+    <ClInclude Include="OptionMenu.h" />
     <ClInclude Include="PlayerFish.h" />
     <ClInclude Include="Render3DUtil.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="Slider.h" />
     <ClInclude Include="Title.h" />
-    <ClInclude Include="TitleScene.h" />
+    <ClInclude Include="Tutorial.h" />
     <ClInclude Include="Vector3.h" />
     <ClInclude Include="Stats.h" />
     <ClInclude Include="Card.h" />
@@ -135,6 +138,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bullet.cpp" />
+    <ClCompile Include="CreditMenu.cpp" />
     <ClCompile Include="DxPlus\Debug.cpp" />
     <ClCompile Include="DxPlus\DxPlus.cpp" />
     <ClCompile Include="DxPlus\DxWrapper.cpp" />
@@ -150,6 +154,7 @@
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="GamePrototype.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="OptionMenu.cpp" />
     <ClCompile Include="PlayerFish.cpp" />
     <ClCompile Include="CardManager.cpp" />
     <ClCompile Include="Boss.cpp" />
@@ -157,8 +162,9 @@
     <ClCompile Include="DebugController.cpp" />
     <ClCompile Include="CameraController.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Slider.cpp" />
     <ClCompile Include="Title.cpp" />
-    <ClCompile Include="TitleScene.cpp" />
+    <ClCompile Include="Tutorial.cpp" />
     <ClCompile Include="UIRenderer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,26 +1,33 @@
 #pragma once
 #include "Title.h"
 #include "GamePrototype.h"
+#include "OptionMenu.h"
+#include "Tutorial.h"
+#include "CreditMenu.h"
 
 
 enum class SceneType
 {
-    Title,
-    Select,
-    Credit,
-    Option,
-    Game,
-    Tutorial,
-    Pouse
+    Title_Scene,
+    Select_Scene,
+    Credit_Scene,
+    Option_Scene,
+    Game_Scene,
+    Tutorial_Scene,
+    Pouse_Scene
 };
 
 class SceneManager
 {
 private:
-    SceneType current = SceneType::Title;
+    SceneType current = SceneType::Title_Scene;
 
     Title title;
     GamePrototype game;
+    OptionMenu option;
+    CreditMenu credit;
+    
+
     
 
     bool firstUpdate = true;
