@@ -8,6 +8,7 @@
 #include "Enemy.h"
 #include "PlayerFish.h"
 #include "Boss.h"
+#include "SoundManager.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
 #include "DxLib.h"
@@ -238,6 +239,7 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
                     if (chained->hp <= 0.0f)
                     {
                         chained->active = false;
+                        SoundManager::Instance().PlaySFX(SfxId::EnemySquish); // #4: tiếng quái chết (giật sét)
                         extraExp = 1;
                         effects.SpawnExpOrb(chained->pos, 1.0f);
                     }

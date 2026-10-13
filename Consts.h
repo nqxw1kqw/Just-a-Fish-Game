@@ -154,6 +154,13 @@ namespace GameConsts
     constexpr float MAX_CAM_SHAKE_OFFSET = 12.0f;  // Giới hạn biên độ rung tối đa
     constexpr float LAND_TRAUMA_AMOUNT = 0.05f;    // Chấn động tiếp đất cơ bản
 
+    // Sương mù dưới nước (#15) - camera cách mục tiêu ~580, sàn 1400x1400
+    constexpr float FOG_START = 700.0f;            // Bắt đầu mờ ngay sau vùng quanh cá
+    constexpr float FOG_END = 2000.0f;             // Mờ hoàn toàn ở góc sàn xa nhất
+    constexpr int FOG_COLOR_R = 10;                // Màu xanh biển sâu
+    constexpr int FOG_COLOR_G = 40;
+    constexpr int FOG_COLOR_B = 80;
+
     // Luồng game & Hồi máu (G3)
     constexpr float WAVE_HEAL_PERCENT = 0.30f;     // Hồi 30% máu tối đa sau mỗi wave (G3)
 

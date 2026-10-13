@@ -671,6 +671,15 @@ void GamePrototype::DrawArena() const
 
 void GamePrototype::Draw() const
 {
+    // #15: Sương mù xanh dưới nước chỉ cho cảnh 3D lúc chơi (tắt ở màn Title)
+    const bool useFog = (state_ != GameState::Title);
+    if (useFog)
+    {
+        SetFogEnable(TRUE);
+        SetFogColor(GameConsts::FOG_COLOR_R, GameConsts::FOG_COLOR_G, GameConsts::FOG_COLOR_B);
+        SetFogStartEnd(GameConsts::FOG_START, GameConsts::FOG_END);
+    }
+
     // 1. Vẽ môi trường sàn đấu 3D
     DrawArena();
 
@@ -691,6 +700,9 @@ void GamePrototype::Draw() const
 
     // 6. Vẽ súng tự ngắm và đạn 3D
     weapon_.Draw(player_);
+
+    // Tắt sương mù trước khi vẽ số sát thương và UI 2D
+    SetFogEnable(FALSE);
 
     // 7. Vẽ số sát thương nổi (Floating Damage Numbers) trên đầu quái
     effects_.DrawDamagePopups();
