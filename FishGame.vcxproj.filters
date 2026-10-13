@@ -91,6 +91,7 @@
     <ClInclude Include="TsunamiWaterEffect.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="BattleHud.h">
     <ClInclude Include="BubbleSystem.h">
     <ClInclude Include="RenderInterp.h">
       <Filter>System</Filter>
@@ -152,6 +153,7 @@
     <ClCompile Include="TsunamiWaterEffect.cpp">
       <Filter>System</Filter>
     </ClCompile>
+    <ClCompile Include="BattleHud.cpp">
     <ClCompile Include="BubbleSystem.cpp">
       <Filter>System</Filter>
     </ClCompile>
