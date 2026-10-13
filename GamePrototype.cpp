@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include "GamePrototype.h"
+#include "LowPolyModels.h"
 #include "DxConv.h"
 #include "Render3DUtil.h"
 #include "DxLib.h"
@@ -159,6 +160,7 @@ void GamePrototype::SaveHighscoreIfEndlessRun()
 void GamePrototype::Init()
 {
     effects_.Init();
+    LowPolyModels::Load(); // Mô hình low-poly dùng chung (nạp 1 lần)
     player_.Init();
     enemies_.Init();
     weapon_.Init();
@@ -177,6 +179,7 @@ void GamePrototype::Shutdown()
     enemies_.Shutdown();
     cardManager_.Shutdown();
     effects_.Shutdown();
+    LowPolyModels::Release();
 }
 
 void GamePrototype::Reset()

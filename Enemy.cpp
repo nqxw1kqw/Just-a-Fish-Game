@@ -12,6 +12,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
+#include "LowPolyModels.h"
 
 namespace
 {
@@ -824,6 +825,35 @@ void EnemyManager::Draw() const
         float heightRatio = e.pos.y / 35.0f;
         float shadowRad = e.radius * 1.3f * (1.0f - 0.35f * heightRatio);
         Render3D::DrawFlatShadow(e.pos, shadowRad, 0.9f);
+
+        // 2a. Mô hình low-poly (F11 để tắt, khi đó dùng mô hình cũ / khối box bên dưới)
+        int lowPolyHandle = LowPolyModels::GetHandle(static_cast<LowPolyId>(static_cast<int>(e.type)));
+        if (lowPolyHandle >= 0)
+        {
+            MV1SetPosition(lowPolyHandle, VGet(e.pos.x, e.pos.y, e.pos.z));
+            MV1SetRotationXYZ(lowPolyHandle, VGet(0.0f, e.yaw, 0.0f));
+            MV1SetScale(lowPolyHandle, VGet(1.0f, 1.0f, 1.0f));
+
+            if (e.hitFlashTimer > 0.0f)
+            {
+                MV1SetDifColorScale(lowPolyHandle, GetColorF(3.0f, 3.0f, 3.0f, 1.0f));
+            }
+            else if (e.type == EnemyType::Charge && e.chargeState == 1)
+            {
+                MV1SetDifColorScale(lowPolyHandle, GetColorF(2.8f, 0.35f, 0.35f, 1.0f));
+            }
+            else if (e.type == EnemyType::Charge && e.chargeState == 2)
+            {
+                MV1SetDifColorScale(lowPolyHandle, GetColorF(2.0f, 0.8f, 0.4f, 1.0f));
+            }
+            else
+            {
+                MV1SetDifColorScale(lowPolyHandle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
+            }
+
+            MV1DrawModel(lowPolyHandle);
+            continue;
+        }
 
         // 2. Mô hình 3D theo từng loại quái thay thế khối box
         size_t typeIdx = static_cast<size_t>(e.type);

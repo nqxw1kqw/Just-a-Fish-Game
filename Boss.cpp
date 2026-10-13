@@ -12,6 +12,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
+#include "LowPolyModels.h"
 
 void WhaleBoss::Init()
 {
@@ -865,6 +866,27 @@ void WhaleBoss::Draw() const
         scaleMul = 1.08f;
         shakeOffset.x = (rand() % 7 - 3) * 0.8f;
         shakeOffset.z = (rand() % 7 - 3) * 0.8f;
+    }
+
+    // Mô hình low-poly cá voi (F11 để tắt, khi đó dùng khối box cũ bên dưới)
+    int whaleHandle = LowPolyModels::GetHandle(LowPolyId::WhaleBoss);
+    if (whaleHandle >= 0)
+    {
+        LowPolyModels::ApplyWhalePhaseColors(phase_ == BossPhase::Phase2);
+        Vec3 drawPos = pos_ + shakeOffset;
+        MV1SetPosition(whaleHandle, VGet(drawPos.x, drawPos.y, drawPos.z));
+        MV1SetRotationXYZ(whaleHandle, VGet(0.0f, yaw_, 0.0f));
+        MV1SetScale(whaleHandle, VGet(scaleMul, scaleMul, scaleMul));
+        if (hitFlashTimer_ > 0.0f)
+        {
+            MV1SetDifColorScale(whaleHandle, GetColorF(3.0f, 3.0f, 3.0f, 1.0f));
+        }
+        else
+        {
+            MV1SetDifColorScale(whaleHandle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
+        }
+        MV1DrawModel(whaleHandle);
+        return;
     }
 
     Vec3 halfBody{ 50.0f * scaleMul, 26.0f * scaleMul, 75.0f * scaleMul };
