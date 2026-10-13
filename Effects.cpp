@@ -24,6 +24,7 @@ namespace
 
 void EffectSystem::Init()
 {
+    waterSplash_.Init();
     Reset();
 }
 
@@ -33,8 +34,19 @@ void EffectSystem::Reset()
     for (auto& p : particles_) p.active = false;
     for (auto& e : expOrbs_) e.active = false;
     for (auto& dp : damagePopups_) dp.active = false;
+    waterSplash_.Reset();
     trauma_ = 0.0f;
     shakeTime_ = 0.0f;
+}
+
+void EffectSystem::Shutdown()
+{
+    waterSplash_.Shutdown();
+}
+
+void EffectSystem::SpawnWaterSplash(const Vec3& pos, float radius, float strength)
+{
+    waterSplash_.EmitImpact(pos, radius, strength);
 }
 
 void EffectSystem::SpawnDamagePopup(const Vec3& pos, float damage, bool isCrit)
@@ -162,6 +174,9 @@ void EffectSystem::Update(float dt, const Vec3& playerPos)
         trauma_ = std::max(0.0f, trauma_ - dt * 2.5f); // Tiêu giảm chấn động
     }
 
+    // Cập nhật hệ thống nước tung tóe (Water Splash Particle System)
+    waterSplash_.Update(dt);
+
     // Cập nhật sóng nước
     for (auto& s : shockwaves_)
     {
@@ -271,6 +286,9 @@ int EffectSystem::CollectExpOrbs(const Vec3& playerPos, float pickupRadius)
 
 void EffectSystem::Draw() const
 {
+    // Vẽ hiệu ứng nước tung tóe (Water Splash & Ripples Particle System)
+    waterSplash_.Draw();
+
     // Vẽ sóng nước (Shockwave rings)
     for (const auto& s : shockwaves_)
     {

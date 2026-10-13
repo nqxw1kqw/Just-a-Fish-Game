@@ -75,6 +75,9 @@
     <ClInclude Include="SoundManager.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="WaterSplash.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -114,6 +117,9 @@
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="SoundManager.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="WaterSplash.cpp">
       <Filter>System</Filter>
     </ClCompile>
   </ItemGroup>

@@ -176,6 +176,7 @@ void GamePrototype::Shutdown()
 
     enemies_.Shutdown();
     cardManager_.Shutdown();
+    effects_.Shutdown();
 }
 
 void GamePrototype::Reset()

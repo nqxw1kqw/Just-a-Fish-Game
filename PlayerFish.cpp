@@ -357,6 +357,9 @@ void PlayerFish::OnLand(EffectSystem& effects)
     // Sinh sóng nước khi tiếp đất (J6)
     effects.SpawnShockwave(pos_, slamRadius_);
 
+    // Kích hoạt hệ thống hạt nước tung tóe 3D (Water Splash Particle System từ Demo)
+    effects.SpawnWaterSplash(pos_, slamRadius_, 1.0f);
+
     // Chấn động nhẹ
     effects.AddTrauma(GameConsts::LAND_TRAUMA_AMOUNT);
 }

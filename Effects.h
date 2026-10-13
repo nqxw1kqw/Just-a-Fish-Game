@@ -49,16 +49,20 @@ struct DamagePopup
     bool active = false;
 };
 
+#include "WaterSplash.h"
+
 class EffectSystem
 {
 public:
     void Init();
     void Reset();
+    void Shutdown();
     void Update(float dt, const Vec3& playerPos);
     void Draw() const;
     void DrawDamagePopups() const;
 
     void SpawnShockwave(const Vec3& pos, float maxRadius = 130.0f);
+    void SpawnWaterSplash(const Vec3& pos, float radius, float strength = 1.0f);
     void SpawnHitParticles(const Vec3& pos, int count, int color);
     void SpawnExpOrb(const Vec3& pos, float val = 1.0f);
     void SpawnDamagePopup(const Vec3& pos, float damage, bool isCrit = false);
@@ -74,6 +78,8 @@ private:
     std::array<Particle3D, 500> particles_{};
     std::array<ExpOrb, 300> expOrbs_{};
     std::array<DamagePopup, MAX_DAMAGE_POPUPS> damagePopups_{};
+
+    WaterSplashSystem waterSplash_;
 
     float trauma_ = 0.0f; // Chấn động camera [0, 1]
     float shakeTime_ = 0.0f;
