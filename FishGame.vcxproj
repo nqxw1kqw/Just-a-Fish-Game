@@ -120,6 +120,7 @@
     <ClInclude Include="DebugController.h" />
     <ClInclude Include="CameraController.h" />
     <ClInclude Include="UIRenderer.h" />
+    <ClInclude Include="SeabedFloor.h" />
     <ClInclude Include="SoundManager.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="WaterSplash.h" />
@@ -142,6 +143,7 @@
     <ClCompile Include="DebugController.cpp" />
     <ClCompile Include="CameraController.cpp" />
     <ClCompile Include="UIRenderer.cpp" />
+    <ClCompile Include="SeabedFloor.cpp" />
     <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="WaterSplash.cpp" />
