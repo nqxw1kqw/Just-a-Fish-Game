@@ -25,6 +25,7 @@ namespace
 void EffectSystem::Init()
 {
     waterSplash_.Init();
+    bubbles_.Init(GameConsts::ARENA_HALF_SIZE);
     Reset();
 }
 
@@ -35,6 +36,7 @@ void EffectSystem::Reset()
     for (auto& e : expOrbs_) e.active = false;
     for (auto& dp : damagePopups_) dp.active = false;
     waterSplash_.Reset();
+    bubbles_.Reset();
     trauma_ = 0.0f;
     shakeTime_ = 0.0f;
 }
@@ -42,6 +44,7 @@ void EffectSystem::Reset()
 void EffectSystem::Shutdown()
 {
     waterSplash_.Shutdown();
+    bubbles_.Shutdown();
 }
 
 void EffectSystem::SpawnWaterSplash(const Vec3& pos, float radius, float strength)
@@ -211,6 +214,7 @@ void EffectSystem::Update(float dt, const Vec3& playerPos)
 
     // Cập nhật hệ thống nước tung tóe (Water Splash Particle System)
     waterSplash_.Update(dt);
+    bubbles_.Update(dt);
 
     // Cập nhật sóng nước
     for (auto& s : shockwaves_)
@@ -323,6 +327,7 @@ void EffectSystem::Draw() const
 {
     // Vẽ hiệu ứng nước tung tóe (Water Splash & Ripples Particle System)
     waterSplash_.Draw();
+    bubbles_.Draw();
 
     // Vẽ sóng nước (Shockwave rings)
     for (const auto& s : shockwaves_)

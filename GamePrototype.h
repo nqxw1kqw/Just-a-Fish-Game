@@ -7,6 +7,7 @@
 #include "Boss.h"
 #include "DebugController.h"
 #include "GodRays.h"
+#include "ResultScreen.h"
 #include "CameraController.h"
 #include "UIRenderer.h"
 #include "Consts.h"
@@ -48,6 +49,11 @@ public:
     void Update(float dt);
     void Draw() const;
 
+    // Render interpolation (#26): đổi transform sang trạng thái nội suy trước Draw, khôi phục sau Draw
+    void BeginRenderInterp(float alpha);
+    void EndRenderInterp();
+    bool IsRenderInterpEnabled() const { return renderInterpEnabled_; }
+
     GameMode GetGameMode() const { return mode_; }
     void SetGameMode(GameMode mode) { mode_ = mode; }
     const HighscoreData& GetHighscore() const { return highscore_; }
@@ -59,6 +65,8 @@ public:
     bool ConsumeWindowModeToggleRequest();
 
 private:
+    bool renderInterpEnabled_ = true; // F10: bật/tắt nội suy hình ảnh
+    bool renderInterpActive_ = false;
     void StartWave(int wave);
     void StartBossFight();
     void OnWaveComplete();
@@ -107,6 +115,8 @@ private:
 
     DebugController debugController_;
     GodRays godRays_; // 光の筋 (phím G bật/tắt)
+    ResultScreen resultScreen_; // ゲームオーバー・勝利画面
+    ResultStats BuildResultStats() const;
     UIRenderer uiRenderer_;
 
     // Màn hình tạm dừng (Task #13)

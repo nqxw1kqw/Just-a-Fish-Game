@@ -50,6 +50,7 @@ struct DamagePopup
 };
 
 #include "WaterSplash.h"
+#include "BubbleSystem.h"
 
 class EffectSystem
 {
@@ -87,6 +88,7 @@ private:
     std::array<DamagePopup, MAX_DAMAGE_POPUPS> damagePopups_{};
 
     WaterSplashSystem waterSplash_;
+    BubbleSystem bubbles_; // #17 泡パーティクル: bọt nổi từ sàn
 
     float trauma_ = 0.0f; // Chấn động camera [0, 1]
     float shakeTime_ = 0.0f;
