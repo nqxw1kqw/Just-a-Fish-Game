@@ -82,6 +82,9 @@
     <ClInclude Include="TsunamiWaterEffect.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="BattleHud.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -128,6 +131,9 @@
     </ClCompile>
     <ClCompile Include="LowPolyModels.cpp">
     <ClCompile Include="TsunamiWaterEffect.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="BattleHud.cpp">
       <Filter>System</Filter>
     </ClCompile>
   </ItemGroup>

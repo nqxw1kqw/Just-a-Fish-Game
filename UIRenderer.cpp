@@ -9,80 +9,21 @@
 
 void UIRenderer::DrawBossHealthBar(const WhaleBoss& boss) const
 {
-    if (!boss.IsActive()) return;
-
-    int sw = GameConsts::SCREEN_WIDTH;
-    int barW = 520;
-    int barH = 24;
-    int barX = (sw - barW) / 2;
-    int barY = 28;
-
-    float ratio = std::clamp(boss.GetHp() / boss.GetMaxHp(), 0.0f, 1.0f);
-
-    // Khung nền
-    DrawBox(barX - 3, barY - 3, barX + barW + 3, barY + barH + 3, GetColor(15, 15, 25), TRUE);
-    DrawBox(barX, barY, barX + barW, barY + barH, GetColor(50, 15, 20), TRUE);
-
-    // Thanh máu
-    int fillColor = (boss.GetPhase() == BossPhase::Phase1) ? GetColor(230, 45, 45) : GetColor(255, 90, 30);
-    DrawBox(barX, barY, barX + static_cast<int>(barW * ratio), barY + barH, fillColor, TRUE);
-    DrawBox(barX - 3, barY - 3, barX + barW + 3, barY + barH + 3, GetColor(255, 200, 80), FALSE);
-
-    // Chữ tên Boss & Giai đoạn
-    const wchar_t* phaseText = (boss.GetPhase() == BossPhase::Phase1) ? L"PHASE 1" : L"PHASE 2: ENRAGED";
-    FontManager::DrawFormat(barX + 12, barY - 22, GetColor(255, 230, 100), FontSize::Body, L"FINAL BOSS: GIANT WHALE (%s)", phaseText);
-    FontManager::DrawFormat(barX + barW / 2 - 45, barY + 4, GetColor(255, 255, 255), FontSize::Body, L"%.0f / %.0f", boss.GetHp(), boss.GetMaxHp());
+    battleHud_.DrawBossBar(boss);
 }
 
 void UIRenderer::DrawHUD(const GamePrototype& game) const
 {
     int sw = GameConsts::SCREEN_WIDTH;
     int sh = GameConsts::SCREEN_HEIGHT;
-
-    // 1. Thanh máu HP của cá (Góc trên bên trái)
     int hpX = 40;
-    int hpY = 30;
-    int barW = 260;
-    int barH = 22;
 
-    float hpRatio = std::clamp(game.player_.GetHp() / game.player_.GetMaxHp(), 0.0f, 1.0f);
-    DrawBox(hpX - 2, hpY - 2, hpX + barW + 2, hpY + barH + 2, GetColor(20, 20, 30), TRUE);
-    DrawBox(hpX, hpY, hpX + barW, hpY + barH, GetColor(80, 20, 20), TRUE);
-    DrawBox(hpX, hpY, hpX + static_cast<int>(barW * hpRatio), hpY + barH, GetColor(240, 60, 60), TRUE);
-    FontManager::DrawFormat(hpX + 8, hpY + 3, GetColor(255, 255, 255), FontSize::Body, L"HP: %.0f / %.0f", game.player_.GetHp(), game.player_.GetMaxHp());
+    // 0. Chớp đỏ khi bị trúng đòn (vẽ dưới các bảng HUD)
+    battleHud_.DrawDamageFlash();
 
-    // 2. Thanh hồi chiêu Nhảy & Tiếp đất Slam (J2, J4, J5)
-    int jumpY = hpY + 28;
-    int jumpBarH = 18;
-    DrawBox(hpX - 2, jumpY - 2, hpX + barW + 2, jumpY + jumpBarH + 2, GetColor(20, 20, 30), TRUE);
-    DrawBox(hpX, jumpY, hpX + barW, jumpY + jumpBarH, GetColor(25, 30, 45), TRUE);
-
-    if (game.player_.IsAirborne())
-    {
-        // Đang bay trên không: Bất tử!
-        DrawBox(hpX, jumpY, hpX + barW, jumpY + jumpBarH, GetColor(255, 215, 60), TRUE);
-        FontManager::Draw(hpX + 8, jumpY + 1, L"* AIRBORNE (INVINCIBLE) *", GetColor(20, 20, 20), FontSize::Body);
-    }
-    else if (game.player_.GetLandRecoveryTimer() > 0.0f)
-    {
-        // Khựng hồi phục sau tiếp đất 0.2s
-        float recRatio = game.player_.GetLandRecoveryTimer() / GameConsts::LAND_RECOVERY;
-        DrawBox(hpX, jumpY, hpX + static_cast<int>(barW * recRatio), jumpY + jumpBarH, GetColor(230, 90, 40), TRUE);
-        FontManager::Draw(hpX + 8, jumpY + 1, L"LANDING RECOVERY (0.2s)", GetColor(255, 255, 255), FontSize::Body);
-    }
-    else if (game.player_.CanJump())
-    {
-        // Sẵn sàng nhảy!
-        DrawBox(hpX, jumpY, hpX + barW, jumpY + jumpBarH, GetColor(50, 220, 140), TRUE);
-        FontManager::Draw(hpX + 8, jumpY + 1, L"[SPACE] READY TO SLAM!", GetColor(15, 30, 20), FontSize::Body);
-    }
-    else
-    {
-        // Đang hồi chiêu
-        float cdRatio = 1.0f - (game.player_.GetJumpCooldownTimer() / game.player_.GetJumpCooldownMax());
-        DrawBox(hpX, jumpY, hpX + static_cast<int>(barW * cdRatio), jumpY + jumpBarH, GetColor(70, 150, 220), TRUE);
-        FontManager::DrawFormat(hpX + 8, jumpY + 1, GetColor(255, 255, 255), FontSize::Body, L"COOLDOWN: %.1fs", game.player_.GetJumpCooldownTimer());
-    }
+    // 1-2. 戦闘HUD: HP (máu trễ), EXP/Lv, vòng hồi chiêu Slam, combo
+    battleHud_.DrawPlayerPanel(game.player_);
+    int jumpY = BattleHud::PanelBottomY() - 28;
 
     // 3. Trạng thái Wave / Boss ở giữa trên
     if (game.state_ == GameState::Wave)

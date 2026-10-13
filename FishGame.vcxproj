@@ -124,6 +124,7 @@
     <ClInclude Include="WaterSplash.h" />
     <ClInclude Include="LowPolyModels.h" />
     <ClInclude Include="TsunamiWaterEffect.h" />
+    <ClInclude Include="BattleHud.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bullet.cpp" />
@@ -143,6 +144,7 @@
     <ClCompile Include="WaterSplash.cpp" />
     <ClCompile Include="LowPolyModels.cpp" />
     <ClCompile Include="TsunamiWaterEffect.cpp" />
+    <ClCompile Include="BattleHud.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
