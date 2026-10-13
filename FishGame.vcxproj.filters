@@ -33,8 +33,17 @@
     <ClInclude Include="Enemy.h">
       <Filter>Entity</Filter>
     </ClInclude>
+    <ClInclude Include="EnemyTypeConfig.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionUtil.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="Bullet.h">
       <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="GamePrototype.h">
       <Filter>System</Filter>
@@ -82,6 +91,9 @@
     </ClCompile>
     <ClCompile Include="Bullet.cpp">
       <Filter>Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="GamePrototype.cpp">
       <Filter>System</Filter>

@@ -2,18 +2,10 @@
 #include "Vector3.h"
 #include "Consts.h"
 #include <array>
+#include "EnemyTypeConfig.h"
 
 class EffectSystem;
 class PlayerFish;
-
-enum class EnemyType
-{
-    Minion, // Quái lính đỏ
-    Hopper, // Cua nảy cam
-    Tanker, // Rùa xanh trâu bò
-    Float,  // Sứa bay lơ lửng, gây tê liệt (G4)
-    Charge  // Cá mập khựng báo hiệu rồi lao thẳng (G4)
-};
 
 struct Enemy
 {
@@ -116,8 +108,6 @@ public:
     void SetCrabModelOffsetY(float y) { SetModelOffsetY(EnemyType::Hopper, y); }
 
 private:
-    static constexpr size_t ENEMY_TYPE_COUNT = 5;
-
     std::array<Enemy, GameConsts::MAX_ENEMIES> enemies_{};
     float spawnTimer_ = 0.0f;
     float waveTimer_ = 0.0f;

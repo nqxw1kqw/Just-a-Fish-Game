@@ -37,6 +37,7 @@ enum class SfxId
     TsunamiCharge,      // sfx_tsunami_charge: hút nước nạp sóng thần
     TsunamiSurge,       // sfx_tsunami_surge: vành sóng thần quét qua sàn đấu
     BossHeavySlam,      // sfx_boss_heavy_slam: địa chấn khi Boss nhảy đập
+    BossRoar,           // sfx_boss_roar: cá voi gầm cuồng nộ khi chuyển sang Phase 2
 
     // Giao diện người dùng
     UiHover,            // sfx_ui_hover: lướt qua thẻ bài / nút

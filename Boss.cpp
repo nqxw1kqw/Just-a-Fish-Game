@@ -11,6 +11,7 @@
 #include "Render3DUtil.h"
 #include "SoundManager.h"
 #include "DxLib.h"
+#include "CollisionUtil.h"
 
 void WhaleBoss::Init()
 {
@@ -88,6 +89,7 @@ bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
         idleDuration_ = 0.95f;        // Nhịp đòn nhanh hơn
         effects.AddTrauma(0.7f);
         effects.SpawnShockwave(pos_, 260.0f);
+        SoundManager::Instance().PlaySFX(SfxId::BossRoar); // Chỉ phát 1 lần lúc đổi phase
     }
 
     if (hp_ <= 0.0f)
@@ -179,8 +181,7 @@ void WhaleBoss::SpawnRing(float gapDeg, const Vec3& targetPos)
             if (gapDeg > 0.0f)
             {
                 // Thống nhất hệ góc: hướng về phía người chơi lúc phóng trong hệ atan2(x, z)
-                Vec3 toTarget = targetPos - pos_;
-                toTarget.y = 0.0f;
+                Vec3 toTarget = Collision::FlatDiff(targetPos, pos_);
                 if (toTarget.LengthSq() > 1.0f)
                 {
                     r.gapCenterRad = std::atan2(toTarget.x, toTarget.z);
@@ -206,8 +207,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
     actionTimer_ = 0.0f;
     actionCycle_++;
 
-    Vec3 toPlayer = player.GetPosition() - pos_;
-    toPlayer.y = 0.0f;
+    Vec3 toPlayer = Collision::FlatDiff(player.GetPosition(), pos_);
     float distToPlayer = toPlayer.Length();
 
     bool canJumpAttack = (timeSinceLastJumpAttack_ >= GameConsts::BOSS_MIN_JUMP_GAP);
@@ -367,8 +367,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     }
 
     // Luôn hướng về phía cá trên XZ nếu không trong pha thực hiện đập
-    Vec3 toPlayer = player.GetPosition() - pos_;
-    toPlayer.y = 0.0f;
+    Vec3 toPlayer = Collision::FlatDiff(player.GetPosition(), pos_);
     if (toPlayer.LengthSq() > 1.0f && action_ != BossAction::PerformSlam && action_ != BossAction::PerformDoubleSlam)
     {
         yaw_ = std::atan2(toPlayer.x, toPlayer.z);
@@ -440,9 +439,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             effects.SpawnShockwave(pos_, slamRadius_);
             SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
 
-            Vec3 pDiff = player.GetPosition() - pos_;
-            pDiff.y = 0.0f;
-            if (pDiff.Length() <= slamRadius_ && player.GetHeightY() < 28.0f)
+            if (Collision::DistXZ(player.GetPosition(), pos_) <= slamRadius_ && player.GetHeightY() < 28.0f)
             {
                 player.TakeDamage(35.0f, effects);
             }
@@ -533,9 +530,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             effects.SpawnShockwave(pos_, slamRadius_);
             SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
 
-            Vec3 pDiff = player.GetPosition() - pos_;
-            pDiff.y = 0.0f;
-            if (pDiff.Length() <= slamRadius_ && player.GetHeightY() < 28.0f)
+            if (Collision::DistXZ(player.GetPosition(), pos_) <= slamRadius_ && player.GetHeightY() < 28.0f)
             {
                 player.TakeDamage(30.0f, effects);
             }
@@ -624,8 +619,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         }
 
         // Kiểm tra va chạm hình vành khuyên (Annulus) với người chơi
-        Vec3 rel = player.GetPosition() - ring.center;
-        rel.y = 0.0f;
+        Vec3 rel = Collision::FlatDiff(player.GetPosition(), ring.center);
         float d = rel.Length();
         float half = ring.thickness * 0.5f + player.GetHitboxRadius();
 
@@ -700,9 +694,7 @@ float WhaleBoss::GetTimeToHitPlayer(const Vec3& playerPos) const
     {
         if (r.active)
         {
-            Vec3 diff = playerPos - r.center;
-            diff.y = 0.0f;
-            float dist = diff.Length();
+            float dist = Collision::DistXZ(playerPos, r.center);
             float waveFront = r.radius + r.thickness * 0.5f;
             if (dist > waveFront)
             {
@@ -720,9 +712,7 @@ float WhaleBoss::GetTimeToHitPlayer(const Vec3& playerPos) const
     {
         float dur = (phase_ == BossPhase::Phase1) ? GameConsts::TSUNAMI_TELEGRAPH_P1 : GameConsts::TSUNAMI_TELEGRAPH_P2;
         float remainingTelegraph = (std::max)(0.0f, dur - actionTimer_);
-        Vec3 diff = playerPos - pos_;
-        diff.y = 0.0f;
-        float dist = diff.Length();
+        float dist = Collision::DistXZ(playerPos, pos_);
         return remainingTelegraph + (std::max)(0.0f, dist - GameConsts::TSUNAMI_START_RADIUS) / spd;
     }
 

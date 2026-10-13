@@ -9,16 +9,17 @@
 #include "Render3DUtil.h"
 #include "DxLib.h"
 #include "SoundManager.h"
+#include "Input.h"
 
 void PlayerFish::Init()
 {
     if (fishModelHandle_ < 0)
     {
-        // 1. Ưu tiên nạp mô hình PreTest theo yêu cầu của Shin
-        fishModelHandle_ = MV1LoadModel(L"Data/Model/PreModelTest/Pre_Fish.mv1");
+        // 1. Ưu tiên nạp mô hình r-fish theo yêu cầu của Shin
+        fishModelHandle_ = MV1LoadModel(L"Data/Model/Main/r-fish.mv1");
         if (fishModelHandle_ >= 0)
         {
-            AppLogAdd(L"[FISH_MODEL] Load Data/Model/PreModelTest/Pre_Fish.mv1 SUCCESS, handle=%d\n", fishModelHandle_);
+            AppLogAdd(L"[FISH_MODEL] Load Data/Model/Main/r-fish.mv1 SUCCESS, handle=%d\n", fishModelHandle_);
         }
         else
         {
@@ -59,17 +60,21 @@ void PlayerFish::Init()
             int matNum = MV1GetMaterialNum(fishModelHandle_);
             int texNum = MV1GetTextureNum(fishModelHandle_);
 
-            // Nạp texture colormap.png nếu có cho mô hình cá
+            // Nạp texture cho mô hình cá: ưu tiên bigfish_texture.png trong Data/Model/Main/
             if (fishTextureHandle_ < 0)
             {
-                fishTextureHandle_ = MV1LoadTexture(L"Data/Model/PreModelTest/colormap.png");
+                fishTextureHandle_ = MV1LoadTexture(L"Data/Model/Main/bigfish_texture.png");
                 if (fishTextureHandle_ < 0)
                 {
-                    fishTextureHandle_ = LoadGraph(L"Data/Model/PreModelTest/colormap.png");
+                    fishTextureHandle_ = LoadGraph(L"Data/Model/Main/bigfish_texture.png");
                 }
                 if (fishTextureHandle_ < 0)
                 {
-                    fishTextureHandle_ = MV1LoadTexture(L"Data/Model/PreModelTest/Pre_Fish.png");
+                    fishTextureHandle_ = MV1LoadTexture(L"Data/Model/PreModelTest/colormap.png");
+                }
+                if (fishTextureHandle_ < 0)
+                {
+                    fishTextureHandle_ = LoadGraph(L"Data/Model/PreModelTest/colormap.png");
                 }
             }
 
@@ -90,7 +95,7 @@ void PlayerFish::Init()
                     int ghNow = MV1GetTextureGraphHandle(fishModelHandle_, i);
                     AppLogAdd(L"[FISH_MODEL] MV1SetTextureGraphHandle ret=%d, ghBefore=%d, ghNow=%d, fishTextureHandle=(%d, %dx%d)\n",
                         retSet, gh, ghNow, fishTextureHandle_, fw, fh);
-                    int retPath = MV1SetTextureColorFilePath(fishModelHandle_, i, L"Data/Model/PreModelTest/colormap.png");
+                    int retPath = MV1SetTextureColorFilePath(fishModelHandle_, i, L"Data/Model/Main/bigfish_texture.png");
                     int ghAfterPath = MV1GetTextureGraphHandle(fishModelHandle_, i);
                     AppLogAdd(L"[FISH_MODEL] MV1SetTextureColorFilePath ret=%d, ghAfterPath=%d\n", retPath, ghAfterPath);
                     boundAnyTexture = true;
@@ -156,7 +161,8 @@ void PlayerFish::Init()
                 fishModelScale_ = GameConsts::PLAYER_MODEL_SCALE;
                 fishModelOffsetY_ = GameConsts::PLAYER_MODEL_OFFSET_Y;
                 fishModelRotYDeg_ = GameConsts::PLAYER_MODEL_ROT_Y_DEG;
-                AppLogAdd(L"[FISH_MODEL] Attached animation 0, attachIndex=%d\n", fishAnimAttachIndex_);
+                AppLogAdd(L"[FISH_MODEL] Attached animation 0, attachIndex=%d, totalTime=%.2f, scale=%.2f, rotY=%.2f\n",
+                    fishAnimAttachIndex_, MV1GetAnimTotalTime(fishModelHandle_, 0), fishModelScale_, fishModelRotYDeg_);
             }
 
             // Cấu hình vật liệu
@@ -386,10 +392,9 @@ void PlayerFish::Update(float dt, EffectSystem& effects)
     if (CheckHitKey(KEY_INPUT_D) || CheckHitKey(KEY_INPUT_RIGHT)) inputDir.x += 1.0f;
 
     bool hasMoveInput = (inputDir.LengthSq() > 0.01f);
-    static bool spacePrev = false;
-    bool spaceNow = (CheckHitKey(KEY_INPUT_SPACE) != 0);
-    bool spaceJustPressed = (spaceNow && !spacePrev);
-    spacePrev = spaceNow;
+    // Cạnh "vừa nhấn" lấy từ trạng thái phím chung: Space dùng để bắt đầu game ở màn Title
+    // sẽ không bị coi là cú nhảy ở tick đầu tiên của wave
+    bool spaceJustPressed = Input::Instance().IsPressed(KEY_INPUT_SPACE);
 
     // 1. TRẠNG THÁI Ở DƯỚI ĐẤT / BƠI (J1, J2, J4)
     if (!isJumping_)
@@ -610,11 +615,7 @@ void PlayerFish::Draw() const
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     }
 
-    // Bóng đổ dẹt trên sàn tại vị trí thực tế của cá
-    float heightRatio = pos_.y / jumpHeight_;
-    float shadowRadius = 24.0f * (1.0f - 0.45f * heightRatio);
-    float shadowAlpha = (1.0f - 0.5f * heightRatio);
-    Render3D::DrawFlatShadow(pos_, shadowRadius, shadowAlpha);
+    // Đã xóa bóng đen dưới chân cá theo yêu cầu của Shin
 
     // Xác định màu sắc (Cá phát sáng vàng kim/neon khi bay bất tử)
     int bodyColor = 0;
@@ -752,8 +753,8 @@ void PlayerFish::Draw() const
                 for (int i = 0; i < matNum; ++i)
                 {
                     MV1SetMaterialDifColor(fishModelHandle_, i, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
-                    MV1SetMaterialAmbColor(fishModelHandle_, i, GetColorF(0.0f, 0.0f, 0.0f, 1.0f));
-                    MV1SetMaterialSpcColor(fishModelHandle_, i, GetColorF(0.0f, 0.0f, 0.0f, 1.0f));
+                    MV1SetMaterialAmbColor(fishModelHandle_, i, GetColorF(0.35f, 0.35f, 0.35f, 1.0f));
+                    MV1SetMaterialSpcColor(fishModelHandle_, i, GetColorF(0.15f, 0.15f, 0.15f, 1.0f));
                     MV1SetMaterialEmiColor(fishModelHandle_, i, GetColorF(0.0f, 0.0f, 0.0f, 1.0f));
                 }
             }

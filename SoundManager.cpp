@@ -29,6 +29,7 @@ static const SfxInitConfig kSfxConfigs[] = {
     { SfxId::TsunamiCharge,  "sfx_tsunami_charge",  L"sfx_tsunami_charge",  4, 95,  nullptr },
     { SfxId::TsunamiSurge,   "sfx_tsunami_surge",   L"sfx_tsunami_surge",   4, 100, nullptr },
     { SfxId::BossHeavySlam,  "sfx_boss_heavy_slam", L"sfx_boss_heavy_slam", 4, 100, nullptr },
+    { SfxId::BossRoar,       "sfx_boss_roar",       L"sfx_boss_roar",       2, 100, nullptr },
     { SfxId::UiHover,        "sfx_ui_hover",        L"sfx_ui_hover",        2, 60,  nullptr },
     { SfxId::CardFlip,       "sfx_card_flip",       L"sfx_card_flip",       4, 80,  nullptr },
     { SfxId::CardSelect,     "sfx_card_select",     L"sfx_card_select",     4, 90,  nullptr },
@@ -81,10 +82,27 @@ static int TryLoadSoundFile(const char* baseName, bool isBgm, const wchar_t* cus
     }
 
     // 2. Thử đường dẫn fallback người dùng đã tải sẵn (nếu có)
-    if (customFallback != nullptr && FileRead_size(customFallback) > 0)
+    if (customFallback != nullptr)
     {
-        int h = LoadSoundMem(customFallback);
-        if (h != -1) return h;
+        // Ưu tiên nạp định dạng .wav trước (nếu có) để triệt tiêu hoàn toàn độ trễ giải mã
+        wchar_t wavFallback[260];
+        wcscpy_s(wavFallback, customFallback);
+        wchar_t* dot = wcsrchr(wavFallback, L'.');
+        if (dot != nullptr)
+        {
+            wcscpy_s(dot, 5, L".wav");
+            if (FileRead_size(wavFallback) > 0)
+            {
+                int h = LoadSoundMem(wavFallback);
+                if (h != -1) return h;
+            }
+        }
+
+        if (FileRead_size(customFallback) > 0)
+        {
+            int h = LoadSoundMem(customFallback);
+            if (h != -1) return h;
+        }
     }
 
     return -1;

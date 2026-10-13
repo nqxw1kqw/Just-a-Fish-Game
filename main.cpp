@@ -45,6 +45,28 @@ void operator delete[](void* p) noexcept
 }
 #endif
 
+// Trạng thái vẽ 3D/2D. ChangeWindowMode() làm DxLib reset hệ thống đồ hoạ: ảnh/model/font tạo từ file
+// được DxLib tự khôi phục, nhưng các thiết lập vẽ có thể về mặc định, nên phải áp dụng lại ở đây.
+static void ApplyRenderSettings(int& dirLightHandle)
+{
+    SetDrawScreen(DX_SCREEN_BACK);
+    SetBackgroundColor(16, 24, 38);
+
+    // Bật Z-buffer cho đồ họa 3D theo mục 3.10 của fish game.md
+    SetUseZBuffer3D(TRUE);
+    SetWriteZBuffer3D(TRUE);
+    SetZBufferBitDepth(24);
+
+    // Cấu hình ánh sáng toàn cục
+    SetUseLighting(TRUE);
+    SetGlobalAmbientLight(GetColorF(0.65f, 0.65f, 0.72f, 1.0f));
+    if (dirLightHandle != -1)
+    {
+        DeleteLightHandle(dirLightHandle);
+    }
+    dirLightHandle = CreateDirLightHandle(VGet(0.5f, -0.8f, 0.4f));
+}
+
 int WINAPI WinMain(
     _In_ HINSTANCE,
     _In_opt_ HINSTANCE,
@@ -71,17 +93,9 @@ int WINAPI WinMain(
     // Khởi tạo Module Âm thanh (SoundManager)
     SoundManager::Instance().Init();
 
-    SetDrawScreen(DX_SCREEN_BACK);
-
-    // Bật Z-buffer cho đồ họa 3D theo mục 3.10 của fish game.md
-    SetUseZBuffer3D(TRUE);
-    SetWriteZBuffer3D(TRUE);
-    SetZBufferBitDepth(24);
-
-    // Cấu hình ánh sáng toàn cục
-    SetUseLighting(TRUE);
-    SetGlobalAmbientLight(GetColorF(0.65f, 0.65f, 0.72f, 1.0f));
-    CreateDirLightHandle(VGet(0.5f, -0.8f, 0.4f));
+    // Thiết lập trạng thái vẽ (gọi lại sau khi đổi Window/Fullscreen vì DxLib reset hệ thống đồ hoạ)
+    int dirLightHandle = -1;
+    ApplyRenderSettings(dirLightHandle);
 
     // Khởi tạo Prototype Game
     GamePrototype game;
@@ -98,7 +112,8 @@ int WINAPI WinMain(
     LONGLONG prev = GetNowHiPerformanceCount();
     float timeScale = 1.0f;
 
-    while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
+    // ESC: tạm dừng khi đang chơi, thoát game ở các màn khác (xử lý trong GamePrototype)
+    while (ProcessMessage() == 0 && !game.IsQuitRequested())
     {
         LONGLONG now = GetNowHiPerformanceCount();
         float frame = static_cast<float>(now - prev) / 1000000.0f;
@@ -113,6 +128,20 @@ int WINAPI WinMain(
         {
             game.Update(kStep);
             acc -= kStep;
+        }
+
+        // Đổi Window/Fullscreen từ màn hình tạm dừng (Task #13)
+        if (game.ConsumeWindowModeToggleRequest())
+        {
+            BOOL toWindow = (GetWindowModeFlag() == TRUE) ? FALSE : TRUE;
+            if (ChangeWindowMode(toWindow) != DX_CHANGESCREEN_OK)
+            {
+                AppLogAdd(L"[SCREEN] ChangeWindowMode thất bại\n");
+            }
+            ApplyRenderSettings(dirLightHandle);
+            // Bỏ qua thời gian chờ đổi chế độ màn hình để bộ tích luỹ 120Hz không bị dồn
+            prev = GetNowHiPerformanceCount();
+            acc = 0.0f;
         }
 
         // Kết xuất hình ảnh

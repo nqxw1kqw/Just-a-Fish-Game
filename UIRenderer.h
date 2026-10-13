@@ -12,4 +12,5 @@ public:
     void DrawTitleScreen(const GamePrototype& game) const;
     void DrawVictoryScreen(const GamePrototype& game) const;
     void DrawGameOverScreen(const GamePrototype& game) const;
+    void DrawPauseScreen(const GamePrototype& game) const;
 };

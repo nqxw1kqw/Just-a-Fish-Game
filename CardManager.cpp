@@ -9,6 +9,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "FontManager.h"
+#include "Input.h"
 
 void CardManager::Init()
 {
@@ -234,65 +235,47 @@ bool CardManager::Update(float dt)
 {
     if (offeredCount_ <= 0) return true; // Không có thẻ để chọn, tự động vượt qua
 
-    // Đọc trạng thái phím hiện tại (hỗ trợ cả phím số thường và Numpad)
-    bool leftNow = (CheckHitKey(KEY_INPUT_A) || CheckHitKey(KEY_INPUT_LEFT)) != 0;
-    bool rightNow = (CheckHitKey(KEY_INPUT_D) || CheckHitKey(KEY_INPUT_RIGHT)) != 0;
-    bool key1Now = (CheckHitKey(KEY_INPUT_1) || CheckHitKey(KEY_INPUT_NUMPAD1)) != 0;
-    bool key2Now = (CheckHitKey(KEY_INPUT_2) || CheckHitKey(KEY_INPUT_NUMPAD2)) != 0;
-    bool key3Now = (CheckHitKey(KEY_INPUT_3) || CheckHitKey(KEY_INPUT_NUMPAD3)) != 0;
-    bool enterNow = (CheckHitKey(KEY_INPUT_RETURN) || CheckHitKey(KEY_INPUT_NUMPADENTER)) != 0;
-
-    static bool leftPrev = false;
-    static bool rightPrev = false;
-    static bool key1Prev = false;
-    static bool key2Prev = false;
-    static bool key3Prev = false;
-    static bool enterPrev = false;
+    // Đọc phím "vừa nhấn" từ trạng thái phím chung (hỗ trợ cả phím số thường và Numpad)
+    const Input& input = Input::Instance();
+    bool leftPressed = input.IsPressed(KEY_INPUT_A) || input.IsPressed(KEY_INPUT_LEFT);
+    bool rightPressed = input.IsPressed(KEY_INPUT_D) || input.IsPressed(KEY_INPUT_RIGHT);
+    bool key1Pressed = input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1);
+    bool key2Pressed = input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2);
+    bool key3Pressed = input.IsPressed(KEY_INPUT_3) || input.IsPressed(KEY_INPUT_NUMPAD3);
+    bool enterPressed = input.IsPressed(KEY_INPUT_RETURN) || input.IsPressed(KEY_INPUT_NUMPADENTER);
 
     // Khoảng đệm an toàn 0.35s sau khi vừa mở bảng chọn thẻ
+    // (phím đang giữ từ trước sẽ không tạo cạnh "vừa nhấn" mới khi hết đệm)
     if (inputDelay_ > 0.0f)
     {
         inputDelay_ -= dt;
-        leftPrev = leftNow;
-        rightPrev = rightNow;
-        key1Prev = key1Now;
-        key2Prev = key2Now;
-        key3Prev = key3Now;
-        enterPrev = enterNow;
         return false;
     }
 
     // Phím A/D hoặc mũi tên để đổi con trỏ
-    if (leftNow && !leftPrev)
+    if (leftPressed)
     {
         selectedIndex_ = (selectedIndex_ + offeredCount_ - 1) % offeredCount_;
         SoundManager::Instance().PlaySFX(SfxId::UiHover);
     }
-    leftPrev = leftNow;
 
-    if (rightNow && !rightPrev)
+    if (rightPressed)
     {
         selectedIndex_ = (selectedIndex_ + 1) % offeredCount_;
         SoundManager::Instance().PlaySFX(SfxId::UiHover);
     }
-    rightPrev = rightNow;
 
     // Phím số 1, 2, 3 chọn trực tiếp (chỉ cho phép slot hợp lệ)
     int chooseSlot = -1;
-    if (key1Now && !key1Prev && offeredCount_ >= 1) chooseSlot = 0;
-    if (key2Now && !key2Prev && offeredCount_ >= 2) chooseSlot = 1;
-    if (key3Now && !key3Prev && offeredCount_ >= 3) chooseSlot = 2;
-
-    key1Prev = key1Now;
-    key2Prev = key2Now;
-    key3Prev = key3Now;
+    if (key1Pressed && offeredCount_ >= 1) chooseSlot = 0;
+    if (key2Pressed && offeredCount_ >= 2) chooseSlot = 1;
+    if (key3Pressed && offeredCount_ >= 3) chooseSlot = 2;
 
     // Phím Enter xác nhận ô đang chọn
-    if (enterNow && !enterPrev)
+    if (enterPressed)
     {
         chooseSlot = selectedIndex_;
     }
-    enterPrev = enterNow;
 
     if (chooseSlot >= 0 && chooseSlot < offeredCount_)
     {

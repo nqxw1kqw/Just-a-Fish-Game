@@ -142,9 +142,9 @@ namespace GameConsts
     constexpr float ENEMY_MODEL_OFFSET_Y_CHARGE = 0.0f;
 
     // Cấu hình mô hình 3D Cá Chính (PlayerFish)
-    constexpr float PLAYER_MODEL_SCALE = 2.2f;     // Tỉ lệ scale mặc định của mô hình cá (khớp chiều dài ~29, hitbox R=18)
-    constexpr float PLAYER_MODEL_ROT_Y_DEG = -90.0f;// Góc xoay bù hướng mặt cá (độ)
-    constexpr float PLAYER_MODEL_OFFSET_Y = 6.0f;  // Độ dời trục Y để bụng cá chạm mặt sàn (Ymin = -2.85 * 2.2)
+    constexpr float PLAYER_MODEL_SCALE = 3.6f;     // Tỉ lệ scale mặc định của mô hình cá (tăng lên 3.6 theo yêu cầu)
+    constexpr float PLAYER_MODEL_ROT_Y_DEG = 90.0f;// Xoay đảo 180 độ (-90 + 180 = 90) để đầu cá bơi hướng về phía trước
+    constexpr float PLAYER_MODEL_OFFSET_Y = 9.8f;  // Độ dời trục Y để bụng cá chạm mặt sàn (Ymin = -2.82 * 3.6)
 
     // Camera & Game Feel (P0)
     constexpr float CAM_PITCH_DEG = 50.0f;         // Góc nghiêng mặc định 50 độ
@@ -153,6 +153,13 @@ namespace GameConsts
     constexpr float CAM_DEAD_ZONE = 35.0f;         // Vùng chết (dead zone)
     constexpr float MAX_CAM_SHAKE_OFFSET = 12.0f;  // Giới hạn biên độ rung tối đa
     constexpr float LAND_TRAUMA_AMOUNT = 0.05f;    // Chấn động tiếp đất cơ bản
+
+    // Sương mù dưới nước (#15) - camera cách mục tiêu ~580, sàn 1400x1400
+    constexpr float FOG_START = 700.0f;            // Bắt đầu mờ ngay sau vùng quanh cá
+    constexpr float FOG_END = 2000.0f;             // Mờ hoàn toàn ở góc sàn xa nhất
+    constexpr int FOG_COLOR_R = 10;                // Màu xanh biển sâu
+    constexpr int FOG_COLOR_G = 40;
+    constexpr int FOG_COLOR_B = 80;
 
     // Luồng game & Hồi máu (G3)
     constexpr float WAVE_HEAL_PERCENT = 0.30f;     // Hồi 30% máu tối đa sau mỗi wave (G3)

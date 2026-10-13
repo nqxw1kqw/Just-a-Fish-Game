@@ -8,9 +8,11 @@
 #include "Enemy.h"
 #include "PlayerFish.h"
 #include "Boss.h"
+#include "SoundManager.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
 #include "DxLib.h"
+#include "CollisionUtil.h"
 
 void WeaponSystem::Init()
 {
@@ -205,9 +207,7 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
         // 1. Kiểm tra va chạm với Boss
         if (boss && boss->IsAlive())
         {
-            Vec3 toBoss = boss->GetPosition() - b.pos;
-            toBoss.y = 0.0f;
-            if (toBoss.Length() <= (b.radius + boss->GetHitboxRadius()))
+            if (Collision::DistXZ(boss->GetPosition(), b.pos) <= (b.radius + boss->GetHitboxRadius()))
             {
                 boss->TakeDamage(b.damage, effects);
                 b.active = false;
@@ -238,6 +238,7 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
                     if (chained->hp <= 0.0f)
                     {
                         chained->active = false;
+                        SoundManager::Instance().PlaySFX(SfxId::EnemySquish); // #4: tiếng quái chết (giật sét)
                         extraExp = 1;
                         effects.SpawnExpOrb(chained->pos, 1.0f);
                     }
@@ -262,27 +263,9 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
 
 void WeaponSystem::Draw(const PlayerFish& player) const
 {
-    const Vec3 playerPos = player.GetPosition();
-    const Vec3 turretBase = playerPos + Vec3{ 0.0f, GameConsts::FISH_SIZE_Y + 2.0f, 0.0f };
+    // Đã xóa đế súng và nòng súng trên đầu/lưng cá theo yêu cầu của Shin
 
-    // 1. Đế súng gắn trên lưng cá
-    Vec3 baseHalfSize{ 5.0f, 3.5f, 5.0f };
-    int baseColor = GetColor(190, 205, 220);
-    int edgeColor = GetColor(80, 100, 130);
-    Render3D::DrawOrientedBox3D(turretBase, baseHalfSize, aimYaw_, baseColor, edgeColor, true);
-
-    // 2. Nòng súng vươn ra theo hướng ngắm
-    float barrelLen = 9.0f;
-    Vec3 barrelCenter = turretBase + Vec3{
-        std::sin(aimYaw_) * barrelLen,
-        1.5f,
-        std::cos(aimYaw_) * barrelLen
-    };
-    Vec3 barrelHalfSize{ 2.5f, 2.5f, 6.0f };
-    int barrelColor = hasTarget_ ? GetColor(255, 80, 80) : GetColor(160, 180, 200);
-    Render3D::DrawOrientedBox3D(barrelCenter, barrelHalfSize, aimYaw_, barrelColor, edgeColor, true);
-
-    // 3. Vẽ các viên đạn 3D
+    // Vẽ các viên đạn 3D đang bay (nếu có)
     int bulletColor = player.IsComboBuffActive() ? GetColor(255, 120, 255) : GetColor(255, 230, 40);
     int bulletEdge = GetColor(255, 120, 20);
     Vec3 bulletHalfSize{ 4.0f, 4.0f, 7.0f };
