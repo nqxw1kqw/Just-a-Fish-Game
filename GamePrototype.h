@@ -6,6 +6,7 @@
 #include "CardManager.h"
 #include "Boss.h"
 #include "DebugController.h"
+#include "GodRays.h"
 #include "CameraController.h"
 #include "UIRenderer.h"
 #include "Consts.h"
@@ -105,6 +106,7 @@ private:
     float gameTime_ = 0.0f;
 
     DebugController debugController_;
+    GodRays godRays_; // 光の筋 (phím G bật/tắt)
     UIRenderer uiRenderer_;
 
     // Màn hình tạm dừng (Task #13)

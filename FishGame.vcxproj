@@ -121,6 +121,7 @@
     <ClInclude Include="UIRenderer.h" />
     <ClInclude Include="SoundManager.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="GodRays.h" />
     <ClInclude Include="WaterSplash.h" />
     <ClInclude Include="LowPolyModels.h" />
     <ClInclude Include="TsunamiWaterEffect.h" />
@@ -140,6 +141,7 @@
     <ClCompile Include="UIRenderer.cpp" />
     <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="GodRays.cpp" />
     <ClCompile Include="WaterSplash.cpp" />
     <ClCompile Include="LowPolyModels.cpp" />
     <ClCompile Include="TsunamiWaterEffect.cpp" />
