@@ -101,6 +101,8 @@
     <ClInclude Include="DxConv.h" />
     <ClInclude Include="Effects.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="EnemyTypeConfig.h" />
+    <ClInclude Include="CollisionUtil.h" />
     <ClInclude Include="GamePrototype.h" />
     <ClInclude Include="PlayerFish.h" />
     <ClInclude Include="Render3DUtil.h" />

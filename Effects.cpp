@@ -10,6 +10,7 @@
 #include "Render3DUtil.h"
 #include "FontManager.h"
 #include "Consts.h"
+#include "CollisionUtil.h"
 #include <cwchar>
 
 namespace
@@ -259,9 +260,7 @@ int EffectSystem::CollectExpOrbs(const Vec3& playerPos, float pickupRadius)
     for (auto& e : expOrbs_)
     {
         if (!e.active) continue;
-        Vec3 diff = playerPos - e.pos;
-        diff.y = 0; // Xét trên mặt phẳng
-        if (diff.LengthSq() <= radSq)
+        if (Collision::DistSqXZ(playerPos, e.pos) <= radSq) // Xét trên mặt phẳng
         {
             e.active = false;
             collected += static_cast<int>(e.value);

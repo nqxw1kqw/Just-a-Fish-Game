@@ -33,6 +33,12 @@
     <ClInclude Include="Enemy.h">
       <Filter>Entity</Filter>
     </ClInclude>
+    <ClInclude Include="EnemyTypeConfig.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionUtil.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="Bullet.h">
       <Filter>Entity</Filter>
     </ClInclude>

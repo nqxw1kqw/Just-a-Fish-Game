@@ -11,6 +11,7 @@
 #include "Render3DUtil.h"
 #include "SoundManager.h"
 #include "DxLib.h"
+#include "CollisionUtil.h"
 
 namespace
 {
@@ -317,14 +318,7 @@ float EnemyManager::GetAliveCost() const
     for (const auto& e : enemies_)
     {
         if (!e.active) continue;
-        switch (e.type)
-        {
-        case EnemyType::Minion: total += GameConsts::ENEMY_COST_MINION; break;
-        case EnemyType::Hopper: total += GameConsts::ENEMY_COST_HOPPER; break;
-        case EnemyType::Float:  total += GameConsts::ENEMY_COST_FLOAT; break;
-        case EnemyType::Charge: total += GameConsts::ENEMY_COST_CHARGE; break;
-        case EnemyType::Tanker: total += GameConsts::ENEMY_COST_TANKER; break;
-        }
+        total += GetEnemyCost(e.type);
     }
     return total;
 }
@@ -349,15 +343,8 @@ float EnemyManager::GetWaveCostCap(int wave) const
 
 float EnemyManager::GetEnemyCost(EnemyType type)
 {
-    switch (type)
-    {
-    case EnemyType::Minion: return GameConsts::ENEMY_COST_MINION;
-    case EnemyType::Hopper: return GameConsts::ENEMY_COST_HOPPER;
-    case EnemyType::Float:  return GameConsts::ENEMY_COST_FLOAT;
-    case EnemyType::Charge: return GameConsts::ENEMY_COST_CHARGE;
-    case EnemyType::Tanker: return GameConsts::ENEMY_COST_TANKER;
-    default: return 1.0f;
-    }
+    const EnemyTypeConfig* cfg = GetEnemyTypeConfig(type);
+    return cfg ? cfg->cost : 1.0f;
 }
 
 bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
@@ -374,48 +361,31 @@ bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
             e.active = true;
             spawnedThisWave_++;
 
+            // Thông số cơ bản lấy từ bảng EnemyTypeConfig (Task #25)
+            const EnemyTypeConfig& tc = *GetEnemyTypeConfig(type);
+            e.hp = e.maxHp = tc.baseHp * hpMultiplier_;
+            e.speed = tc.baseSpeed * spdMultiplier_;
+            e.radius = tc.radius;
+            e.damage = tc.baseDamage * dmgMultiplier_;
+            if (tc.setSpawnY) e.pos.y = tc.spawnY;
+
+            // Trạng thái riêng theo loại
             switch (type)
             {
-            case EnemyType::Minion:
-                e.hp = e.maxHp = 26.0f * hpMultiplier_;
-                e.speed = 110.0f * spdMultiplier_;
-                e.radius = 13.0f;
-                e.damage = 5.0f * dmgMultiplier_;
-                e.pos.y = 0.0f;
-                break;
             case EnemyType::Hopper:
-                e.hp = e.maxHp = 38.0f * hpMultiplier_;
-                e.speed = 135.0f * spdMultiplier_;
-                e.radius = 15.0f;
-                e.damage = 7.0f * dmgMultiplier_;
                 e.bouncePhase = RandomRange(0.0f, 1.0f);
-                e.bounceHeight = 28.0f;
-                e.bounceDuration = 0.36f;
-                break;
-            case EnemyType::Tanker:
-                e.hp = e.maxHp = 130.0f * hpMultiplier_;
-                e.speed = 52.0f * spdMultiplier_;
-                e.radius = 24.0f;
-                e.damage = 12.0f * dmgMultiplier_;
-                e.pos.y = 0.0f;
+                e.bounceHeight = tc.bounceHeight;
+                e.bounceDuration = tc.bounceDuration;
                 break;
             case EnemyType::Float:
-                e.hp = e.maxHp = 32.0f * hpMultiplier_;
-                e.speed = 60.0f * spdMultiplier_;
-                e.radius = 16.0f;
-                e.damage = 7.0f * dmgMultiplier_;
                 e.floatPhase = RandomRange(0.0f, 6.28f);
-                e.pos.y = 16.0f;
                 break;
             case EnemyType::Charge:
-                e.hp = e.maxHp = 45.0f * hpMultiplier_;
-                e.speed = 92.0f * spdMultiplier_;
-                e.radius = 17.0f;
-                e.damage = 12.0f * dmgMultiplier_;
                 e.chargeState = 0;
                 e.chargeTimer = 0.0f;
                 e.chargeDir = Vec3{ 0, 0, 1 };
-                e.pos.y = 0.0f;
+                break;
+            default:
                 break;
             }
             return true;
@@ -451,9 +421,7 @@ bool EnemyManager::SpawnRandomEdge(EnemyType type, const Vec3& playerPos)
         }
 
         // Kiểm tra khoảng cách tối thiểu với người chơi (Task 10 T2: không sinh sát mặt player)
-        Vec3 diff = spawnPos - playerPos;
-        diff.y = 0.0f;
-        if (diff.LengthSq() >= minDistSq)
+        if (Collision::DistSqXZ(spawnPos, playerPos) >= minDistSq)
         {
             return SpawnEnemy(type, spawnPos);
         }
@@ -487,79 +455,22 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                 int roll = rand() % 100;
                 EnemyType typeToSpawn = EnemyType::Minion;
 
+                // Tỉ lệ phân bố lấy từ bảng trong EnemyTypeConfig.h (Task #25)
                 if (isEndless_)
                 {
                     // Endless Mode: Dịch dần sang quái Tanker/Charge theo bậc 5 wave (Task 10 T4b)
                     int tier = (currentWave_ - 1) / 5;
-                    if (tier == 0) // Wave 1..5
-                    {
-                        if (roll < 45) typeToSpawn = EnemyType::Minion;
-                        else if (roll < 70) typeToSpawn = EnemyType::Hopper;
-                        else if (roll < 85) typeToSpawn = EnemyType::Tanker;
-                        else if (roll < 93) typeToSpawn = EnemyType::Float;
-                        else typeToSpawn = EnemyType::Charge;
-                    }
-                    else if (tier == 1) // Wave 6..10
-                    {
-                        if (roll < 30) typeToSpawn = EnemyType::Minion;
-                        else if (roll < 55) typeToSpawn = EnemyType::Hopper;
-                        else if (roll < 75) typeToSpawn = EnemyType::Tanker;
-                        else if (roll < 88) typeToSpawn = EnemyType::Float;
-                        else typeToSpawn = EnemyType::Charge;
-                    }
-                    else if (tier == 2) // Wave 11..15
-                    {
-                        if (roll < 20) typeToSpawn = EnemyType::Minion;
-                        else if (roll < 40) typeToSpawn = EnemyType::Hopper;
-                        else if (roll < 65) typeToSpawn = EnemyType::Tanker;
-                        else if (roll < 82) typeToSpawn = EnemyType::Float;
-                        else typeToSpawn = EnemyType::Charge;
-                    }
-                    else // Wave 16+
-                    {
-                        if (roll < 15) typeToSpawn = EnemyType::Minion;
-                        else if (roll < 30) typeToSpawn = EnemyType::Hopper;
-                        else if (roll < 55) typeToSpawn = EnemyType::Tanker;
-                        else if (roll < 78) typeToSpawn = EnemyType::Float;
-                        else typeToSpawn = EnemyType::Charge;
-                    }
+                    int idx = (tier == 0 || tier == 1 || tier == 2) ? tier : 3;
+                    typeToSpawn = PickEnemyTypeByRoll(kEndlessSpawnWeights[idx], roll);
                 }
                 else
                 {
                     // Chế độ Classic: Giữ nguyên 100% tỉ lệ phân bố của 5 wave gốc
-                    if (currentWave_ <= 1)
-                    {
-                        if (roll < 75) typeToSpawn = EnemyType::Minion;
-                        else typeToSpawn = EnemyType::Hopper;
-                    }
-                    else if (currentWave_ == 2)
-                    {
-                        if (roll < 70) typeToSpawn = EnemyType::Minion;
-                        else typeToSpawn = EnemyType::Hopper;
-                    }
-                    else if (currentWave_ == 3)
-                    {
-                        if (roll < 45) typeToSpawn = EnemyType::Minion;
-                        else if (roll < 75) typeToSpawn = EnemyType::Hopper;
-                        else if (roll < 90) typeToSpawn = EnemyType::Tanker;
-                        else typeToSpawn = EnemyType::Float;
-                    }
-                    else if (currentWave_ == 4)
-                    {
-                        if (roll < 30) typeToSpawn = EnemyType::Minion;
-                        else if (roll < 55) typeToSpawn = EnemyType::Hopper;
-                        else if (roll < 75) typeToSpawn = EnemyType::Tanker;
-                        else if (roll < 88) typeToSpawn = EnemyType::Float;
-                        else typeToSpawn = EnemyType::Charge;
-                    }
-                    else // Wave 5: Tổng lực hỗn hợp mọi chủng loại quái
-                    {
-                        if (roll < 20) typeToSpawn = EnemyType::Minion;
-                        else if (roll < 40) typeToSpawn = EnemyType::Hopper;
-                        else if (roll < 60) typeToSpawn = EnemyType::Tanker;
-                        else if (roll < 80) typeToSpawn = EnemyType::Float;
-                        else typeToSpawn = EnemyType::Charge;
-                    }
+                    int idx = (currentWave_ <= 1) ? 0
+                            : (currentWave_ == 2) ? 1
+                            : (currentWave_ == 3) ? 2
+                            : (currentWave_ == 4) ? 3 : 4;
+                    typeToSpawn = PickEnemyTypeByRoll(kClassicSpawnWeights[idx], roll);
                 }
 
                 // Kiểm tra trần chi phí quái sống của wave: chỉ sinh nếu không vượt trần
@@ -599,8 +510,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
         }
         else
         {
-            Vec3 toPlayer = playerPos - e.pos;
-            toPlayer.y = 0.0f;
+            Vec3 toPlayer = Collision::FlatDiff(playerPos, e.pos);
             float distToPlayer = toPlayer.Length();
 
             if (e.type == EnemyType::Charge)
@@ -701,8 +611,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
             auto& other = enemies_[j];
             if (!other.active) continue;
 
-            Vec3 diff = e.pos - other.pos;
-            diff.y = 0.0f;
+            Vec3 diff = Collision::FlatDiff(e.pos, other.pos);
             float dSq = diff.LengthSq();
             float minD = e.radius + other.radius;
             if (dSq < minD * minD && dSq > 0.001f)
@@ -717,8 +626,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
         }
 
         // 2. Va chạm với cá (Gây sát thương nếu cá không ở trên không - J4)
-        Vec3 toPlayer = playerPos - e.pos;
-        toPlayer.y = 0.0f;
+        Vec3 toPlayer = Collision::FlatDiff(playerPos, e.pos);
         float distToPlayer = toPlayer.Length();
         float totalRad = e.radius + playerHitRadius;
         if (distToPlayer <= totalRad)
@@ -765,8 +673,7 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
     {
         if (!e.active) continue;
 
-        Vec3 diff = e.pos - center;
-        diff.y = 0.0f;
+        Vec3 diff = Collision::FlatDiff(e.pos, center);
         float dSq = diff.LengthSq();
 
         if (dSq <= radSq)
@@ -826,9 +733,7 @@ Enemy* EnemyManager::FindClosestEnemy(const Vec3& fromPos, float maxRange)
     for (auto& e : enemies_)
     {
         if (!e.active) continue;
-        Vec3 diff = e.pos - fromPos;
-        diff.y = 0.0f;
-        float dSq = diff.LengthSq();
+        float dSq = Collision::DistSqXZ(e.pos, fromPos);
         if (dSq < closestDistSq)
         {
             closestDistSq = dSq;
@@ -845,13 +750,9 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
     {
         if (!e.active) continue;
 
-        Vec3 diff = e.pos - bulletPos;
-        // Kiểm tra khoảng cách 3D
-        float totalRad = e.radius + bulletRadius;
-        if (std::abs(diff.y) < 25.0f)
+        // Hình trụ: chênh Y < 25 và chồng XZ (CollisionUtil)
         {
-            diff.y = 0.0f;
-            if (diff.LengthSq() <= totalRad * totalRad)
+            if (Collision::CylinderHit(e.pos, e.radius, bulletPos, bulletRadius, 25.0f))
             {
                 // Trúng đạn!
                 e.hp -= damage;

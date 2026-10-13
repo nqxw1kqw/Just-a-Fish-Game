@@ -11,6 +11,7 @@
 #include "Effects.h"
 #include "Render3DUtil.h"
 #include "DxLib.h"
+#include "CollisionUtil.h"
 
 void WeaponSystem::Init()
 {
@@ -205,9 +206,7 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
         // 1. Kiểm tra va chạm với Boss
         if (boss && boss->IsAlive())
         {
-            Vec3 toBoss = boss->GetPosition() - b.pos;
-            toBoss.y = 0.0f;
-            if (toBoss.Length() <= (b.radius + boss->GetHitboxRadius()))
+            if (Collision::DistXZ(boss->GetPosition(), b.pos) <= (b.radius + boss->GetHitboxRadius()))
             {
                 boss->TakeDamage(b.damage, effects);
                 b.active = false;
