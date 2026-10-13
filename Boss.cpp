@@ -88,6 +88,7 @@ bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
         idleDuration_ = 0.95f;        // Nhịp đòn nhanh hơn
         effects.AddTrauma(0.7f);
         effects.SpawnShockwave(pos_, 260.0f);
+        SoundManager::Instance().PlaySFX(SfxId::BossRoar); // Chỉ phát 1 lần lúc đổi phase
     }
 
     if (hp_ <= 0.0f)

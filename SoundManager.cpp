@@ -29,6 +29,7 @@ static const SfxInitConfig kSfxConfigs[] = {
     { SfxId::TsunamiCharge,  "sfx_tsunami_charge",  L"sfx_tsunami_charge",  4, 95,  nullptr },
     { SfxId::TsunamiSurge,   "sfx_tsunami_surge",   L"sfx_tsunami_surge",   4, 100, nullptr },
     { SfxId::BossHeavySlam,  "sfx_boss_heavy_slam", L"sfx_boss_heavy_slam", 4, 100, nullptr },
+    { SfxId::BossRoar,       "sfx_boss_roar",       L"sfx_boss_roar",       2, 100, nullptr },
     { SfxId::UiHover,        "sfx_ui_hover",        L"sfx_ui_hover",        2, 60,  nullptr },
     { SfxId::CardFlip,       "sfx_card_flip",       L"sfx_card_flip",       4, 80,  nullptr },
     { SfxId::CardSelect,     "sfx_card_select",     L"sfx_card_select",     4, 90,  nullptr },
