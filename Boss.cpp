@@ -14,6 +14,30 @@
 #include "CollisionUtil.h"
 #include "LowPolyModels.h"
 
+namespace
+{
+    // Ánh xạ vòng gameplay sang trạng thái hiển thị cho hiệu ứng nước
+    TsunamiWaveState ToWaveState(const TsunamiRing& r)
+    {
+        TsunamiWaveState w;
+        w.active = r.active;
+        w.center = r.center;
+        w.radius = r.radius;
+        w.thickness = r.thickness;
+        w.speed = r.speed;
+        w.gapCenterRad = r.gapCenterRad;
+        w.gapHalfRad = r.gapHalfRad;
+        return w;
+    }
+
+    std::array<TsunamiWaveState, TsunamiWaterEffect::MAX_WAVES> ToWaveStates(const std::array<TsunamiRing, GameConsts::TSUNAMI_MAX_ACTIVE>& rings)
+    {
+        std::array<TsunamiWaveState, TsunamiWaterEffect::MAX_WAVES> out{};
+        for (int i = 0; i < TsunamiWaterEffect::MAX_WAVES && i < GameConsts::TSUNAMI_MAX_ACTIVE; ++i) out[i] = ToWaveState(rings[i]);
+        return out;
+    }
+}
+
 void WhaleBoss::Init()
 {
     Reset();
@@ -48,6 +72,7 @@ void WhaleBoss::Reset()
     waterFxTimer_ = 0.0f;
 
     for (auto& r : tsunamiRings_) r.active = false;
+    tsunamiWater_.Reset();
 }
 
 void WhaleBoss::Spawn(const Vec3& arenaCenter)
@@ -72,6 +97,7 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
     currentTsunamiGapDeg_ = 0.0f;
 
     for (auto& r : tsunamiRings_) r.active = false;
+    tsunamiWater_.Reset();
 }
 
 bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
@@ -199,6 +225,7 @@ void WhaleBoss::SpawnRing(float gapDeg, const Vec3& targetPos)
                 r.gapCenterRad = 0.0f;
                 r.gapHalfRad = 0.0f;
             }
+            tsunamiWater_.OnLaunch(ToWaveState(r));
             break;
         }
     }
@@ -602,7 +629,6 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             timeSinceLastTsunami_ = 0.0f;
 
             effects.AddTrauma(0.45f);
-            effects.SpawnShockwave(pos_, 150.0f);
 
             // Boss quay lại Idle ngay sau khi phóng, không cần chờ sóng đi hết (A2)
             action_ = BossAction::Idle;
@@ -673,6 +699,9 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             }
         }
     }
+
+    // Hiệu ứng nước sóng thần (chỉ hình ảnh)
+    tsunamiWater_.Update(dt, action_ == BossAction::TelegraphRadialTsunami, pos_, ToWaveStates(tsunamiRings_));
 }
 
 int WhaleBoss::GetActiveTsunamiCount() const
@@ -752,106 +781,13 @@ void WhaleBoss::Draw() const
         Render3D::DrawCircle3D(pos_, 140.0f, 32, GetColor(180, 60, 255), false);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     }
-    else if (action_ == BossAction::TelegraphRadialTsunami)
+
+    // 2. Hiệu ứng nước Radial Tsunami: không còn decal cảnh báo, chỉ có nước + hạt
     {
-        // Vòng cảnh báo đỏ phình dần quanh boss + các vòng mờ đồng tâm (A2, A7)
         float dur = (phase_ == BossPhase::Phase1) ? GameConsts::TSUNAMI_TELEGRAPH_P1 : GameConsts::TSUNAMI_TELEGRAPH_P2;
-        float ratio = std::clamp(actionTimer_ / dur, 0.0f, 1.0f);
-
-        // Nhấp nháy nhanh dần trong 0.3s cuối
-        bool flash = true;
-        if (dur - actionTimer_ <= 0.3f)
-        {
-            float fT = dur - actionTimer_;
-            flash = (static_cast<int>(fT * 30.0f) % 2 == 0);
-        }
-
-        if (flash)
-        {
-            int alpha = static_cast<int>(130.0f + ratio * 90.0f);
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-
-            float currentExpandR = GameConsts::TSUNAMI_START_RADIUS + 50.0f * ratio;
-            Render3D::DrawCircle3D(pos_, currentExpandR, 36, GetColor(255, 50, 50), true);
-            Render3D::DrawCircle3D(pos_, currentExpandR, 36, GetColor(255, 220, 60), false);
-
-            // 2-3 vòng đồng tâm mờ thể hiện hướng lan tỏa
-            Render3D::DrawCircle3D(pos_, currentExpandR + 40.0f, 36, GetColor(255, 100, 80), false);
-            Render3D::DrawCircle3D(pos_, currentExpandR + 80.0f, 36, GetColor(255, 150, 100), false);
-
-            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-        }
-    }
-
-    // 2. Vẽ Vành Sóng Thần Tỏa Tròn 3D (A7, Task 10 T3c thống nhất hệ góc atan2(x, z))
-    for (const auto& ring : tsunamiRings_)
-    {
-        if (!ring.active) continue;
-
-        int numSegments = 56;
-        float angleStep = 6.2831853f / numSegments;
-        float rInner = (std::max)(1.0f, ring.radius - ring.thickness * 0.5f);
-        float rOuter = ring.radius + ring.thickness * 0.5f;
-
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 190);
-        int waterColor = GetColor(35, 150, 245);
-        int foamColor = GetColor(230, 245, 255);
-
-        for (int i = 0; i < numSegments; ++i)
-        {
-            float a1 = i * angleStep;
-            float a2 = (i + 1) * angleStep;
-
-            // Bỏ qua đoạn nằm trong khe hở (nếu có)
-            if (ring.gapHalfRad > 0.0f)
-            {
-                float midA = (a1 + a2) * 0.5f;
-                float diff = std::abs(midA - ring.gapCenterRad);
-                while (diff > 3.14159265f) diff = std::abs(diff - 6.2831853f);
-                if (diff <= ring.gapHalfRad) continue;
-            }
-
-            // Dùng sin(a) cho X và cos(a) cho Z để khớp 100% với atan2(x, z)
-            float s1 = std::sin(a1), c1 = std::cos(a1);
-            float s2 = std::sin(a2), c2 = std::cos(a2);
-
-            VECTOR pIn1 = VGet(ring.center.x + s1 * rInner, 1.0f, ring.center.z + c1 * rInner);
-            VECTOR pIn2 = VGet(ring.center.x + s2 * rInner, 1.0f, ring.center.z + c2 * rInner);
-            VECTOR pOut1 = VGet(ring.center.x + s1 * rOuter, 14.0f, ring.center.z + c1 * rOuter);
-            VECTOR pOut2 = VGet(ring.center.x + s2 * rOuter, 14.0f, ring.center.z + c2 * rOuter);
-
-            // Vẽ 2 tam giác tạo nên hình thang vành khuyên
-            DrawTriangle3D(pIn1, pOut1, pOut2, waterColor, TRUE);
-            DrawTriangle3D(pIn1, pOut2, pIn2, waterColor, TRUE);
-            DrawTriangle3D(pIn1, pOut2, pOut1, waterColor, TRUE);
-            DrawTriangle3D(pIn1, pIn2, pOut2, waterColor, TRUE);
-
-            // Mép bọt nước trắng phía trước
-            ::DrawLine3D(pOut1, pOut2, foamColor);
-        }
-
-        // Vẽ vạch chỉ báo phát sáng xanh ngọc tại 2 mép khe hở để người chơi nhận diện lối thoát an toàn (Task 10 T3c)
-        if (ring.gapHalfRad > 0.0f)
-        {
-            int gapLineColor = GetColor(50, 255, 230);
-            float g1 = ring.gapCenterRad - ring.gapHalfRad;
-            float g2 = ring.gapCenterRad + ring.gapHalfRad;
-
-            VECTOR g1In = VGet(ring.center.x + std::sin(g1) * rInner, 1.0f, ring.center.z + std::cos(g1) * rInner);
-            VECTOR g1Out = VGet(ring.center.x + std::sin(g1) * rOuter, 14.0f, ring.center.z + std::cos(g1) * rOuter);
-            VECTOR g2In = VGet(ring.center.x + std::sin(g2) * rInner, 1.0f, ring.center.z + std::cos(g2) * rInner);
-            VECTOR g2Out = VGet(ring.center.x + std::sin(g2) * rOuter, 14.0f, ring.center.z + std::cos(g2) * rOuter);
-
-            ::DrawLine3D(g1In, g1Out, gapLineColor);
-            ::DrawLine3D(g2In, g2Out, gapLineColor);
-
-            VECTOR g1Top = VGet(ring.center.x + std::sin(g1) * rOuter, 28.0f, ring.center.z + std::cos(g1) * rOuter);
-            VECTOR g2Top = VGet(ring.center.x + std::sin(g2) * rOuter, 28.0f, ring.center.z + std::cos(g2) * rOuter);
-            ::DrawLine3D(g1Out, g1Top, gapLineColor);
-            ::DrawLine3D(g2Out, g2Top, gapLineColor);
-        }
-
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+        bool charging = (action_ == BossAction::TelegraphRadialTsunami);
+        float chargeRatio = charging ? std::clamp(actionTimer_ / dur, 0.0f, 1.0f) : 0.0f;
+        tsunamiWater_.Draw(charging, chargeRatio, pos_, ToWaveStates(tsunamiRings_));
     }
 
     // 3. Vẽ bóng dẹt của boss
