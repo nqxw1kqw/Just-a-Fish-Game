@@ -18,6 +18,7 @@ obj/
 # Local runtime/debug artifacts
 /Log.txt
 /Data/highscore.dat
+/Data/highscore.tmp
 /test_screenshot.png
 /fish_zoom*.png
 /Review_Bundle.md
