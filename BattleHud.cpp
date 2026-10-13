@@ -114,7 +114,8 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
         DrawBox(hx, hy, hx + fw, hy + 7, low ? GetColor(255, 160, 150) : GetColor(150, 255, 190), TRUE);
     }
     FontManager::Draw(hx + 6, hy + 3, L"HP", GetColor(15, 30, 20), FontSize::Body);
-    FontManager::DrawFormat(hx + hw - 92, hy + 3, GetColor(255, 255, 255), FontSize::Body, L"%3.0f / %3.0f", hp, maxHp);
+    FontManager::DrawFormat(hx + hw - 81, hy + 4, GetColor(0, 0, 0), FontSize::Body, L"%3.0f / %3.0f", hp, maxHp);   // bóng chữ
+    FontManager::DrawFormat(hx + hw - 82, hy + 3, GetColor(255, 255, 255), FontSize::Body, L"%3.0f / %3.0f", hp, maxHp);
 
     // Thanh EXP mảnh
     int ey = hy + hh + 8;
@@ -202,7 +203,8 @@ void BattleHud::DrawBossBar(const WhaleBoss& boss) const
     }
     // Mốc 50% (chuyển pha)
     DrawLine(x + w / 2, y - 3, x + w / 2, y + h + 3, GetColor(255, 255, 255), 2);
-    FontManager::DrawFormat(x + w / 2 - 50, y + 3, GetColor(255, 255, 255), FontSize::Body, L"%.0f / %.0f", hp, maxHp);
+    FontManager::DrawFormat(x + w - 109, y + 4, GetColor(0, 0, 0), FontSize::Body, L"%.0f / %.0f", hp, maxHp);   // bóng chữ
+    FontManager::DrawFormat(x + w - 110, y + 3, GetColor(255, 255, 255), FontSize::Body, L"%.0f / %.0f", hp, maxHp);
 }
 
 void BattleHud::DrawDamageFlash() const
