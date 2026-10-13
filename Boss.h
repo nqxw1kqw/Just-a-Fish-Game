@@ -59,6 +59,11 @@ public:
     void Update(float dt, PlayerFish& player, EnemyManager& enemies, EffectSystem& effects);
     void Draw() const;
 
+    // Render interpolation (#26)
+    void SavePrevTransform() { prevPos_ = pos_; prevYaw_ = yaw_; }
+    void BeginRenderInterp(float alpha);
+    void EndRenderInterp() { pos_ = savedPos_; yaw_ = savedYaw_; }
+
     bool TakeDamage(float dmg, EffectSystem& effects);
 
     bool IsAlive() const { return active_ && hp_ > 0.0f; }
@@ -110,6 +115,10 @@ private:
     Vec3 pos_{ 0, 0, 0 };
     Vec3 targetPos_{ 0, 0, 0 };
     float yaw_ = 0.0f;
+    Vec3 prevPos_{ 0, 0, 0 };
+    float prevYaw_ = 0.0f;
+    Vec3 savedPos_{ 0, 0, 0 };
+    float savedYaw_ = 0.0f;
     int bossTier_ = 1;
     float hpMultiplier_ = 1.0f;
     float hp_ = GameConsts::BOSS_MAX_HP;

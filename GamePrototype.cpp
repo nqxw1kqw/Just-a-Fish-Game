@@ -488,8 +488,39 @@ bool GamePrototype::UpdatePauseInput()
     return true;
 }
 
+void GamePrototype::BeginRenderInterp(float alpha)
+{
+    if (alpha < 0.0f) alpha = 0.0f;
+    if (alpha > 1.0f) alpha = 1.0f;
+    if (!renderInterpEnabled_) alpha = 1.0f; // tắt: vẽ đúng trạng thái tick mới nhất (như trước)
+
+    player_.BeginRenderInterp(alpha);
+    enemies_.BeginRenderInterp(alpha);
+    boss_.BeginRenderInterp(alpha);
+    weapon_.BeginRenderInterp(alpha);
+    cameraController_.ApplyInterpolated(alpha, effects_);
+    renderInterpActive_ = true;
+}
+
+void GamePrototype::EndRenderInterp()
+{
+    if (!renderInterpActive_) return;
+    player_.EndRenderInterp();
+    enemies_.EndRenderInterp();
+    boss_.EndRenderInterp();
+    weapon_.EndRenderInterp();
+    renderInterpActive_ = false;
+}
+
 void GamePrototype::Update(float dt)
 {
+    // Render interpolation (#26): lưu transform đầu tick (kể cả khi pause -> prev == current)
+    player_.SavePrevTransform();
+    enemies_.SavePrevTransforms();
+    boss_.SavePrevTransform();
+    weapon_.SavePrevTransforms();
+    cameraController_.SavePrev();
+
     // Màn hình tạm dừng: đóng băng toàn bộ logic game (chỉ âm thanh vẫn cập nhật fade)
     if (UpdatePauseInput())
     {
@@ -503,6 +534,12 @@ void GamePrototype::Update(float dt)
     // Chụp trạng thái bàn phím một lần cho cả tick (dùng chung cho mọi module)
     Input::Instance().Update();
     const Input& input = Input::Instance();
+
+    // F10: bật/tắt render interpolation (so sánh độ mượt)
+    if (input.IsPressed(KEY_INPUT_F10))
+    {
+        renderInterpEnabled_ = !renderInterpEnabled_;
+    }
 
     // Xử lý các phím Debug / Cheat / Camera tinh chỉnh (Phần D)
     debugController_.Update(dt, *this);

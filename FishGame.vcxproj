@@ -124,6 +124,7 @@
     <ClInclude Include="WaterSplash.h" />
     <ClInclude Include="LowPolyModels.h" />
     <ClInclude Include="TsunamiWaterEffect.h" />
+    <ClInclude Include="RenderInterp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bullet.cpp" />

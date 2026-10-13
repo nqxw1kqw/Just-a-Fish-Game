@@ -47,6 +47,11 @@ public:
     void Update(float dt);
     void Draw() const;
 
+    // Render interpolation (#26): đổi transform sang trạng thái nội suy trước Draw, khôi phục sau Draw
+    void BeginRenderInterp(float alpha);
+    void EndRenderInterp();
+    bool IsRenderInterpEnabled() const { return renderInterpEnabled_; }
+
     GameMode GetGameMode() const { return mode_; }
     void SetGameMode(GameMode mode) { mode_ = mode; }
     const HighscoreData& GetHighscore() const { return highscore_; }
@@ -58,6 +63,8 @@ public:
     bool ConsumeWindowModeToggleRequest();
 
 private:
+    bool renderInterpEnabled_ = true; // F10: bật/tắt nội suy hình ảnh
+    bool renderInterpActive_ = false;
     void StartWave(int wave);
     void StartBossFight();
     void OnWaveComplete();

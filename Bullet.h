@@ -13,6 +13,9 @@ struct Bullet
 {
     Vec3 pos{ 0, 0, 0 };
     Vec3 vel{ 0, 0, 0 };
+    Vec3 prevPos{ 0, 0, 0 };   // Render interpolation (#26)
+    Vec3 savedPos{ 0, 0, 0 };
+    bool prevActive = false;
     float life = 0.0f;
     float maxLife = GameConsts::BULLET_LIFETIME;
     float damage = GameConsts::BULLET_DAMAGE;
@@ -27,6 +30,11 @@ public:
     void Reset();
     void Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss = nullptr);
     void Draw(const PlayerFish& player) const;
+
+    // Render interpolation (#26)
+    void SavePrevTransforms();
+    void BeginRenderInterp(float alpha);
+    void EndRenderInterp();
 
     void ApplyStats(const PlayerStats& stats);
     void SetHooks(bool hasLightningChain, bool hasWaterfallCarp, bool hasShark = false);

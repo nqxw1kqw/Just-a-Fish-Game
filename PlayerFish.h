@@ -54,6 +54,11 @@ public:
     const Vec3& GetPosition() const { return pos_; }
     float GetGroundHeight() const { return 0.0f; }
     float GetHeightY() const { return pos_.y; }
+
+    // Render interpolation (#26): lưu transform tick trước, đổi sang transform nội suy khi vẽ
+    void SavePrevTransform() { prevPos_ = pos_; prevYaw_ = yaw_; }
+    void BeginRenderInterp(float alpha);
+    void EndRenderInterp() { pos_ = savedPos_; yaw_ = savedYaw_; }
     float GetBouncePhase() const { return jumpPhase_; }
     float GetJumpPhase() const { return jumpPhase_; }
     bool IsAirborne() const { return isJumping_ || pos_.y > 0.01f; }
@@ -116,6 +121,10 @@ private:
     Vec3 knockback_{ 0.0f, 0.0f, 0.0f };
     Vec3 predictedLandPos_{ 0.0f, 0.0f, 0.0f };
     float yaw_ = 0.0f;
+    Vec3 prevPos_{ 0.0f, 0.0f, 0.0f };
+    float prevYaw_ = 0.0f;
+    Vec3 savedPos_{ 0.0f, 0.0f, 0.0f };
+    float savedYaw_ = 0.0f;
     float swimTimer_ = 0.0f;
     float invulnerableTimer_ = 0.0f;
     bool isGodMode_ = false;

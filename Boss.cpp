@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include "Boss.h"
+#include "RenderInterp.h"
 #include "PlayerFish.h"
 #include "Enemy.h"
 #include "Effects.h"
@@ -878,4 +879,9 @@ const wchar_t* WhaleBoss::GetRecentAction(int indexFromNewest) const
     if (indexFromNewest < 0 || indexFromNewest >= actionHistoryCount_) return nullptr;
     int idx = (actionHistoryHead_ - 1 - indexFromNewest + ACTION_HISTORY_CAPACITY * 2) % ACTION_HISTORY_CAPACITY;
     return actionHistory_[idx];
+}
+
+void WhaleBoss::BeginRenderInterp(float alpha)
+{
+    RenderInterp::Apply(pos_, yaw_, prevPos_, prevYaw_, alpha, savedPos_, savedYaw_);
 }

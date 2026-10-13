@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdlib>
 #include "Enemy.h"
+#include "RenderInterp.h"
 #include "PlayerFish.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
@@ -1024,5 +1025,36 @@ void EnemyManager::Draw() const
         float eyeFwd = halfSize.z + 1.5f;
         Vec3 eyePos = center + Vec3{ std::sin(e.yaw) * eyeFwd, 2.0f, std::cos(e.yaw) * eyeFwd };
         Render3D::DrawOrientedBox3D(eyePos, Vec3{ 3.0f, 2.0f, 1.5f }, e.yaw, GetColor(20, 20, 20), 0, false);
+    }
+}
+
+void EnemyManager::SavePrevTransforms()
+{
+    for (auto& e : enemies_)
+    {
+        e.prevPos = e.pos;
+        e.prevYaw = e.yaw;
+        e.prevActive = e.active;
+    }
+}
+
+void EnemyManager::BeginRenderInterp(float alpha)
+{
+    for (auto& e : enemies_)
+    {
+        e.savedPos = e.pos;
+        e.savedYaw = e.yaw;
+        // Quái vừa sinh ra trong tick này: vẽ đúng vị trí hiện tại
+        if (!e.active || !e.prevActive) continue;
+        RenderInterp::Apply(e.pos, e.yaw, e.prevPos, e.prevYaw, alpha, e.savedPos, e.savedYaw);
+    }
+}
+
+void EnemyManager::EndRenderInterp()
+{
+    for (auto& e : enemies_)
+    {
+        e.pos = e.savedPos;
+        e.yaw = e.savedYaw;
     }
 }
