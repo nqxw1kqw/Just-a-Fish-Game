@@ -113,6 +113,7 @@
     <ClInclude Include="Stats.h" />
     <ClInclude Include="Card.h" />
     <ClInclude Include="CardDatabase.h" />
+    <ClInclude Include="CardFrame.h" />
     <ClInclude Include="CardManager.h" />
     <ClInclude Include="Boss.h" />
     <ClInclude Include="FontManager.h" />
@@ -134,6 +135,7 @@
     <ClCompile Include="GamePrototype.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PlayerFish.cpp" />
+    <ClCompile Include="CardFrame.cpp" />
     <ClCompile Include="CardManager.cpp" />
     <ClCompile Include="Boss.cpp" />
     <ClCompile Include="FontManager.cpp" />
