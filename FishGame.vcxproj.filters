@@ -78,6 +78,9 @@
     <ClInclude Include="WaterSplash.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="ResultScreen.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="LowPolyModels.h">
     <ClInclude Include="TsunamiWaterEffect.h">
       <Filter>System</Filter>
@@ -127,6 +130,9 @@
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="WaterSplash.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="ResultScreen.cpp">
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="LowPolyModels.cpp">
