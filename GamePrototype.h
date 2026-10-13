@@ -6,6 +6,7 @@
 #include "CardManager.h"
 #include "Boss.h"
 #include "DebugController.h"
+#include "GodRays.h"
 #include "ResultScreen.h"
 #include "CameraController.h"
 #include "UIRenderer.h"
@@ -113,6 +114,7 @@ private:
     float gameTime_ = 0.0f;
 
     DebugController debugController_;
+    GodRays godRays_; // 光の筋 (phím G bật/tắt)
     ResultScreen resultScreen_; // ゲームオーバー・勝利画面
     ResultStats BuildResultStats() const;
     UIRenderer uiRenderer_;

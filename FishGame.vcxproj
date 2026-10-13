@@ -123,6 +123,7 @@
     <ClInclude Include="SeabedFloor.h" />
     <ClInclude Include="SoundManager.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="GodRays.h" />
     <ClInclude Include="WaterSplash.h" />
     <ClInclude Include="ResultScreen.h" />
     <ClInclude Include="LowPolyModels.h" />
@@ -148,6 +149,7 @@
     <ClCompile Include="SeabedFloor.cpp" />
     <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="GodRays.cpp" />
     <ClCompile Include="WaterSplash.cpp" />
     <ClCompile Include="ResultScreen.cpp" />
     <ClCompile Include="LowPolyModels.cpp" />

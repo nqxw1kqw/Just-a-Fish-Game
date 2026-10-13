@@ -959,6 +959,12 @@ void GamePrototype::Draw() const
     // 6. Vẽ súng tự ngắm và đạn 3D
     weapon_.Draw(player_);
 
+    // 6b. 光の筋: tia sáng từ mặt nước + caustics (additive, vẽ sau vật thể đục)
+    if (state_ != GameState::Title)
+    {
+        godRays_.Draw();
+    }
+
     // Tắt sương mù trước khi vẽ số sát thương và UI 2D
     SetFogEnable(FALSE);
 
