@@ -215,87 +215,12 @@ void UIRenderer::DrawBossIntroScreen() const
 
 void UIRenderer::DrawVictoryScreen(const GamePrototype& game) const
 {
-    int sw = GameConsts::SCREEN_WIDTH;
-    int sh = GameConsts::SCREEN_HEIGHT;
-
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
-    DrawBox(0, 0, sw, sh, GetColor(10, 25, 45), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-
-    int midX = sw / 2;
-    FontManager::Draw(midX - 100, sh / 2 - 90, L"* VICTORY! *", GetColor(255, 225, 60), FontSize::Header);
-    FontManager::Draw(midX - 220, sh / 2 - 40, L"You survived 5 waves and defeated the Giant Whale!", GetColor(220, 240, 255), FontSize::Body);
-
-    int min = static_cast<int>(game.gameTime_) / 60;
-    int sec = static_cast<int>(game.gameTime_) % 60;
-    FontManager::DrawFormat(midX - 120, sh / 2 + 10, GetColor(160, 220, 255), FontSize::Body, L"Survival Time: %02d:%02d", min, sec);
-    FontManager::DrawFormat(midX - 120, sh / 2 + 35, GetColor(160, 220, 255), FontSize::Body, L"Fish Level Achieved: Lv.%d", game.player_.GetLevel());
-
-    if (game.debugController_.WasDebugUsed())
-    {
-        FontManager::Draw(midX - 90, sh / 2 + 65, L"[DEBUG MODE USED]", GetColor(255, 90, 90), FontSize::Body);
-    }
-
-    FontManager::Draw(midX - 160, sh / 2 + 100, L"Press [R] to start a new swim!", GetColor(255, 255, 255), FontSize::Body);
+    game.resultScreen_.Draw(game.BuildResultStats());
 }
 
 void UIRenderer::DrawGameOverScreen(const GamePrototype& game) const
 {
-    int sw = GameConsts::SCREEN_WIDTH;
-    int sh = GameConsts::SCREEN_HEIGHT;
-
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
-    DrawBox(0, 0, sw, sh, GetColor(35, 10, 10), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-
-    int midX = sw / 2;
-    FontManager::Draw(midX - 160, sh / 2 - 90, L"FISH STRANDED! (GAME OVER)", GetColor(255, 60, 60), FontSize::Header);
-
-    if (game.mode_ == GameMode::Endless)
-    {
-        FontManager::Draw(midX - 95, sh / 2 - 50, L"[ENDLESS MODE RUN]", GetColor(255, 180, 80), FontSize::Medium);
-        FontManager::DrawFormat(midX - 120, sh / 2 - 20, GetColor(255, 230, 200), FontSize::Body,
-            L"Wave Reached: Wave %d", game.currentWave_);
-        FontManager::DrawFormat(midX - 120, sh / 2 + 5, GetColor(255, 230, 200), FontSize::Body,
-            L"Total Enemies Defeated: %d", game.GetTotalKills());
-
-        int min = static_cast<int>(game.gameTime_) / 60;
-        int sec = static_cast<int>(game.gameTime_) % 60;
-        FontManager::DrawFormat(midX - 120, sh / 2 + 30, GetColor(255, 230, 200), FontSize::Body,
-            L"Survival Time: %02d:%02d", min, sec);
-
-        const auto& hs = game.GetHighscore();
-        int hsMin = static_cast<int>(hs.maxSurvivalTime) / 60;
-        int hsSec = static_cast<int>(hs.maxSurvivalTime) % 60;
-        FontManager::DrawFormat(midX - 150, sh / 2 + 60, GetColor(255, 215, 80), FontSize::Body,
-            L"Best Record: Wave %d | Kills: %d | Time: %02d:%02d",
-            hs.maxWave, hs.maxKills, hsMin, hsSec);
-
-        if (game.debugController_.WasDebugUsed())
-        {
-            FontManager::Draw(midX - 150, sh / 2 + 90, L"[DEBUG MODE USED - RECORD NOT SAVED]", GetColor(255, 90, 90), FontSize::Body);
-        }
-
-        FontManager::Draw(midX - 160, sh / 2 + 125, L"Press [R] to retry  |  [T] to Title", GetColor(255, 255, 255), FontSize::Body);
-    }
-    else
-    {
-        if (game.state_ == GameState::Boss)
-        {
-            FontManager::Draw(midX - 140, sh / 2 - 25, L"Fell before: Giant Whale Boss", GetColor(255, 180, 180), FontSize::Body);
-        }
-        else
-        {
-            FontManager::DrawFormat(midX - 110, sh / 2 - 25, GetColor(255, 180, 180), FontSize::Body, L"Fell at: Wave %d / 5", game.currentWave_);
-        }
-
-        if (game.debugController_.WasDebugUsed())
-        {
-            FontManager::Draw(midX - 35, sh / 2 + 10, L"[DEBUG]", GetColor(255, 90, 90), FontSize::Body);
-        }
-
-        FontManager::Draw(midX - 160, sh / 2 + 50, L"Press [R] to revive and try again! | [T] Title", GetColor(255, 255, 255), FontSize::Body);
-    }
+    game.resultScreen_.Draw(game.BuildResultStats());
 }
 
 void UIRenderer::DrawPauseScreen(const GamePrototype& game) const

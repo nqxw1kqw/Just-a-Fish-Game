@@ -6,6 +6,7 @@
 #include "CardManager.h"
 #include "Boss.h"
 #include "DebugController.h"
+#include "ResultScreen.h"
 #include "CameraController.h"
 #include "UIRenderer.h"
 #include "Consts.h"
@@ -105,6 +106,8 @@ private:
     float gameTime_ = 0.0f;
 
     DebugController debugController_;
+    ResultScreen resultScreen_; // ゲームオーバー・勝利画面
+    ResultStats BuildResultStats() const;
     UIRenderer uiRenderer_;
 
     // Màn hình tạm dừng (Task #13)

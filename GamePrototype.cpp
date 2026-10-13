@@ -553,6 +553,7 @@ void GamePrototype::Update(float dt)
     {
         if (player_.GetHp() <= 0.0f)
         {
+            resultScreen_.Enter(false, state_ == GameState::Boss || state_ == GameState::BossIntro);
             state_ = GameState::GameOver;
             effects_.AddTrauma(0.85f);
             SoundManager::Instance().PlayBGM(BgmId::GameOver, true);
@@ -566,13 +567,14 @@ void GamePrototype::Update(float dt)
 
     if (state_ == GameState::GameOver || state_ == GameState::Victory)
     {
-        if (input.IsPressed(KEY_INPUT_R))
+        ResultScreen::Action action = resultScreen_.Update(dt, input);
+        if (action == ResultScreen::Action::Retry)
         {
             Reset();
             StartWave(1);
             return;
         }
-        if (input.IsPressed(KEY_INPUT_T))
+        if (action == ResultScreen::Action::Title)
         {
             Reset();
             state_ = GameState::Title;
@@ -804,6 +806,7 @@ void GamePrototype::Update(float dt)
                 if (mode_ == GameMode::Classic)
                 {
                     state_ = GameState::Victory;
+                    resultScreen_.Enter(true, false);
                     effects_.AddTrauma(0.7f);
                     enemies_.KillAll(effects_);
                     SoundManager::Instance().PlayBGM(BgmId::Victory, true);
@@ -963,4 +966,21 @@ void GamePrototype::Draw() const
     {
         uiRenderer_.DrawPauseScreen(*this);
     }
+}
+
+ResultStats GamePrototype::BuildResultStats() const
+{
+    ResultStats s;
+    s.victory = (state_ == GameState::Victory);
+    s.endless = (mode_ == GameMode::Endless);
+    s.diedAtBoss = resultScreen_.DiedAtBoss();
+    s.debugUsed = debugController_.WasDebugUsed();
+    s.time = gameTime_;
+    s.kills = GetTotalKills();
+    s.level = player_.GetLevel();
+    s.wave = currentWave_;
+    s.bestWave = highscore_.maxWave;
+    s.bestKills = highscore_.maxKills;
+    s.bestTime = highscore_.maxSurvivalTime;
+    return s;
 }
