@@ -9,6 +9,7 @@
 #include "Render3DUtil.h"
 #include "DxLib.h"
 #include "SoundManager.h"
+#include "Input.h"
 
 void PlayerFish::Init()
 {
@@ -386,10 +387,9 @@ void PlayerFish::Update(float dt, EffectSystem& effects)
     if (CheckHitKey(KEY_INPUT_D) || CheckHitKey(KEY_INPUT_RIGHT)) inputDir.x += 1.0f;
 
     bool hasMoveInput = (inputDir.LengthSq() > 0.01f);
-    static bool spacePrev = false;
-    bool spaceNow = (CheckHitKey(KEY_INPUT_SPACE) != 0);
-    bool spaceJustPressed = (spaceNow && !spacePrev);
-    spacePrev = spaceNow;
+    // Cạnh "vừa nhấn" lấy từ trạng thái phím chung: Space dùng để bắt đầu game ở màn Title
+    // sẽ không bị coi là cú nhảy ở tick đầu tiên của wave
+    bool spaceJustPressed = Input::Instance().IsPressed(KEY_INPUT_SPACE);
 
     // 1. TRẠNG THÁI Ở DƯỚI ĐẤT / BƠI (J1, J2, J4)
     if (!isJumping_)

@@ -115,6 +115,7 @@
     <ClInclude Include="CameraController.h" />
     <ClInclude Include="UIRenderer.h" />
     <ClInclude Include="SoundManager.h" />
+    <ClInclude Include="Input.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bullet.cpp" />
@@ -130,6 +131,7 @@
     <ClCompile Include="CameraController.cpp" />
     <ClCompile Include="UIRenderer.cpp" />
     <ClCompile Include="SoundManager.cpp" />
+    <ClCompile Include="Input.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

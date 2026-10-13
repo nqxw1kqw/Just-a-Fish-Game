@@ -60,6 +60,7 @@ private:
 
     void LoadHighscore();
     void SaveHighscore();
+    void SaveHighscoreIfEndlessRun();
 
     // Hỗ trợ Debug (Phần D)
     void SkipCurrentWave();

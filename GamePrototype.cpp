@@ -5,26 +5,88 @@
 #include <algorithm>
 #include <cmath>
 #include <atomic>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
 #include "GamePrototype.h"
 #include "DxConv.h"
 #include "Render3DUtil.h"
 #include "DxLib.h"
 #include "FontManager.h"
 #include "SoundManager.h"
+#include "Input.h"
+
+namespace
+{
+    // Định dạng file kỷ lục v2: có số phiên bản + checksum.
+    // File cũ (v1) chỉ là HighscoreData thô (16 byte) - vẫn đọc được để tương thích ngược.
+    constexpr unsigned int HIGHSCORE_MAGIC = 0x4F444F52; // 'ODOR'
+    constexpr unsigned int HIGHSCORE_VERSION = 2;
+    const wchar_t* const HIGHSCORE_PATH = L"Data/highscore.dat";
+    const wchar_t* const HIGHSCORE_TMP_PATH = L"Data/highscore.tmp";
+
+    struct HighscoreFileV2
+    {
+        unsigned int magic = HIGHSCORE_MAGIC;
+        unsigned int version = HIGHSCORE_VERSION;
+        int maxWave = 0;
+        int maxKills = 0;
+        float maxSurvivalTime = 0.0f;
+        unsigned int checksum = 0; // FNV-1a của toàn bộ các byte phía trước
+    };
+    static_assert(sizeof(HighscoreFileV2) != sizeof(HighscoreData), "V1/V2 phải khác kích thước để phân biệt");
+
+    unsigned int ComputeHighscoreChecksum(const HighscoreFileV2& f)
+    {
+        const unsigned char* p = reinterpret_cast<const unsigned char*>(&f);
+        const size_t len = offsetof(HighscoreFileV2, checksum);
+        unsigned int h = 2166136261u;
+        for (size_t i = 0; i < len; ++i)
+        {
+            h ^= p[i];
+            h *= 16777619u;
+        }
+        return h;
+    }
+}
 
 void GamePrototype::LoadHighscore()
 {
     highscore_ = HighscoreData{};
     FILE* fp = nullptr;
-    if (fopen_s(&fp, "Data/highscore.dat", "rb") == 0 && fp)
+    if (_wfopen_s(&fp, HIGHSCORE_PATH, L"rb") != 0 || !fp) return;
+
+    // Đọc tối đa sizeof(V2) + 1 byte để biết chính xác kích thước file
+    unsigned char buf[sizeof(HighscoreFileV2) + 1] = {};
+    size_t size = fread(buf, 1, sizeof(buf), fp);
+    fclose(fp);
+
+    if (size == sizeof(HighscoreFileV2))
     {
+        HighscoreFileV2 f{};
+        memcpy(&f, buf, sizeof(f));
+        if (f.magic == HIGHSCORE_MAGIC && f.version == HIGHSCORE_VERSION &&
+            f.checksum == ComputeHighscoreChecksum(f))
+        {
+            highscore_.maxWave = f.maxWave;
+            highscore_.maxKills = f.maxKills;
+            highscore_.maxSurvivalTime = f.maxSurvivalTime;
+        }
+        else
+        {
+            AppLogAdd(L"[HIGHSCORE] File kỷ lục không hợp lệ (sai phiên bản/checksum), bỏ qua\n");
+        }
+    }
+    else if (size == sizeof(HighscoreData))
+    {
+        // Tương thích ngược: file v1 cũ (struct thô, không checksum)
         HighscoreData temp{};
-        size_t read = fread(&temp, sizeof(HighscoreData), 1, fp);
-        if (read == 1 && temp.magic == 0x4F444F52)
+        memcpy(&temp, buf, sizeof(temp));
+        if (temp.magic == HIGHSCORE_MAGIC)
         {
             highscore_ = temp;
+            AppLogAdd(L"[HIGHSCORE] Đã đọc file kỷ lục định dạng cũ (v1)\n");
         }
-        fclose(fp);
     }
 }
 
@@ -54,14 +116,43 @@ void GamePrototype::SaveHighscore()
     if (updated)
     {
         CreateDirectory(L"Data", NULL);
+
+        HighscoreFileV2 f{};
+        f.maxWave = highscore_.maxWave;
+        f.maxKills = highscore_.maxKills;
+        f.maxSurvivalTime = highscore_.maxSurvivalTime;
+        f.checksum = ComputeHighscoreChecksum(f);
+
+        // Ghi an toàn: ghi ra file tạm, kiểm tra lỗi, rồi mới thay thế file thật
         FILE* fp = nullptr;
-        if (fopen_s(&fp, "Data/highscore.dat", "wb") == 0 && fp)
+        if (_wfopen_s(&fp, HIGHSCORE_TMP_PATH, L"wb") != 0 || !fp)
         {
-            fwrite(&highscore_, sizeof(HighscoreData), 1, fp);
-            fclose(fp);
+            AppLogAdd(L"[HIGHSCORE] Không mở được file tạm để ghi\n");
+            return;
+        }
+        bool ok = (fwrite(&f, sizeof(f), 1, fp) == 1);
+        ok = (fflush(fp) == 0) && ok;
+        ok = (fclose(fp) == 0) && ok;
+
+        if (ok && MoveFileExW(HIGHSCORE_TMP_PATH, HIGHSCORE_PATH, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+        {
             AppLogAdd(L"[HIGHSCORE] Saved: Wave=%d, Kills=%d, Time=%.1fs\n",
                 highscore_.maxWave, highscore_.maxKills, highscore_.maxSurvivalTime);
         }
+        else
+        {
+            DeleteFileW(HIGHSCORE_TMP_PATH);
+            AppLogAdd(L"[HIGHSCORE] Lưu kỷ lục thất bại, giữ nguyên file cũ\n");
+        }
+    }
+}
+
+void GamePrototype::SaveHighscoreIfEndlessRun()
+{
+    // Chỉ lưu khi đang có một ván Endless (không lưu ở màn Title)
+    if (mode_ == GameMode::Endless && state_ != GameState::Title)
+    {
+        SaveHighscore();
     }
 }
 
@@ -80,6 +171,9 @@ void GamePrototype::Init()
 
 void GamePrototype::Shutdown()
 {
+    // Thoát game (ESC / đóng cửa sổ) giữa ván Endless: vẫn lưu kỷ lục
+    SaveHighscoreIfEndlessRun();
+
     enemies_.Shutdown();
     cardManager_.Shutdown();
 }
@@ -102,7 +196,8 @@ void GamePrototype::Reset()
 
     ReapplyAllStats();
 
-    StartWave(1);
+    // Lưu ý: Reset() chỉ dọn trạng thái, không tự bắt đầu wave.
+    // Người gọi tự gọi StartWave(1) (tránh gọi StartWave(1) hai lần).
 
     cameraController_.Reset(player_.GetPosition());
 
@@ -293,12 +388,9 @@ void GamePrototype::Update(float dt)
     // Cập nhật hệ thống âm thanh (Fade BGM mỗi tick 120Hz)
     SoundManager::Instance().Update(dt);
 
-    // Phím Reset (R)
-    if (CheckHitKey(KEY_INPUT_R))
-    {
-        Reset();
-        return;
-    }
+    // Chụp trạng thái bàn phím một lần cho cả tick (dùng chung cho mọi module)
+    Input::Instance().Update();
+    const Input& input = Input::Instance();
 
     // Xử lý các phím Debug / Cheat / Camera tinh chỉnh (Phần D)
     debugController_.Update(dt, *this);
@@ -308,16 +400,15 @@ void GamePrototype::Update(float dt)
     {
         SoundManager::Instance().PlayBGM(BgmId::Title, true);
 
-        static bool upPrev = false, downPrev = false, k1Prev = false, k2Prev = false;
-        bool upNow = (CheckHitKey(KEY_INPUT_UP) || CheckHitKey(KEY_INPUT_W)) != 0;
-        bool downNow = (CheckHitKey(KEY_INPUT_DOWN) || CheckHitKey(KEY_INPUT_S)) != 0;
-        bool k1Now = (CheckHitKey(KEY_INPUT_1) || CheckHitKey(KEY_INPUT_NUMPAD1)) != 0;
-        bool k2Now = (CheckHitKey(KEY_INPUT_2) || CheckHitKey(KEY_INPUT_NUMPAD2)) != 0;
+        bool upPressed = input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W);
+        bool downPressed = input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S);
+        bool k1Pressed = input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1);
+        bool k2Pressed = input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2);
 
-        if (upNow && !upPrev) titleSelectedMode_ = 0;
-        if (downNow && !downPrev) titleSelectedMode_ = 1;
+        if (upPressed) titleSelectedMode_ = 0;
+        if (downPressed) titleSelectedMode_ = 1;
 
-        if (k1Now && !k1Prev)
+        if (k1Pressed)
         {
             mode_ = GameMode::Classic;
             titleSelectedMode_ = 0;
@@ -325,7 +416,7 @@ void GamePrototype::Update(float dt)
             StartWave(1);
             return;
         }
-        if (k2Now && !k2Prev)
+        if (k2Pressed)
         {
             mode_ = GameMode::Endless;
             titleSelectedMode_ = 1;
@@ -333,9 +424,7 @@ void GamePrototype::Update(float dt)
             StartWave(1);
             return;
         }
-        upPrev = upNow; downPrev = downNow; k1Prev = k1Now; k2Prev = k2Now;
-
-        if (CheckHitKey(KEY_INPUT_SPACE) || CheckHitKey(KEY_INPUT_RETURN))
+        if (input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
         {
             mode_ = (titleSelectedMode_ == 1) ? GameMode::Endless : GameMode::Classic;
             Reset();
@@ -365,13 +454,13 @@ void GamePrototype::Update(float dt)
 
     if (state_ == GameState::GameOver || state_ == GameState::Victory)
     {
-        if (CheckHitKey(KEY_INPUT_R))
+        if (input.IsPressed(KEY_INPUT_R))
         {
             Reset();
             StartWave(1);
             return;
         }
-        if (CheckHitKey(KEY_INPUT_T))
+        if (input.IsPressed(KEY_INPUT_T))
         {
             Reset();
             state_ = GameState::Title;
@@ -381,6 +470,16 @@ void GamePrototype::Update(float dt)
 
         // Vẫn cập nhật hạt hiệu ứng và camera khi ở màn hình kết thúc
         effects_.Update(dt, player_.GetPosition());
+        return;
+    }
+
+    // Phím R: chơi lại từ wave 1 (cùng chế độ) - chỉ trong các trạng thái đang chơi,
+    // chỉ khi vừa nhấn (giữ phím không reset liên tục). Lưu kỷ lục Endless trước khi reset.
+    if (input.IsPressed(KEY_INPUT_R))
+    {
+        SaveHighscoreIfEndlessRun();
+        Reset();
+        StartWave(1);
         return;
     }
 
