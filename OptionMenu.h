@@ -1,4 +1,8 @@
 #pragma once
+#include "Slider.h"
+#include "SoundManager.h"
+
+
 class OptionMenu
 {
 public:
@@ -14,7 +18,13 @@ public:
 	//Scene
 	bool GoTitle() const { return goTitle; }
 
+
+	
+
 private:
+	int OptionBgmHandle = -1;
+
+
 	bool finish{false};
 
 	bool goTitle{ false };
@@ -25,8 +35,16 @@ private:
 	char keyState[256] = { 0 };
 	char oldKeyState[256] = { 0 };
 
+	//Slider slider;
+	Slider sliders[2];
 
 
+
+	int mousePosX;
+	int mousePosY;
+
+	float bgmV = 100;
+	float seV = 100;
 
 };
 

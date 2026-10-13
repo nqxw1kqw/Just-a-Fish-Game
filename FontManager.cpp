@@ -15,6 +15,13 @@ void FontManager::Init()
     int addRes = AddFontResourceExW(L"Data/Font/Yabikoma-e9W16.otf", FR_PRIVATE, NULL);
     fontLoaded_ = (addRes > 0);
 
+    int addRes2 = AddFontResourceExW(L"Data/Font/AkazukiPOP.otf", FR_PRIVATE, NULL);
+    fontLoaded_ = (addRes2 > 0);
+
+    const wchar_t* fontName2 = fontLoaded_ ? L"AkazukiPOP" : L"Consolas";
+
+
+
     const wchar_t* fontName = fontLoaded_ ? L"Yabikoma" : L"Consolas";
 
     // Khởi tạo các cấp độ kích thước font

@@ -1,4 +1,6 @@
 #include "Slider.h"
+#include "DxPlus//DxPlus.h"
+#include "Vector3.h"
 
 Slider::Slider() {
 
@@ -68,40 +70,113 @@ void Slider::SetFillColor(int setFillColor)
 	fillColor = setFillColor;
 }
 
-void Slider::Update(int mousePosX, int mousePosY, bool icClick)
+//void Slider::Update(int mousePosX, int mousePosY, bool isClick)
+//{
+//	if (PixelAndBoxHit(
+//		mousePosX, mousePosY,
+//		handlePosition.x - handleSize.x,
+//		handlePosition.y - handleSize.y,
+//		handleSize.x * 2,
+//		handleSize.y * 2
+//	))
+//	{
+//		isHandleMove = true;
+//	}
+//
+//	else if (PixelAndBoxHit(
+//		mousePosX, mousePosY,
+//		handlePosition.x - handleSize.x,
+//		handlePosition.y - handleSize.y,
+//		handleSize.x * 2,
+//		handleSize.y * 2
+//	))
+//	{
+//		isHandleMove = false;
+//	}
+//
+//	if (isHandleMove == true) {
+//
+//		handlePosition.x = mousePosX;
+//
+//		if (handlePosition.x > position.x + backSize.x) handlePosition.x = position.x + backSize.x;
+//		else if (handlePosition.x < position.x - backSize.x) handlePosition.x = position.x - backSize.x;
+//
+//
+//		value = (handlePosition.x - (position.x - backSize.x)) / (backSize.x * 2.0f) * (maxValue - minValue) + minValue;
+//
+//
+//		if (value < minValue) value = minValue;
+//		else if (value > maxValue) value = maxValue;
+//
+//	}
+//	else {
+//
+//		handlePosition = {
+//				(position.x - backSize.x) + (value - minValue) / (maxValue - minValue) * (backSize.x * 2),
+//				position.y,
+//		};
+//	}
+//}
+
+void Slider::Update(int mousePosX, int mousePosY, bool isClick)
 {
-	if (PixelAndBoxHit(mousePosX, mousePosY, handlePosition.x, handlePosition.y, handleSize.x, handleSize.y) == true && isClick == true) {
+    // ハンドルの当たり判定
+    bool hitHandle = PixelAndBoxHit(
+        mousePosX, mousePosY,
+        handlePosition.x - handleSize.x,
+        handlePosition.y - handleSize.y,
+        handleSize.x * 2,
+        handleSize.y * 2
+    );
 
-		isHandleMove = true;
-	}
-	else if (PixelAndBoxHit(mousePosX, mousePosY, position.x, position.y, backSize.x + 100, backSize.y + 50) == false || isClick == false) { //Sliderよりも大きく指定することで、外側でもある程度の距離を対応できる
+    // バー全体の当たり判定
+    bool hitBar = PixelAndBoxHit(
+        mousePosX, mousePosY,
+        position.x - backSize.x,
+        position.y - backSize.y,
+        backSize.x * 2,
+        backSize.y * 2
+    );
 
-		isHandleMove = false;
-	}
+    // ハンドルを掴んだ瞬間
+    if (hitHandle && isClick)
+    {
+        isHandleMove = true;
+    }
+    // クリックを離した or バーの外に出たら解除
+    else if (!isClick || !hitBar)
+    {
+        isHandleMove = false;
+    }
 
-	if (isHandleMove == true) {
+    // ハンドル移動中
+    if (isHandleMove)
+    {
+        handlePosition.x = mousePosX;
 
-		handlePosition.x = mousePosX;
+        // 範囲制限
+        if (handlePosition.x > position.x + backSize.x) handlePosition.x = position.x + backSize.x;
+        if (handlePosition.x < position.x - backSize.x) handlePosition.x = position.x - backSize.x;
 
-		if (handlePosition.x > position.x + backSize.x) handlePosition.x = position.x + backSize.x;
-		else if (handlePosition.x < position.x - backSize.x) handlePosition.x = position.x - backSize.x;
+        // 値計算
+        value = (handlePosition.x - (position.x - backSize.x))
+            / (backSize.x * 2.0f) * (maxValue - minValue) + minValue;
 
+        if (value < minValue) value = minValue;
+        if (value > maxValue) value = maxValue;
+    }
+    else
+    {
+        // 値からハンドル位置を逆算
+        handlePosition.x =
+            (position.x - backSize.x)
+            + (value - minValue) / (maxValue - minValue) * (backSize.x * 2);
 
-		value = (handlePosition.x - (position.x - backSize.x)) / (backSize.x * 2.0f) * (maxValue - minValue) + minValue;
-
-
-		if (value < minValue) value = minValue;
-		else if (value > maxValue) value = maxValue;
-
-	}
-	else {
-
-		handlePosition = {
-				(position.x - backSize.x) + (value - minValue) / (maxValue - minValue) * (backSize.x * 2),
-				position.y,
-		};
-	}
+        handlePosition.y = position.y;
+    }
 }
+
+
 
 void Slider::Draw()
 {
@@ -119,9 +194,20 @@ void Slider::Draw()
 
 	if (GetHandleEnabled()) {
 
-		DrawBox(
+		/*DrawBox(
 			handlePosition.x - handleSize.x, handlePosition.y - handleSize.y,
 			handlePosition.x + handleSize.x, handlePosition.y + handleSize.y,
-			handleColor, true);
+			handleColor, true);*/
+        
+
+        int radius = (int)handleSize.x;
+
+        DrawCircle(
+            (int)handlePosition.x,
+            (int)handlePosition.y,
+            radius,
+            handleColor,
+            true
+        );
 	}
 }

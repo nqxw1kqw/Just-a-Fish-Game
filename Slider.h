@@ -10,6 +10,8 @@ public:
 	void SetMaxValue(float setMaxValue);
 	void SetMinValue(float setMinValue);
 	float GetValue() { return value; }
+	float GetMaxValue() { return maxValue; }
+	float GetMinValue() { return minValue; }
 	
 
 	void SetPosition(float setPositionX, float setPositionY);
@@ -24,7 +26,7 @@ public:
 	void Update(int mousePosX, int mousePosY, bool icClick);
 	void Draw();
 
-	bool PixelAndBoxHit(float pixelX, float pixelY, float boxPosX, float boxPosY, float boxWidth, float boxHeight) {
+	/*bool PixelAndBoxHit(float pixelX, float pixelY, float boxPosX, float boxPosY, float boxWidth, float boxHeight) {
 
 		float vx = boxPosX - pixelX;
 		float vy = boxPosY - pixelY;
@@ -37,7 +39,21 @@ public:
 		}
 
 		return false;
+	}*/
+
+	bool PixelAndBoxHit(float pixelX, float pixelY,
+		float boxPosX, float boxPosY,
+		float boxWidth, float boxHeight)
+	{
+		float vx = boxPosX - pixelX;
+		float vy = boxPosY - pixelY;
+
+		if (vx < 0) vx *= -1;
+		if (vy < 0) vy *= -1;
+
+		return (vx < boxWidth && vy < boxHeight);
 	}
+
 
 private:
 
@@ -55,6 +71,8 @@ private:
 	float value;
 	float maxValue = 1;
 	float minValue = 0;
+
+	bool isHandleMove = false;
 
 
 
