@@ -127,6 +127,7 @@
     <ClInclude Include="ResultScreen.h" />
     <ClInclude Include="LowPolyModels.h" />
     <ClInclude Include="TsunamiWaterEffect.h" />
+    <ClInclude Include="BubbleSystem.h" />
     <ClInclude Include="RenderInterp.h" />
   </ItemGroup>
   <ItemGroup>
@@ -150,6 +151,7 @@
     <ClCompile Include="ResultScreen.cpp" />
     <ClCompile Include="LowPolyModels.cpp" />
     <ClCompile Include="TsunamiWaterEffect.cpp" />
+    <ClCompile Include="BubbleSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
