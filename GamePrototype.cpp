@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include "GamePrototype.h"
+#include "SeabedFloor.h"
 #include "LowPolyModels.h"
 #include "DxConv.h"
 #include "Render3DUtil.h"
@@ -488,8 +489,39 @@ bool GamePrototype::UpdatePauseInput()
     return true;
 }
 
+void GamePrototype::BeginRenderInterp(float alpha)
+{
+    if (alpha < 0.0f) alpha = 0.0f;
+    if (alpha > 1.0f) alpha = 1.0f;
+    if (!renderInterpEnabled_) alpha = 1.0f; // tắt: vẽ đúng trạng thái tick mới nhất (như trước)
+
+    player_.BeginRenderInterp(alpha);
+    enemies_.BeginRenderInterp(alpha);
+    boss_.BeginRenderInterp(alpha);
+    weapon_.BeginRenderInterp(alpha);
+    cameraController_.ApplyInterpolated(alpha, effects_);
+    renderInterpActive_ = true;
+}
+
+void GamePrototype::EndRenderInterp()
+{
+    if (!renderInterpActive_) return;
+    player_.EndRenderInterp();
+    enemies_.EndRenderInterp();
+    boss_.EndRenderInterp();
+    weapon_.EndRenderInterp();
+    renderInterpActive_ = false;
+}
+
 void GamePrototype::Update(float dt)
 {
+    // Render interpolation (#26): lưu transform đầu tick (kể cả khi pause -> prev == current)
+    player_.SavePrevTransform();
+    enemies_.SavePrevTransforms();
+    boss_.SavePrevTransform();
+    weapon_.SavePrevTransforms();
+    cameraController_.SavePrev();
+
     // Màn hình tạm dừng: đóng băng toàn bộ logic game (chỉ âm thanh vẫn cập nhật fade)
     if (UpdatePauseInput())
     {
@@ -503,6 +535,12 @@ void GamePrototype::Update(float dt)
     // Chụp trạng thái bàn phím một lần cho cả tick (dùng chung cho mọi module)
     Input::Instance().Update();
     const Input& input = Input::Instance();
+
+    // F10: bật/tắt render interpolation (so sánh độ mượt)
+    if (input.IsPressed(KEY_INPUT_F10))
+    {
+        renderInterpEnabled_ = !renderInterpEnabled_;
+    }
 
     // Xử lý các phím Debug / Cheat / Camera tinh chỉnh (Phần D)
     debugController_.Update(dt, *this);
@@ -553,6 +591,7 @@ void GamePrototype::Update(float dt)
     {
         if (player_.GetHp() <= 0.0f)
         {
+            resultScreen_.Enter(false, state_ == GameState::Boss || state_ == GameState::BossIntro);
             state_ = GameState::GameOver;
             effects_.AddTrauma(0.85f);
             SoundManager::Instance().PlayBGM(BgmId::GameOver, true);
@@ -566,13 +605,14 @@ void GamePrototype::Update(float dt)
 
     if (state_ == GameState::GameOver || state_ == GameState::Victory)
     {
-        if (input.IsPressed(KEY_INPUT_R))
+        ResultScreen::Action action = resultScreen_.Update(dt, input);
+        if (action == ResultScreen::Action::Retry)
         {
             Reset();
             StartWave(1);
             return;
         }
-        if (input.IsPressed(KEY_INPUT_T))
+        if (action == ResultScreen::Action::Title)
         {
             Reset();
             state_ = GameState::Title;
@@ -804,6 +844,7 @@ void GamePrototype::Update(float dt)
                 if (mode_ == GameMode::Classic)
                 {
                     state_ = GameState::Victory;
+                    resultScreen_.Enter(true, false);
                     effects_.AddTrauma(0.7f);
                     enemies_.KillAll(effects_);
                     SoundManager::Instance().PlayBGM(BgmId::Victory, true);
@@ -839,21 +880,24 @@ void GamePrototype::DrawArena() const
 {
     float half = GameConsts::ARENA_HALF_SIZE;
 
-    // 1. Mặt sàn chính
-    VECTOR floorP1 = VGet(-half, -2.0f, -half);
-    VECTOR floorP2 = VGet(half, 0.0f, half);
-    Render3D::DrawBox3D(floorP1, floorP2, GetColor(18, 26, 42), TRUE);
+    // 1. Mặt sàn chính: 海底の砂テクスチャ (fallback: hộp màu + lưới cũ nếu thiếu file)
+    if (!SeabedFloor::Draw(half))
+    {
+        VECTOR floorP1 = VGet(-half, -2.0f, -half);
+        VECTOR floorP2 = VGet(half, 0.0f, half);
+        Render3D::DrawBox3D(floorP1, floorP2, GetColor(18, 26, 42), TRUE);
 
-    // 2. Lưới ô vuông 3D trên sàn (Grid)
-    int gridColor = GetColor(35, 55, 85);
-    float step = 100.0f;
-    for (float x = -half; x <= half; x += step)
-    {
-        DrawLine3D(VGet(x, 0.2f, -half), VGet(x, 0.2f, half), gridColor);
-    }
-    for (float z = -half; z <= half; z += step)
-    {
-        DrawLine3D(VGet(-half, 0.2f, z), VGet(half, 0.2f, z), gridColor);
+        // 2. Lưới ô vuông 3D trên sàn (Grid)
+        int gridColor = GetColor(35, 55, 85);
+        float step = 100.0f;
+        for (float x = -half; x <= half; x += step)
+        {
+            DrawLine3D(VGet(x, 0.2f, -half), VGet(x, 0.2f, half), gridColor);
+        }
+        for (float z = -half; z <= half; z += step)
+        {
+            DrawLine3D(VGet(-half, 0.2f, z), VGet(half, 0.2f, z), gridColor);
+        }
     }
 
     // 3. Đường viền tâm sàn đấu
@@ -963,4 +1007,21 @@ void GamePrototype::Draw() const
     {
         uiRenderer_.DrawPauseScreen(*this);
     }
+}
+
+ResultStats GamePrototype::BuildResultStats() const
+{
+    ResultStats s;
+    s.victory = (state_ == GameState::Victory);
+    s.endless = (mode_ == GameMode::Endless);
+    s.diedAtBoss = resultScreen_.DiedAtBoss();
+    s.debugUsed = debugController_.WasDebugUsed();
+    s.time = gameTime_;
+    s.kills = GetTotalKills();
+    s.level = player_.GetLevel();
+    s.wave = currentWave_;
+    s.bestWave = highscore_.maxWave;
+    s.bestKills = highscore_.maxKills;
+    s.bestTime = highscore_.maxSurvivalTime;
+    return s;
 }

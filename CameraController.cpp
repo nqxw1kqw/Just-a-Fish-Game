@@ -1,4 +1,5 @@
 #include "CameraController.h"
+#include "RenderInterp.h"
 #include "Effects.h"
 #include "DxConv.h"
 #include "DxLib.h"
@@ -48,6 +49,24 @@ void CameraController::Update(float dt, const Vec3& targetPos, const EffectSyste
     DxLib::SetCameraPositionAndTargetAndUpVec(
         DxConv::ToVECTOR(camEye_ + shake),
         DxConv::ToVECTOR(camTarget_ + shake),
+        VGet(0.0f, 1.0f, 0.0f)
+    );
+}
+
+void CameraController::ApplyInterpolated(float alpha, const EffectSystem& effects) const
+{
+    Vec3 eye = camEye_;
+    Vec3 target = camTarget_;
+    if (!RenderInterp::ShouldSnap(prevTarget_, camTarget_))
+    {
+        eye = RenderInterp::Lerp(prevEye_, camEye_, alpha);
+        target = RenderInterp::Lerp(prevTarget_, camTarget_, alpha);
+    }
+    Vec3 shake = effects.GetCameraShakeOffset(camShakeScale_);
+    DxLib::SetCameraNearFar(5.0f, 4000.0f);
+    DxLib::SetCameraPositionAndTargetAndUpVec(
+        DxConv::ToVECTOR(eye + shake),
+        DxConv::ToVECTOR(target + shake),
         VGet(0.0f, 1.0f, 0.0f)
     );
 }

@@ -9,6 +9,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "FontManager.h"
+#include "CardFrame.h"
 #include "Input.h"
 
 void CardManager::Init()
@@ -381,43 +382,23 @@ void CardManager::Draw() const
     int imgSize = GameConsts::CARD_IMAGE_SIZE;
     int totalW = offeredCount_ * cardW + (offeredCount_ - 1) * spacing;
     int startX = (sw - totalW) / 2;
-    int cardY = 175;
+    const int cardBaseY = 175;
+    const float frameTime = static_cast<float>(GetNowCount()) / 1000.0f;
 
     for (int i = 0; i < offeredCount_; ++i)
     {
         const auto& card = currentOffer_[i];
         int cx = startX + i * (cardW + spacing);
         bool isSelected = (i == selectedIndex_);
+        // Thẻ đang chọn được nhấc lên nhẹ (選択演出)
+        int cardY = cardBaseY - (isSelected ? 10 : 0);
 
-        // Viền theo độ hiếm: Thường = xám trắng, Hiếm = tím, Rất hiếm = vàng (T3)
-        int edgeColor = GetColor(180, 200, 220); // Common
-        const wchar_t* rarityStr = L"[COMMON]";
-        if (card.rarity == CardRarity::Rare)
-        {
-            edgeColor = GetColor(200, 110, 255); // Rare (Tím)
-            rarityStr = L"[RARE]";
-        }
-        else if (card.rarity == CardRarity::Epic)
-        {
-            edgeColor = GetColor(255, 215, 60);  // Epic (Vàng)
-            rarityStr = L"[EPIC]";
-        }
-
-        // Nền Card
-        int bgColor = isSelected ? GetColor(24, 38, 62) : GetColor(14, 22, 36);
-        DrawBox(cx, cardY, cx + cardW, cardY + cardH, bgColor, TRUE);
-
-        // Viền ngoài Card (phóng sáng viền khi được chọn)
-        if (isSelected)
-        {
-            DrawBox(cx - 3, cardY - 3, cx + cardW + 3, cardY + cardH + 3, GetColor(255, 240, 100), FALSE);
-            DrawBox(cx - 2, cardY - 2, cx + cardW + 2, cardY + cardH + 2, edgeColor, FALSE);
-            DrawBox(cx - 1, cardY - 1, cx + cardW + 1, cardY + cardH + 1, edgeColor, FALSE);
-        }
-        else
-        {
-            DrawBox(cx, cardY, cx + cardW, cardY + cardH, edgeColor, FALSE);
-        }
+        // カード枠: khung theo độ hiếm (Common bạc / Rare tím / Epic vàng kim)
+        const CardFrame::Style& frame = CardFrame::GetStyle(card.rarity);
+        int edgeColor = static_cast<int>(frame.edge);
+        wchar_t rarityStr[24];
+        swprintf_s(rarityStr, L"[%s]", frame.label);
+        CardFrame::DrawBack(cx, cardY, cardW, cardH, card.rarity, isSelected, frameTime + i * 0.7f);
 
         // Thanh tiêu đề số phím tắt [1..3], độ hiếm và thông tin stack trong Endless (Task 10 T4d)
         wchar_t slotHeader[48];
@@ -466,6 +447,9 @@ void CardManager::Draw() const
             FontManager::Draw(cx + 16, textY + 62, card.drawback.c_str(), GetColor(255, 100, 90), FontSize::Small);
         }
 
+        // Hiệu ứng phủ (vệt sáng, ảnh khung PNG nếu có)
+        CardFrame::DrawFront(cx, cardY, cardW, cardH, card.rarity, isSelected, frameTime + i * 0.7f);
+
         // Con trỏ chọn bên dưới thẻ
         if (isSelected)
         {
@@ -482,8 +466,7 @@ void CardManager::Draw() const
         listY += 24;
         for (const auto& c : activeCards_)
         {
-            int col = (c.rarity == CardRarity::Epic) ? GetColor(220, 100, 255) :
-                      (c.rarity == CardRarity::Rare) ? GetColor(255, 215, 60) : GetColor(160, 210, 255);
+            int col = static_cast<int>(CardFrame::GetStyle(c.rarity).edge); // cùng màu với khung thẻ
             FontManager::DrawFormat(listX, listY, col, FontSize::Small, L"- %s", c.name.c_str());
             listY += 20;
         }

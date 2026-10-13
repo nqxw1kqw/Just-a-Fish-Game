@@ -145,8 +145,11 @@ int WINAPI WinMain(
         }
 
         // Kết xuất hình ảnh
+        // Render interpolation (#26): alpha = phần dư của bộ tích luỹ giữa 2 tick logic
         ClearDrawScreen();
+        game.BeginRenderInterp(acc / kStep);
         game.Draw();
+        game.EndRenderInterp();
         ScreenFlip();
     }
 
