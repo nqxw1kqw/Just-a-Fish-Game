@@ -36,6 +36,8 @@ struct Enemy
     float hitFlashTimer = 0.0f;
     float stunTimer = 0.0f; // Thời gian bị choáng (J6)
     float animTime = 0.0f;  // Thời gian hoạt ảnh 3D
+    float waterFxTimer = 0.0f; // Bộ đếm nhịp hiệu ứng nước
+    bool hopperWasAirborne = false; // Theo dõi trạng thái trên không của Hopper để kích hoạt tiếp đất
     bool active = false;
 };
 

@@ -45,6 +45,7 @@ void WhaleBoss::Reset()
     lastSkill_ = BossSkill::None;
     timeSinceLastTsunami_ = 10.0f;
     currentTsunamiGapDeg_ = 0.0f;
+    waterFxTimer_ = 0.0f;
 
     for (auto& r : tsunamiRings_) r.active = false;
 }
@@ -401,6 +402,13 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             pos_.x += moveDir.x * GameConsts::BOSS_WALK_SPEED * dt;
             pos_.z += moveDir.z * GameConsts::BOSS_WALK_SPEED * dt;
             pos_.y = 0.0f;
+
+            waterFxTimer_ += dt;
+            if (waterFxTimer_ >= 0.22f)
+            {
+                waterFxTimer_ = 0.0f;
+                effects.SpawnFishSwim(pos_, moveDir, GameConsts::BOSS_WALK_SPEED, 3.0f, false);
+            }
         }
 
         if (actionTimer_ >= idleDuration_)
@@ -438,6 +446,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
 
             effects.AddTrauma(0.55f);
             effects.SpawnShockwave(pos_, slamRadius_);
+            effects.SpawnWaterSplash(pos_, slamRadius_, 2.2f);
             SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
 
             if (Collision::DistXZ(player.GetPosition(), pos_) <= slamRadius_ && player.GetHeightY() < 28.0f)
@@ -529,6 +538,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             pos_.y = 0.0f;
             effects.AddTrauma(0.55f);
             effects.SpawnShockwave(pos_, slamRadius_);
+            effects.SpawnWaterSplash(pos_, slamRadius_, 2.2f);
             SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
 
             if (Collision::DistXZ(player.GetPosition(), pos_) <= slamRadius_ && player.GetHeightY() < 28.0f)

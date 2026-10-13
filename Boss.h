@@ -138,6 +138,7 @@ private:
     // Hiệu ứng & Hit flash
     float hitFlashTimer_ = 0.0f;
     float phaseTransitionTimer_ = 0.0f;
+    float waterFxTimer_ = 0.0f;
 
     // Đo đạc & Lịch sử chiêu (Task 10 T1)
     float bossFightTimer_ = 0.0f;

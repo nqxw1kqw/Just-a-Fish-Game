@@ -54,6 +54,31 @@ void EffectSystem::SpawnSwimWake(const Vec3& fishPos, const Vec3& moveDir)
     waterSplash_.EmitSwimWake(fishPos, moveDir);
 }
 
+void EffectSystem::SpawnFishSwim(const Vec3& pos, const Vec3& dir, float speed, float sizeMul, bool isDashing)
+{
+    waterSplash_.EmitFishSwim(pos, dir, speed, sizeMul, isDashing);
+}
+
+void EffectSystem::SpawnTurtlePaddle(const Vec3& pos, const Vec3& dir, float radius)
+{
+    waterSplash_.EmitTurtlePaddle(pos, dir, radius);
+}
+
+void EffectSystem::SpawnFrogHop(const Vec3& pos, const Vec3& dir, float radius)
+{
+    waterSplash_.EmitFrogHop(pos, dir, radius);
+}
+
+void EffectSystem::SpawnFrogLand(const Vec3& pos, float radius)
+{
+    waterSplash_.EmitFrogLand(pos, radius);
+}
+
+void EffectSystem::SpawnCrabScuttle(const Vec3& pos, const Vec3& moveDir, const Vec3& facingDir, float radius)
+{
+    waterSplash_.EmitCrabScuttle(pos, moveDir, facingDir, radius);
+}
+
 void EffectSystem::DrawShallowOcean(float arenaHalfSize) const
 {
     waterSplash_.DrawShallowOcean(arenaHalfSize);

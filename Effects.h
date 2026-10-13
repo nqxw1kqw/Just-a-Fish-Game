@@ -64,6 +64,11 @@ public:
     void SpawnShockwave(const Vec3& pos, float maxRadius = 130.0f);
     void SpawnWaterSplash(const Vec3& pos, float radius, float strength = 1.0f);
     void SpawnSwimWake(const Vec3& fishPos, const Vec3& moveDir);
+    void SpawnFishSwim(const Vec3& pos, const Vec3& dir, float speed, float sizeMul = 1.0f, bool isDashing = false);
+    void SpawnTurtlePaddle(const Vec3& pos, const Vec3& dir, float radius);
+    void SpawnFrogHop(const Vec3& pos, const Vec3& dir, float radius);
+    void SpawnFrogLand(const Vec3& pos, float radius);
+    void SpawnCrabScuttle(const Vec3& pos, const Vec3& moveDir, const Vec3& facingDir, float radius);
     void DrawShallowOcean(float arenaHalfSize) const;
     void SpawnHitParticles(const Vec3& pos, int count, int color);
     void SpawnExpOrb(const Vec3& pos, float val = 1.0f);

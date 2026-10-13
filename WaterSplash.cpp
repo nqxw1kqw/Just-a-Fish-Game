@@ -243,43 +243,305 @@ void WaterSplashSystem::SpawnSecondaryRipple(const Vec3& pos)
 
 void WaterSplashSystem::EmitSwimWake(const Vec3& fishPos, const Vec3& moveDir)
 {
-    Vec3 wakePos = fishPos - moveDir * 12.0f; // Điểm phát sóng sau đuôi cá
-    wakePos.y = 0.12f;
+    EmitFishSwim(fishPos, moveDir, 100.0f, 1.0f, false);
+}
 
-    // Sinh 1 ripple nhỏ sau đuôi cá
+void WaterSplashSystem::EmitFishSwim(const Vec3& pos, const Vec3& dir, float /*speed*/, float sizeMul, bool isDashing)
+{
+    if (dir.LengthSq() < 0.001f) return;
+    Vec3 normDir = dir.Normalized();
+    Vec3 sideDir{ -normDir.z, 0.0f, normDir.x };
+
+    static int s_tailSide = 0;
+    s_tailSide = 1 - s_tailSide;
+
+    Vec3 tailPos = pos - normDir * (12.0f * sizeMul);
+    tailPos.y = 0.12f;
+    Vec3 contact = tailPos + sideDir * (s_tailSide == 0 ? 4.5f : -4.5f) * sizeMul;
+
+    // 1. Sinh ripple sóng quẫy đuôi
     for (auto& r : ripples_)
     {
         if (!r.active)
         {
-            r.center = wakePos;
+            r.center = contact;
             r.age = 0.0f;
-            r.lifetime = 0.45f;
-            r.startRadius = 3.5f;
-            r.endRadius = 18.0f;
-            r.opacity = 0.50f;
+            r.lifetime = isDashing ? 0.65f : 0.45f;
+            r.startRadius = 3.0f * sizeMul;
+            r.endRadius = (isDashing ? 28.0f : 16.0f) * sizeMul;
+            r.opacity = isDashing ? 0.75f : 0.48f;
             r.active = true;
             break;
         }
     }
 
-    // Sinh 2 hạt bọt nước dạt hai bên sườn đuôi cá
-    Vec3 rightDir{ -moveDir.z, 0.0f, moveDir.x };
+    // 2. Sinh bọt nước dạt hai bên đuôi
+    int foamCount = isDashing ? 4 : 2;
+    for (int i = 0; i < foamCount; ++i)
+    {
+        for (auto& f : foams_)
+        {
+            if (!f.active)
+            {
+                float sideSign = (i % 2 == 0) ? -1.0f : 1.0f;
+                f.pos = tailPos + sideDir * (sideSign * 4.0f * sizeMul);
+                float foamSideSpd = isDashing ? RandomFloat(35.0f, 65.0f) : RandomFloat(15.0f, 30.0f);
+                float foamBackSpd = isDashing ? RandomFloat(40.0f, 80.0f) : RandomFloat(12.0f, 22.0f);
+                f.vel = sideDir * (sideSign * foamSideSpd) - normDir * foamBackSpd;
+                f.age = 0.0f;
+                f.lifetime = isDashing ? RandomFloat(0.40f, 0.65f) : RandomFloat(0.30f, 0.48f);
+                f.sizeStart = (isDashing ? RandomFloat(4.5f, 7.0f) : RandomFloat(3.0f, 4.5f)) * sizeMul;
+                f.sizeEnd = 1.0f;
+                f.r = 210; f.g = 245; f.b = 255;
+                f.active = true;
+                break;
+            }
+        }
+    }
+
+    // 3. Giọt nước văng tóe (bắn nhiều hơn khi cá lao / dashing)
+    int dropCount = isDashing ? 3 : 1;
+    for (int i = 0; i < dropCount; ++i)
+    {
+        for (auto& d : drops_)
+        {
+            if (!d.active)
+            {
+                d.pos = contact + Vec3{ 0.0f, 0.15f, 0.0f };
+                float dSpd = isDashing ? RandomFloat(25.0f, 55.0f) : RandomFloat(12.0f, 24.0f);
+                float dUp = isDashing ? RandomFloat(65.0f, 120.0f) : RandomFloat(25.0f, 45.0f);
+                d.vel = -normDir * dSpd + Vec3{ RandomFloat(-15.0f, 15.0f), dUp, RandomFloat(-15.0f, 15.0f) };
+                d.age = 0.0f;
+                d.lifetime = RandomFloat(0.35f, 0.55f);
+                d.sizeStart = (isDashing ? RandomFloat(3.0f, 5.0f) : RandomFloat(2.0f, 3.2f)) * sizeMul;
+                d.sizeEnd = 1.0f;
+                d.gravity = 280.0f;
+                d.surfaceY = 0.1f;
+                d.r = 200; d.g = 240; d.b = 255;
+                d.active = true;
+                break;
+            }
+        }
+    }
+}
+
+void WaterSplashSystem::EmitTurtlePaddle(const Vec3& pos, const Vec3& dir, float radius)
+{
+    if (dir.LengthSq() < 0.001f) return;
+    Vec3 normDir = dir.Normalized();
+    Vec3 sideDir{ -normDir.z, 0.0f, normDir.x };
+
+    // Sinh 2 vòng sóng tròn lăn tăn ở 2 bên sườn mái chèo
+    for (int side = -1; side <= 1; side += 2)
+    {
+        Vec3 paddlePos = pos + sideDir * (static_cast<float>(side) * radius * 0.82f) - normDir * (radius * 0.20f);
+        paddlePos.y = 0.12f;
+
+        for (auto& r : ripples_)
+        {
+            if (!r.active)
+            {
+                r.center = paddlePos;
+                r.age = 0.0f;
+                r.lifetime = 0.68f;
+                r.startRadius = radius * 0.35f;
+                r.endRadius = radius * 1.15f;
+                r.opacity = 0.42f;
+                r.active = true;
+                break;
+            }
+        }
+
+        // Bọt nước sủi đục êm đềm ở bên sườn
+        for (auto& f : foams_)
+        {
+            if (!f.active)
+            {
+                f.pos = paddlePos;
+                f.vel = sideDir * (static_cast<float>(side) * RandomFloat(10.0f, 18.0f)) - normDir * RandomFloat(5.0f, 12.0f);
+                f.age = 0.0f;
+                f.lifetime = RandomFloat(0.45f, 0.65f);
+                f.sizeStart = RandomFloat(3.8f, 5.2f);
+                f.sizeEnd = 1.2f;
+                f.r = 195; f.g = 235; f.b = 245;
+                f.active = true;
+                break;
+            }
+        }
+    }
+}
+
+void WaterSplashSystem::EmitFrogHop(const Vec3& pos, const Vec3& dir, float radius)
+{
+    Vec3 normDir = (dir.LengthSq() > 0.001f) ? dir.Normalized() : Vec3{ 0.0f, 0.0f, 1.0f };
+    Vec3 rearPos = pos - normDir * (radius * 0.75f);
+    rearPos.y = 0.12f;
+
+    // Sinh 1 ripple phía sau chân đạp
+    for (auto& r : ripples_)
+    {
+        if (!r.active)
+        {
+            r.center = rearPos;
+            r.age = 0.0f;
+            r.lifetime = 0.50f;
+            r.startRadius = radius * 0.3f;
+            r.endRadius = radius * 1.2f;
+            r.opacity = 0.62f;
+            r.active = true;
+            break;
+        }
+    }
+
+    // 3 bọt nước phụt mạnh về sau
+    for (int i = 0; i < 3; ++i)
+    {
+        for (auto& f : foams_)
+        {
+            if (!f.active)
+            {
+                f.pos = rearPos;
+                f.vel = -normDir * RandomFloat(40.0f, 75.0f) + Vec3{ RandomFloat(-12.0f, 12.0f), 0.0f, RandomFloat(-12.0f, 12.0f) };
+                f.age = 0.0f;
+                f.lifetime = RandomFloat(0.35f, 0.52f);
+                f.sizeStart = RandomFloat(4.0f, 6.0f);
+                f.sizeEnd = 1.0f;
+                f.r = 215; f.g = 248; f.b = 255;
+                f.active = true;
+                break;
+            }
+        }
+    }
+
+    // 2 giọt nước bắn lùi
+    for (int i = 0; i < 2; ++i)
+    {
+        for (auto& d : drops_)
+        {
+            if (!d.active)
+            {
+                d.pos = rearPos + Vec3{ 0.0f, 0.2f, 0.0f };
+                d.vel = -normDir * RandomFloat(25.0f, 50.0f) + Vec3{ RandomFloat(-10.0f, 10.0f), RandomFloat(35.0f, 65.0f), RandomFloat(-10.0f, 10.0f) };
+                d.age = 0.0f;
+                d.lifetime = RandomFloat(0.30f, 0.45f);
+                d.sizeStart = RandomFloat(2.5f, 3.8f);
+                d.sizeEnd = 1.0f;
+                d.gravity = 280.0f;
+                d.surfaceY = 0.1f;
+                d.r = 210; d.g = 245; d.b = 255;
+                d.active = true;
+                break;
+            }
+        }
+    }
+}
+
+void WaterSplashSystem::EmitFrogLand(const Vec3& pos, float radius)
+{
+    Vec3 landPos = pos;
+    landPos.y = 0.12f;
+
+    // Sinh 1 ripple bung rộng khi tiếp đất
+    for (auto& r : ripples_)
+    {
+        if (!r.active)
+        {
+            r.center = landPos;
+            r.age = 0.0f;
+            r.lifetime = 0.55f;
+            r.startRadius = radius * 0.35f;
+            r.endRadius = radius * 1.55f;
+            r.opacity = 0.72f;
+            r.active = true;
+            break;
+        }
+    }
+
+    // Sinh 4 giọt nước bắn tỏa tròn 360 độ
+    for (int i = 0; i < 4; ++i)
+    {
+        for (auto& d : drops_)
+        {
+            if (!d.active)
+            {
+                float ang = static_cast<float>(i) * 1.57f + RandomFloat(-0.3f, 0.3f);
+                float spd = RandomFloat(30.0f, 65.0f);
+                d.pos = landPos + Vec3{ 0.0f, 0.2f, 0.0f };
+                d.vel = Vec3{ std::cos(ang) * spd, RandomFloat(50.0f, 90.0f), std::sin(ang) * spd };
+                d.age = 0.0f;
+                d.lifetime = RandomFloat(0.35f, 0.50f);
+                d.sizeStart = RandomFloat(2.8f, 4.2f);
+                d.sizeEnd = 1.2f;
+                d.gravity = 280.0f;
+                d.surfaceY = 0.1f;
+                d.r = 210; d.g = 245; d.b = 255;
+                d.active = true;
+                break;
+            }
+        }
+    }
+
+    // 2 bọt nước nổi
+    for (int i = 0; i < 2; ++i)
+    {
+        for (auto& f : foams_)
+        {
+            if (!f.active)
+            {
+                f.pos = landPos + Vec3{ RandomFloat(-radius * 0.4f, radius * 0.4f), 0.0f, RandomFloat(-radius * 0.4f, radius * 0.4f) };
+                f.vel = Vec3{ RandomFloat(-15.0f, 15.0f), 0.0f, RandomFloat(-15.0f, 15.0f) };
+                f.age = 0.0f;
+                f.lifetime = RandomFloat(0.35f, 0.55f);
+                f.sizeStart = RandomFloat(3.5f, 5.0f);
+                f.sizeEnd = 1.0f;
+                f.r = 210; f.g = 245; f.b = 255;
+                f.active = true;
+                break;
+            }
+        }
+    }
+}
+
+void WaterSplashSystem::EmitCrabScuttle(const Vec3& pos, const Vec3& moveDir, const Vec3& facingDir, float radius)
+{
+    Vec3 mDir = (moveDir.LengthSq() > 0.001f) ? moveDir.Normalized() : Vec3{ 1.0f, 0.0f, 0.0f };
+    Vec3 fDir = (facingDir.LengthSq() > 0.001f) ? facingDir.Normalized() : Vec3{ 0.0f, 0.0f, 1.0f };
+
+    // Sinh 2 bọt nước li ti ở 2 bên theo hướng mặt khi bò ngang
     for (int side = -1; side <= 1; side += 2)
     {
         for (auto& f : foams_)
         {
             if (!f.active)
             {
-                f.pos = wakePos + rightDir * (static_cast<float>(side) * 5.0f);
-                f.vel = rightDir * (static_cast<float>(side) * RandomFloat(15.0f, 30.0f)) - moveDir * 10.0f;
+                f.pos = pos + fDir * (static_cast<float>(side) * radius * 0.55f);
+                f.pos.y = 0.12f;
+                f.vel = -mDir * RandomFloat(15.0f, 28.0f);
                 f.age = 0.0f;
-                f.lifetime = RandomFloat(0.30f, 0.50f);
-                f.sizeStart = RandomFloat(3.2f, 4.8f);
-                f.sizeEnd = 1.0f;
-                f.r = 210; f.g = 245; f.b = 255;
+                f.lifetime = RandomFloat(0.28f, 0.42f);
+                f.sizeStart = RandomFloat(2.5f, 3.8f);
+                f.sizeEnd = 0.8f;
+                f.r = 205; f.g = 240; f.b = 255;
                 f.active = true;
                 break;
             }
+        }
+    }
+
+    // 1 ripple nhỏ nối tiếp
+    for (auto& r : ripples_)
+    {
+        if (!r.active)
+        {
+            r.center = pos;
+            r.center.y = 0.12f;
+            r.age = 0.0f;
+            r.lifetime = 0.35f;
+            r.startRadius = radius * 0.25f;
+            r.endRadius = radius * 0.85f;
+            r.opacity = 0.38f;
+            r.active = true;
+            break;
         }
     }
 }

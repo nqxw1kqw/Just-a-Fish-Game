@@ -442,7 +442,7 @@ void PlayerFish::Update(float dt, EffectSystem& effects)
             if (swimWakeTimer_ >= 0.085f)
             {
                 swimWakeTimer_ = 0.0f;
-                effects.SpawnSwimWake(pos_, moveDir_);
+                effects.SpawnFishSwim(pos_, moveDir_, speed_, 1.0f, false);
             }
         }
         else
