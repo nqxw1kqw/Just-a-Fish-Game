@@ -68,6 +68,7 @@ void WhaleBoss::UpdateBreachTelegraph(float dt, float duration, PlayerFish& play
     pos_.y = -GameConsts::BREACH_SINK_DEPTH * ratio;
 
     (void)effects;
+    (void)dt;
     // PR E: bọt sủi dày dần ở điểm đáp (WhaleBreachSlamFx). Thời gian fizz = telegraph + thời gian bay
     // để fizz kéo tới lúc đáp; Impact() được gọi thủ công trong LandBreach.
     WhaleFxSet& fx = Fx();
