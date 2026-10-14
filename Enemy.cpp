@@ -776,15 +776,11 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
             float kbFactor = 1.0f - (dist / radius) * 0.4f;
             e.knockback = dir * (knockbackStrength * kbFactor);
 
-            // Bắn hạt nước tung tóe
-            effects.SpawnHitParticles(e.pos + Vec3{ 0, 10, 0 }, 6, GetColor(120, 220, 255));
-
             if (e.hp <= 0.0f)
             {
                 e.active = false;
                 killedThisWave_++;
                 totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
-                effects.SpawnHitParticles(e.pos + Vec3{ 0, 12, 0 }, 18, GetColor(255, 120, 40));
                 effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
                 SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                 // G3: Bỏ EXP, quái chết có tỉ lệ 10% rơi vật hồi máu nhỏ (+10 HP)
@@ -833,7 +829,6 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
                 effects.SpawnHitFeedback(bulletPos, bulletDir, damage >= GameConsts::HIT_CRIT_DAMAGE);
                 e.knockback = bulletDir * 120.0f;
 
-                effects.SpawnHitParticles(bulletPos, 6, GetColor(255, 230, 80));
                 effects.SpawnDamagePopup(e.pos + Vec3{ 0, e.radius + 6.0f, 0 }, damage, false);
 
                 if (e.hp <= 0.0f)
@@ -841,7 +836,6 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
                     e.active = false;
                     killedThisWave_++;
                     totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
-                    effects.SpawnHitParticles(e.pos + Vec3{ 0, 12, 0 }, 20, GetColor(255, 90, 70));
                     effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
                     SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                     if ((rand() % 100) < 10)

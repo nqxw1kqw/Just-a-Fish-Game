@@ -611,7 +611,6 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
     invulnerableTimer_ = 0.35f; // Thời gian I-Frame 0.35s bảo vệ cá không bị dồn sát thương liên tục
     hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME;
     effects.AddTrauma(0.28f); // Rung nhẹ vừa phải tạo phản hồi va đập
-    effects.SpawnHitParticles(pos_ + Vec3{ 0, 10, 0 }, 8, GetColor(255, 60, 60));
     effects.SpawnHitFeedback(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, false);
 
     // Phát âm thanh khi người chơi bị trúng đòn

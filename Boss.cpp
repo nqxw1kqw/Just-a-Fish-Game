@@ -160,7 +160,6 @@ bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
     hp_ -= dmg;
     hitFlashTimer_ = GameConsts::HIT_FLASH_TIME;
     effects.SpawnHitFeedback(pos_ + Vec3{ 0, 30.0f, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, dmg >= GameConsts::HIT_CRIT_DAMAGE);
-    effects.SpawnHitParticles(pos_ + Vec3{ 0, 25, 0 }, 6, GetColor(255, 120, 60));
     effects.SpawnDamagePopup(pos_ + Vec3{ 0, 45.0f, 0 }, dmg, (dmg >= 50.0f));
 
     // Chuyển sang Giai đoạn 2 (< 50% máu: 500 HP)
@@ -191,7 +190,7 @@ bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
     {
         hp_ = 0.0f;
         effects.AddTrauma(1.0f);
-        effects.SpawnHitParticles(pos_ + Vec3{ 0, 30, 0 }, 50, GetColor(255, 220, 60));
+        effects.SpawnFishDeath(pos_ + Vec3{ 0, 30, 0 }, 150.0f); // HitFx: nổ bọt/vảy khi Boss chết
     }
 
     return true;
@@ -873,7 +872,6 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
                 player.ApplyKnockback(outward * GameConsts::TSUNAMI_KNOCKBACK);
                 ring.hitPlayer = true;
                 effects.AddTrauma(0.35f);
-                effects.SpawnHitParticles(player.GetPosition() + Vec3{ 0, 15, 0 }, 18, GetColor(0, 180, 255));
             }
         }
     }
