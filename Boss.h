@@ -3,6 +3,7 @@
 #include "Consts.h"
 #include "TsunamiWaterEffect.h"
 #include <array>
+#include <vector>
 
 class PlayerFish;
 class EnemyManager;
@@ -29,7 +30,12 @@ enum class BossAction
     // Boss rework (PR A)
     TelegraphTail,          // Quật đuôi: giơ đuôi
     PerformTail,            // Quật đuôi: hồi sau đòn
-    Stunned                 // Choáng (nhận thêm sát thương)
+    Stunned,                // Choáng (nhận thêm sát thương)
+    // PR C
+    TelegraphBubbleNet,     // Lặn xuống, bọt sủi quanh người chơi
+    BubbleNetSwim,          // Bơi vòng tròn thả cột bọt (lưới khép dần)
+    TelegraphInhale,        // Há miệng, nước bắt đầu xoáy vào
+    PerformInhale           // Hút: kéo người chơi về miệng
 };
 
 enum class BossSkill
@@ -39,7 +45,9 @@ enum class BossSkill
     DoubleSlam,
     Minions,
     Tsunami,
-    Tail
+    Tail,
+    BubbleNet,
+    Inhale
 };
 
 // Cấu trúc Vành Sóng thần tỏa tròn (Radial Tsunami - Phần A3)
@@ -82,6 +90,8 @@ public:
     void ForceTsunamiWithGap(PlayerFish& player);
     void ForceDoubleSlam(PlayerFish& player);
     void ForceTsunamiDouble(PlayerFish& player); // PR B: sóng đôi (không khe -> có khe)
+    void ForceBubbleNet(PlayerFish& player);     // PR C
+    void ForceInhale(PlayerFish& player);        // PR C
     void StartTsunamiTelegraph(PlayerFish& player, float gapDeg = 0.0f);
 
     // Boss rework (PR A): Breach Slam, Tail Slap, Stun
@@ -160,6 +170,18 @@ private:
     float slamRadius_ = 200.0f;
     float slamProgress_ = 0.0f; // Pha nhảy lên đập xuống
     bool isSecondSlam_ = false;
+    struct BubblePillar { Vec3 pos; float life = 0.0f; float fxTimer = 0.0f; };
+    std::vector<BubblePillar> bubblePillars_;
+    Vec3 netCenter_{ 0.0f, 0.0f, 0.0f };
+    float netStartAngle_ = 0.0f;
+    int netPillarsDropped_ = 0;
+    float netHitCooldown_ = 0.0f;
+    float bubbleNetCooldown_ = 0.0f;
+    float inhaleCooldown_ = 0.0f;
+    void StartBubbleNet(PlayerFish& player);
+    void StartInhale(PlayerFish& player);
+    void UpdateBossHazards(float dt, PlayerFish& player, EffectSystem& effects);
+    void DrawBossHazards() const;
     int slamCount_ = 0;              // PR B: số cú đã đáp trong Quật ba nhịp
     float secondRingDelay_ = 0.0f;   // PR B: độ trễ vòng sóng thứ 2
     float secondRingGapDeg_ = 0.0f;  // PR B: khe của vòng sóng thứ 2

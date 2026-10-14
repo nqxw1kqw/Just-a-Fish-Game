@@ -272,6 +272,9 @@ void PlayerFish::Reset()
     landRecoveryTimer_ = 0.0f;
     speed_ = GameConsts::FISH_SPEED;
     airSpeedMul_ = GameConsts::AIR_SPEED_MUL;
+    slowTimer_ = 0.0f;
+    slowFactor_ = 1.0f;
+    externalPull_ = Vec3{ 0.0f, 0.0f, 0.0f };
 
     slamDamage_ = GameConsts::SLAM_DAMAGE;
     slamRadius_ = GameConsts::SLAM_RADIUS;
@@ -368,6 +371,30 @@ void PlayerFish::OnLand(EffectSystem& effects)
 }
 
 void PlayerFish::Update(float dt, EffectSystem& effects)
+{
+    // Boss rework PR C: lực kéo ngoài (Inhale) + làm chậm (Bubble Net)
+    if (externalPull_.LengthSq() > 0.01f)
+    {
+        float lim = GameConsts::ARENA_HALF_SIZE - 25.0f;
+        pos_.x = std::clamp(pos_.x + externalPull_.x * dt, -lim, lim);
+        pos_.z = std::clamp(pos_.z + externalPull_.z * dt, -lim, lim);
+    }
+    externalPull_ = Vec3{ 0.0f, 0.0f, 0.0f };
+
+    if (slowTimer_ > 0.0f)
+    {
+        slowTimer_ -= dt;
+        float savedSpeed = speed_;
+        speed_ *= slowFactor_;
+        UpdateCore(dt, effects);
+        speed_ = savedSpeed;
+        if (slowTimer_ <= 0.0f) slowFactor_ = 1.0f;
+        return;
+    }
+    UpdateCore(dt, effects);
+}
+
+void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
 {
     if (hitFlashTimer_ > 0.0f)
     {
