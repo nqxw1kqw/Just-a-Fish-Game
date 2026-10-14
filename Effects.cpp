@@ -32,7 +32,13 @@ void EffectSystem::SpawnHitFeedback(const Vec3& pos, const Vec3& dir, bool crit)
     VECTOR p = DxConv::ToVECTOR(pos);
     VECTOR d = DxConv::ToVECTOR(dir);
     hitFx_->spark.Emit(p, d, crit);
+    // TODO(Fuyuu): thay HitBubblePuff bằng hạt trúng đòn mới cho quái (không phải bọt) — chỉ cần đổi dòng này
     hitFx_->puff.Emit(p, d);
+}
+
+void EffectSystem::SpawnHitSparksOnly(const Vec3& pos, const Vec3& dir, bool crit)
+{
+    if (hitFx_) hitFx_->spark.Emit(DxConv::ToVECTOR(pos), DxConv::ToVECTOR(dir), crit);
 }
 
 void EffectSystem::SpawnFishDeath(const Vec3& pos, float size)

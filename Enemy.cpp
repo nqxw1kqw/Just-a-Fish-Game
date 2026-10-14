@@ -281,7 +281,7 @@ void EnemyManager::SetModelOffsetY(EnemyType type, float y)
 
 void EnemyManager::Reset()
 {
-    for (auto& e : enemies_) e.active = false;
+    for (auto& e : enemies_) { e.active = false; e.dying = false; }
     spawnTimer_ = 0.0f;
     waveTimer_ = 0.0f;
     currentWave_ = 1;
@@ -354,7 +354,7 @@ bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
 {
     for (auto& e : enemies_)
     {
-        if (!e.active)
+        if (!e.active && !e.dying)
         {
             e.type = type;
             e.pos = pos;
@@ -499,6 +499,31 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
     for (size_t i = 0; i < enemies_.size(); ++i)
     {
         auto& e = enemies_[i];
+        if (e.dying)
+        {
+            // Hoạt ảnh chết: nảy văng ra, thu nhỏ, rồi nổ HitFx và biến mất
+            e.deathTimer += dt;
+            if (e.hitFlashTimer > 0.0f) e.hitFlashTimer -= dt;
+            e.deathVel.y -= GameConsts::ENEMY_DEATH_GRAVITY * dt;
+            e.pos += e.deathVel * dt;
+            if (e.pos.y < 0.0f)
+            {
+                e.pos.y = 0.0f;
+                e.deathVel.y = -e.deathVel.y * GameConsts::ENEMY_DEATH_BOUNCE;
+                e.deathVel.x *= 0.7f;
+                e.deathVel.z *= 0.7f;
+            }
+            float lim = GameConsts::ARENA_HALF_SIZE - 20.0f;
+            e.pos.x = std::clamp(e.pos.x, -lim, lim);
+            e.pos.z = std::clamp(e.pos.z, -lim, lim);
+            e.yaw += dt * 9.0f;
+            if (e.deathTimer >= GameConsts::ENEMY_DEATH_TIME)
+            {
+                e.dying = false;
+                if (e.deathFx) effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
+            }
+            continue;
+        }
         if (!e.active) continue;
 
         if (e.hitFlashTimer > 0.0f) e.hitFlashTimer -= dt;
@@ -703,14 +728,10 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
         {
             Vec3 pushDir = (distToPlayer > 0.001f) ? (toPlayer / distToPlayer) : Vec3{ 0.0f, 0.0f, 1.0f };
 
-            if (player.TakeDamage(e.damage, effects))
+            if (player.TakeDamage(e.damage, effects, &e.pos))
             {
-                // Knockback nhẹ cho cả hai:
-                // - Quái bị nảy lùi về phía sau (ngược hướng lao tới)
+                // Quái bị nảy lùi về phía sau (ngược hướng lao tới); cá chính bị đẩy lùi mạnh trong TakeDamage
                 e.knockback = -pushDir * 180.0f;
-
-                // - Cá chính bị nảy lùi nhẹ theo hướng bị húc
-                player.ApplyKnockback(pushDir * 160.0f);
             }
             else if (!player.IsAirborne())
             {
@@ -778,10 +799,9 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
 
             if (e.hp <= 0.0f)
             {
-                e.active = false;
+                StartDeath(e, center);
                 killedThisWave_++;
                 totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
-                effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
                 SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                 // G3: Bỏ EXP, quái chết có tỉ lệ 10% rơi vật hồi máu nhỏ (+10 HP)
                 if ((rand() % 100) < 10)
@@ -833,10 +853,9 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
 
                 if (e.hp <= 0.0f)
                 {
-                    e.active = false;
+                    StartDeath(e, e.pos - bulletDir * 10.0f);
                     killedThisWave_++;
                     totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
-                    effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
                     SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                     if ((rand() % 100) < 10)
                     {
@@ -860,20 +879,32 @@ int EnemyManager::GetActiveCount() const
     return count;
 }
 
+void EnemyManager::StartDeath(Enemy& e, const Vec3& awayFrom, bool withFx)
+{
+    e.active = false;
+    e.dying = true;
+    e.deathFx = withFx;
+    e.deathTimer = 0.0f;
+    Vec3 away = Collision::FlatDiff(e.pos, awayFrom);
+    float l = away.Length();
+    away = (l > 0.001f) ? away * (1.0f / l) : Vec3{ 0.0f, 0.0f, 1.0f };
+    e.deathVel = Vec3{ away.x * GameConsts::ENEMY_DEATH_HOP_SPEED, GameConsts::ENEMY_DEATH_HOP_UP, away.z * GameConsts::ENEMY_DEATH_HOP_SPEED };
+    e.knockback = Vec3{ 0, 0, 0 };
+}
+
 void EnemyManager::KillAll(EffectSystem& effects)
 {
+    (void)effects;
     // Quét cuối wave / Endless: nổ chết HitFx như quái chết thường, giới hạn số vụ để pool không tràn
     int bursts = 0;
     for (auto& e : enemies_)
     {
         if (e.active)
         {
-            e.active = false;
-            if (bursts < GameConsts::DEATH_WIPE_MAX_BURSTS)
-            {
-                effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
-                bursts++;
-            }
+            // Văng ra hướng ngẫu nhiên; chỉ DEATH_WIPE_MAX_BURSTS con đầu phát nổ HitFx
+            float ang = static_cast<float>(rand() % 628) * 0.01f;
+            StartDeath(e, e.pos - Vec3{ std::sin(ang), 0.0f, std::cos(ang) } * 10.0f, bursts < GameConsts::DEATH_WIPE_MAX_BURSTS);
+            bursts++;
         }
     }
 }
@@ -882,10 +913,17 @@ void EnemyManager::Draw() const
 {
     for (const auto& e : enemies_)
     {
-        if (!e.active) continue;
+        if (!e.active && !e.dying) continue;
+        // Hoạt ảnh chết: thu nhỏ dần (ease-in)
+        float deathScale = 1.0f;
+        if (e.dying)
+        {
+            float t = std::clamp(e.deathTimer / GameConsts::ENEMY_DEATH_TIME, 0.0f, 1.0f);
+            deathScale = (std::max)(0.05f, 1.0f - t * t);
+        }
 
         // Vạch đỏ báo hiệu hướng lao thẳng của cá mập trên sàn (G4)
-        if (e.type == EnemyType::Charge && e.chargeState == 1)
+        if (e.active && e.type == EnemyType::Charge && e.chargeState == 1)
         {
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
             Vec3 pStart = e.pos + Vec3{ 0, 1.2f, 0 };
@@ -897,7 +935,7 @@ void EnemyManager::Draw() const
 
         // 1. Bóng dẹt dưới sàn
         float heightRatio = e.pos.y / 35.0f;
-        float shadowRad = e.radius * 1.3f * (1.0f - 0.35f * heightRatio);
+        float shadowRad = e.radius * 1.3f * deathScale * (1.0f - 0.35f * heightRatio);
         Render3D::DrawFlatShadow(e.pos, shadowRad, 0.9f);
 
         // 2a. Mô hình low-poly (ưu tiên); 2b. mô hình cũ PreModelTest nếu low-poly nạp lỗi
@@ -906,7 +944,7 @@ void EnemyManager::Draw() const
         {
             MV1SetPosition(lowPolyHandle, VGet(e.pos.x, e.pos.y, e.pos.z));
             MV1SetRotationXYZ(lowPolyHandle, VGet(0.0f, e.yaw, 0.0f));
-            MV1SetScale(lowPolyHandle, VGet(1.0f, 1.0f, 1.0f));
+            MV1SetScale(lowPolyHandle, VGet(deathScale, deathScale, deathScale));
 
             if (e.hitFlashTimer > 0.0f)
             {
@@ -940,7 +978,7 @@ void EnemyManager::Draw() const
             float finalYaw = e.yaw + cfg.rotYDeg * (DX_PI_F / 180.0f);
             MV1SetRotationXYZ(cfg.handle, VGet(0.0f, finalYaw, 0.0f));
 
-            MV1SetScale(cfg.handle, VGet(cfg.scale, cfg.scale, cfg.scale));
+            MV1SetScale(cfg.handle, VGet(cfg.scale * deathScale, cfg.scale * deathScale, cfg.scale * deathScale));
 
             if (cfg.animAttachIndex >= 0 && cfg.animTotalTime > 0.0f)
             {

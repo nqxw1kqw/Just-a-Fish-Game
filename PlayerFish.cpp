@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include "PlayerFish.h"
+#include "CollisionUtil.h"
 #include "Effects/Hit/HitFeedback.h"
 #include "RenderInterp.h"
 #include "Effects.h"
@@ -598,7 +599,7 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
     }
 }
 
-bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
+bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects, const Vec3* sourcePos)
 {
     // J4: Bất tử suốt lúc ở trên không, đang trong thời gian I-Frame, hoặc bật God Mode (F9)
     if (isGodMode_ || IsAirborne() || invulnerableTimer_ > 0.0f)
@@ -608,10 +609,19 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
 
     hp_ -= dmg;
     damageTakenThisWave_ += dmg;
-    invulnerableTimer_ = 0.35f; // Thời gian I-Frame 0.35s bảo vệ cá không bị dồn sát thương liên tục
+    invulnerableTimer_ = GameConsts::PLAYER_IFRAME_TIME; // Cửa sổ an toàn sau khi trúng đòn
     hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME;
     effects.AddTrauma(0.28f); // Rung nhẹ vừa phải tạo phản hồi va đập
-    effects.SpawnHitFeedback(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, false);
+    // Đẩy lùi mạnh ra xa nguồn sát thương
+    if (sourcePos)
+    {
+        Vec3 away = Collision::FlatDiff(pos_, *sourcePos);
+        float l = away.Length();
+        away = (l > 0.001f) ? away * (1.0f / l) : Vec3{ 0.0f, 0.0f, -1.0f };
+        knockback_ += away * GameConsts::PLAYER_HURT_KNOCKBACK;
+    }
+    // TODO(Fuyuu): hạt "máu" đỏ khi người chơi trúng đòn — tạm thời không phát bọt (HitBubblePuff), chỉ tia lửa
+    effects.SpawnHitSparksOnly(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, false);
 
     // Phát âm thanh khi người chơi bị trúng đòn
     SoundManager::Instance().PlaySFX(SfxId::PlayerHit);
@@ -771,8 +781,18 @@ void PlayerFish::Draw() const
             }
         }
 
+        // Bất tử sau trúng đòn: nhấp nháy ẩn/hiện (sau chớp trắng) + vòng an toàn dưới chân
+        bool blinkHidden = false;
+        if (invulnerableTimer_ > 0.0f && hitFlashTimer_ <= 0.0f)
+        {
+            blinkHidden = (static_cast<int>(invulnerableTimer_ * GameConsts::PLAYER_IFRAME_BLINK_HZ * 2.0f) % 2) == 0;
+            float a = std::clamp(invulnerableTimer_ / GameConsts::PLAYER_IFRAME_TIME, 0.0f, 1.0f);
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(80 + 140 * a));
+            Render3D::DrawCircle3D(Vec3{ pos_.x, 0.5f, pos_.z }, GameConsts::PLAYER_IFRAME_RING_RADIUS, 28, GetColor(120, 230, 255), false);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+        }
         // Chớp trắng emissive (HitFlash) phủ lên mọi trạng thái màu ở trên
-        HitFlash::DrawModel(fishModelHandle_, hitFlashTimer_ / GameConsts::PLAYER_HIT_FLASH_TIME);
+        if (!blinkHidden) HitFlash::DrawModel(fishModelHandle_, hitFlashTimer_ / GameConsts::PLAYER_HIT_FLASH_TIME);
     }
     // Model nạp lỗi: đã báo lỗi trong Init() -> bỏ qua vẽ (không vẽ khối hộp)
 }

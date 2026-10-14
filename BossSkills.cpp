@@ -104,11 +104,11 @@ void WhaleBoss::LandBreach(PlayerFish& player, EffectSystem& effects, float inne
     float d = Collision::DistXZ(player.GetPosition(), pos_);
     if (d <= innerRadius)
     {
-        player.TakeDamage(innerDamage, effects);
+        player.TakeDamage(innerDamage, effects, &pos_);
     }
     else if (d <= outerRadius)
     {
-        player.TakeDamage(outerDamage, effects);
+        player.TakeDamage(outerDamage, effects, &pos_);
     }
 }
 
@@ -181,7 +181,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
                 Vec3 out = Collision::FlatDiff(player.GetPosition(), pos_);
                 float l = std::sqrt(out.x * out.x + out.z * out.z);
                 out = (l > 0.001f) ? out * (1.0f / l) : back;
-                player.TakeDamage(GameConsts::TAIL_DAMAGE, effects);
+                player.TakeDamage(GameConsts::TAIL_DAMAGE, effects, &pos_);
                 player.ApplyKnockback(out * GameConsts::TAIL_KNOCKBACK);
             }
             action_ = BossAction::PerformTail;
@@ -364,7 +364,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
             Collision::DistXZ(player.GetPosition(), pos_) <= GameConsts::DIVE_HIT_RADIUS + player.GetHitboxRadius())
         {
             diveHit_ = true;
-            player.TakeDamage(GameConsts::DIVE_DAMAGE, effects);
+            player.TakeDamage(GameConsts::DIVE_DAMAGE, effects, &pos_);
             player.ApplyKnockback(diveDir_ * GameConsts::DIVE_KNOCKBACK);
             effects.AddTrauma(0.45f);
         }
@@ -479,7 +479,7 @@ void WhaleBoss::UpdateBossHazards(float dt, PlayerFish& player, EffectSystem& ef
             Fx().slow.Start(DxConv::ToVECTOR(pp), GameConsts::BUBBLENET_SLOW_TIME);
             if (netHitCooldown_ <= 0.0f)
             {
-                player.TakeDamage(GameConsts::BUBBLENET_PILLAR_DAMAGE, effects);
+                player.TakeDamage(GameConsts::BUBBLENET_PILLAR_DAMAGE, effects, &bp.pos);
                 netHitCooldown_ = GameConsts::BUBBLENET_HIT_INTERVAL;
             }
         }

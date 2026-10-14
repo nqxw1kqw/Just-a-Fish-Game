@@ -868,7 +868,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             {
                 // Đang ở dưới đất: Bị sóng thần đánh trúng!
                 Vec3 outward = (d > 0.001f) ? (rel * (1.0f / d)) : Vec3{ 0, 0, 1 };
-                player.TakeDamage(GameConsts::TSUNAMI_DAMAGE, effects);
+                player.TakeDamage(GameConsts::TSUNAMI_DAMAGE, effects, &pos_);
                 player.ApplyKnockback(outward * GameConsts::TSUNAMI_KNOCKBACK);
                 ring.hitPlayer = true;
                 effects.AddTrauma(0.35f);

@@ -46,6 +46,11 @@ struct Enemy
     float waterFxTimer = 0.0f; // Bộ đếm nhịp hiệu ứng nước
     bool hopperWasAirborne = false; // Theo dõi trạng thái trên không của Hopper để kích hoạt tiếp đất
     bool active = false;
+    // Hoạt ảnh chết: active = false (gameplay coi như đã chết) nhưng vẫn vẽ khi dying
+    bool dying = false;
+    bool deathFx = true;       // phát HitFx nổ chết khi kết thúc
+    float deathTimer = 0.0f;
+    Vec3 deathVel{ 0, 0, 0 };
 };
 
 struct EnemyModelConfig
@@ -94,6 +99,8 @@ public:
     int GetTotalKills() const { return totalKills_; }
     void RecordKill() { killedThisWave_++; totalKills_++; }
     void KillAll(EffectSystem& effects);
+    // Bắt đầu hoạt ảnh chết (thu nhỏ + nảy văng ra xa killerPos), không xoá ngay
+    static void StartDeath(Enemy& e, const Vec3& awayFrom, bool withFx = true);
 
     void SetWave(int wave, bool isEndless = false);
     void SetEndless(bool enable) { isEndless_ = enable; }

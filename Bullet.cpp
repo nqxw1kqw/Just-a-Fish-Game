@@ -237,8 +237,7 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
                     effects.SpawnDamagePopup(chained->pos + Vec3{ 0, chained->radius + 6.0f, 0 }, chainDmg, false);
                     if (chained->hp <= 0.0f)
                     {
-                        chained->active = false;
-                        effects.SpawnFishDeath(chained->pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, chained->radius * 2.0f);
+                        EnemyManager::StartDeath(*chained, b.pos);
                         SoundManager::Instance().PlaySFX(SfxId::EnemySquish); // #4: tiếng quái chết (giật sét)
                         extraExp = 1;
                         effects.SpawnExpOrb(chained->pos, 1.0f);
