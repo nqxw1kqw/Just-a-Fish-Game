@@ -38,6 +38,9 @@ public:
     void Update(float dt);
     void Draw() const;
 
+    // Phát bọt tại vị trí bất kỳ (telegraph của boss...)
+    void EmitAt(const Vec3& center, int count, float spread, float sizeMin = 2.5f, float sizeMax = 6.0f);
+
     std::size_t ActiveCount() const;
 
 private:

@@ -185,3 +185,12 @@ std::size_t BubbleSystem::ActiveCount() const
     for (const auto& b : bubbles_) if (b.active) ++n;
     return n;
 }
+
+void BubbleSystem::EmitAt(const Vec3& center, int count, float spread, float sizeMin, float sizeMax)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        float a = Rnd(0.0f, 6.2831853f), r = Rnd(0.0f, spread);
+        Spawn(center + Vec3{ std::cos(a) * r, Rnd(0.0f, 6.0f), std::sin(a) * r }, sizeMin, sizeMax);
+    }
+}

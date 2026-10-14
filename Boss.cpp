@@ -74,6 +74,11 @@ void WhaleBoss::Reset()
 
     for (auto& r : tsunamiRings_) r.active = false;
     tsunamiWater_.Reset();
+    tailCooldown_ = 0.0f;
+    hugTimer_ = 0.0f;
+    stunTimer_ = 0.0f;
+    stunDamageMul_ = 1.0f;
+    telegraphFxTimer_ = 0.0f;
 }
 
 void WhaleBoss::Spawn(const Vec3& arenaCenter)
@@ -99,11 +104,19 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
 
     for (auto& r : tsunamiRings_) r.active = false;
     tsunamiWater_.Reset();
+    tailCooldown_ = 0.0f;
+    hugTimer_ = 0.0f;
+    stunTimer_ = 0.0f;
+    stunDamageMul_ = 1.0f;
+    telegraphFxTimer_ = 0.0f;
 }
 
 bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
 {
     if (!active_ || hp_ <= 0.0f) return false;
+
+    // Boss rework: đang choáng thì nhận thêm sát thương
+    if (action_ == BossAction::Stunned) dmg *= stunDamageMul_;
 
     hp_ -= dmg;
     hitFlashTimer_ = 0.14f;
@@ -189,7 +202,6 @@ void WhaleBoss::ForceDoubleSlam(PlayerFish& player)
     slamTarget_.y = 0.0f;
     isSecondSlam_ = false;
     RecordActionHistory(L"Đập kép (F7)");
-    if (player.GetHeightY() <= 0.01f && !player.IsAirborne()) player.ResetJumpCooldown();
 }
 
 void WhaleBoss::SpawnRing(float gapDeg, const Vec3& targetPos)
@@ -249,7 +261,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         BossSkill skill;
         float weight;
     };
-    std::array<Candidate, 4> candidates{};
+    std::array<Candidate, 12> candidates{};
     int count = 0;
 
     auto TryAddCandidate = [&](BossSkill skill, float baseWeight)
@@ -261,17 +273,20 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         if ((skill == BossSkill::Slam || skill == BossSkill::DoubleSlam) && !canJumpAttack) return;
         if (skill == BossSkill::Minions && !canSummon) return;
         if (skill == BossSkill::Tsunami && !canTsunami) return;
+        if (skill == BossSkill::Tail && !(tailCooldown_ <= 0.0f && distToPlayer < GameConsts::TAIL_TRIGGER_RANGE && IsPlayerBehind(player))) return;
 
-        // 3. Điều chỉnh trọng số theo cự ly người chơi
+        // 3. Điều chỉnh trọng số theo cự ly người chơi (Boss rework 16)
         float w = baseWeight;
-        if (distToPlayer < 200.0f && (skill == BossSkill::Slam || skill == BossSkill::DoubleSlam))
+        if (distToPlayer < GameConsts::BOSS_NEAR_RANGE)
         {
-            w *= 1.5f;
+            if (skill == BossSkill::Tail) w *= 2.0f;
+            if (skill == BossSkill::Slam || skill == BossSkill::DoubleSlam) w *= 1.5f;
         }
-        else if (distToPlayer > 450.0f && skill == BossSkill::Tsunami)
+        else if (distToPlayer > GameConsts::BOSS_FAR_RANGE)
         {
-            w *= 1.5f;
+            if (skill == BossSkill::Tsunami) w *= 1.5f;
         }
+        if (count >= static_cast<int>(candidates.size())) return;
 
         candidates[count++] = Candidate{ skill, w };
     };
@@ -282,6 +297,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         TryAddCandidate(BossSkill::Slam, 3.0f);
         TryAddCandidate(BossSkill::Minions, 2.0f);
         TryAddCandidate(BossSkill::Tsunami, 3.0f);
+        TryAddCandidate(BossSkill::Tail, 2.5f);
     }
     else
     {
@@ -290,6 +306,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         TryAddCandidate(BossSkill::Tsunami, 3.0f);
         TryAddCandidate(BossSkill::Minions, 2.0f);
         TryAddCandidate(BossSkill::Slam, 2.0f);
+        TryAddCandidate(BossSkill::Tail, 2.5f);
     }
 
     // Nếu danh sách hợp lệ rỗng: chọn Triệu hồi (nếu được) hoặc kéo dài Idle thêm nhịp ngắn, không được kẹt
@@ -333,9 +350,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
     {
     case BossSkill::Slam:
     {
-        action_ = BossAction::TelegraphSlam;
-        RecordActionHistory(L"Nhảy đập");
-        if (player.GetHeightY() <= 0.01f && !player.IsAirborne()) player.ResetJumpCooldown();
+        StartBreach(player);
         break;
     }
     case BossSkill::DoubleSlam:
@@ -343,7 +358,11 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         action_ = BossAction::TelegraphDoubleSlam;
         isSecondSlam_ = false;
         RecordActionHistory(L"Đập kép");
-        if (player.GetHeightY() <= 0.01f && !player.IsAirborne()) player.ResetJumpCooldown();
+        break;
+    }
+    case BossSkill::Tail:
+    {
+        StartTail();
         break;
     }
     case BossSkill::Minions:
@@ -398,10 +417,21 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
 
     // Luôn hướng về phía cá trên XZ nếu không trong pha thực hiện đập
     Vec3 toPlayer = Collision::FlatDiff(player.GetPosition(), pos_);
-    if (toPlayer.LengthSq() > 1.0f && action_ != BossAction::PerformSlam && action_ != BossAction::PerformDoubleSlam)
+    // Boss rework: xoay dần với tốc độ giới hạn (người chơi có thể vòng ra sau lưng -> Tail Slap)
+    bool canTurn = action_ != BossAction::PerformSlam && action_ != BossAction::PerformDoubleSlam &&
+                   action_ != BossAction::TelegraphTail && action_ != BossAction::PerformTail && action_ != BossAction::Stunned;
+    if (toPlayer.LengthSq() > 1.0f && canTurn)
     {
-        yaw_ = std::atan2(toPlayer.x, toPlayer.z);
+        float targetYaw = std::atan2(toPlayer.x, toPlayer.z);
+        float diff = targetYaw - yaw_;
+        while (diff > 3.14159265f) diff -= 6.2831853f;
+        while (diff < -3.14159265f) diff += 6.2831853f;
+        float maxStep = GameConsts::BOSS_TURN_RATE * dt;
+        yaw_ += std::clamp(diff, -maxStep, maxStep);
     }
+
+    if (tailCooldown_ > 0.0f) tailCooldown_ -= dt;
+    hugTimer_ = (toPlayer.Length() < GameConsts::BOSS_NEAR_RANGE) ? hugTimer_ + dt : 0.0f;
 
     actionTimer_ += dt;
     timeSinceLastJumpAttack_ += dt;
@@ -439,6 +469,15 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             }
         }
 
+        // Boss rework 16: chống bám sát — người chơi đứng sát quá lâu thì ép Quật đuôi
+        if (hugTimer_ >= GameConsts::BOSS_HUG_TIME && tailCooldown_ <= 0.0f)
+        {
+            hugTimer_ = 0.0f;
+            lastSkill_ = BossSkill::Tail;
+            StartTail();
+            break;
+        }
+
         if (actionTimer_ >= idleDuration_)
         {
             PickNextAction(player, enemies);
@@ -451,7 +490,9 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     // 1. Nhảy đập (Slam)
     case BossAction::TelegraphSlam:
     {
-        float telegraphDuration = (phase_ == BossPhase::Phase1) ? 1.2f : 0.75f;
+        // Breach Slam (rework 8): lặn xuống, bọt sủi ở điểm đáp, điểm đáp bám theo người chơi
+        float telegraphDuration = (phase_ == BossPhase::Phase1) ? GameConsts::BREACH_TELEGRAPH_P1 : GameConsts::BREACH_TELEGRAPH_P2;
+        UpdateBreachTelegraph(dt, telegraphDuration, player, effects, true);
         if (actionTimer_ >= telegraphDuration)
         {
             action_ = BossAction::PerformSlam;
@@ -462,30 +503,25 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     }
     case BossAction::PerformSlam:
     {
-        float jumpDuration = 0.65f;
+        float jumpDuration = GameConsts::BREACH_AIR_TIME;
         slamProgress_ += dt / jumpDuration;
+        // Điểm đáp còn bám theo người chơi tới BREACH_LOCK_TIME trước khi đáp
+        if ((1.0f - slamProgress_) * jumpDuration > GameConsts::BREACH_LOCK_TIME)
+        {
+            slamTarget_ = player.GetPosition();
+            slamTarget_.y = 0.0f;
+        }
         if (slamProgress_ >= 1.0f)
         {
-            pos_ = slamTarget_;
-            pos_.y = 0.0f;
             action_ = BossAction::Idle;
             actionTimer_ = 0.0f;
             timeSinceLastJumpAttack_ = 0.0f; // Đánh dấu đòn nhảy đã kết thúc
-
-            effects.AddTrauma(0.55f);
-            effects.SpawnShockwave(pos_, slamRadius_);
-            effects.SpawnWaterSplash(pos_, slamRadius_, 2.2f);
-            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
-
-            if (Collision::DistXZ(player.GetPosition(), pos_) <= slamRadius_ && player.GetHeightY() < 28.0f)
-            {
-                player.TakeDamage(35.0f, effects);
-            }
+            LandBreach(player, effects, GameConsts::BREACH_INNER_DAMAGE, GameConsts::BREACH_OUTER_DAMAGE);
         }
         else
         {
             float t = slamProgress_;
-            pos_.y = 4.0f * 130.0f * t * (1.0f - t);
+            pos_.y = 4.0f * GameConsts::BREACH_JUMP_HEIGHT * t * (1.0f - t);
             pos_.x += (slamTarget_.x - pos_.x) * (dt * 5.0f);
             pos_.z += (slamTarget_.z - pos_.z) * (dt * 5.0f);
         }
@@ -547,6 +583,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     // 3. Nhảy đập đôi (Phase 2 - Task 10 T3b)
     case BossAction::TelegraphDoubleSlam:
     {
+        UpdateBreachTelegraph(dt, 0.6f, player, effects, false);
         if (actionTimer_ >= 0.6f)
         {
             action_ = BossAction::PerformDoubleSlam;
@@ -581,11 +618,6 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
                 actionTimer_ = 0.0f;
                 slamTarget_ = player.GetPosition();
                 slamTarget_.y = 0.0f;
-                // Nếu người chơi ở dưới đất, reset jump cooldown để người chơi có cơ hội né cú 2
-                if (player.GetHeightY() <= 0.01f && !player.IsAirborne())
-                {
-                    player.ResetJumpCooldown();
-                }
             }
             else
             {
@@ -605,6 +637,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     }
     case BossAction::TelegraphDoubleSlam2:
     {
+        UpdateBreachTelegraph(dt, GameConsts::BOSS_DOUBLE_SLAM_TELEGRAPH2, player, effects, false);
         if (actionTimer_ >= GameConsts::BOSS_DOUBLE_SLAM_TELEGRAPH2)
         {
             action_ = BossAction::PerformDoubleSlam;
@@ -639,6 +672,8 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     }
 
     default:
+        // Boss rework: các trạng thái mới nằm trong BossSkills.cpp
+        UpdateExtendedAction(dt, player, enemies, effects);
         break;
     }
 
@@ -765,16 +800,18 @@ void WhaleBoss::Draw() const
     if (!active_ || hp_ <= 0.0f) return;
 
     // 1. Vẽ Decal báo hiệu trước khi tung đòn
-    if (action_ == BossAction::TelegraphSlam || action_ == BossAction::TelegraphDoubleSlam || action_ == BossAction::TelegraphDoubleSlam2)
+    // Boss rework: bỏ decal đỏ/vàng của đòn đập — thay bằng bóng đổ to dần ở điểm đáp (+ bọt khí trong Update)
+    if (action_ == BossAction::TelegraphSlam || action_ == BossAction::TelegraphDoubleSlam || action_ == BossAction::TelegraphDoubleSlam2 ||
+        action_ == BossAction::PerformSlam || action_ == BossAction::PerformDoubleSlam)
     {
-        float maxDur = (action_ == BossAction::TelegraphDoubleSlam2) ? GameConsts::BOSS_DOUBLE_SLAM_TELEGRAPH2 : 1.0f;
-        float ratio = std::clamp(actionTimer_ / maxDur, 0.1f, 1.0f);
-        int alpha = static_cast<int>(120.0f + ratio * 80.0f);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-
-        Render3D::DrawCircle3D(slamTarget_, slamRadius_ * ratio, 32, GetColor(255, 40, 40), true);
-        Render3D::DrawCircle3D(slamTarget_, slamRadius_, 32, GetColor(255, 230, 80), false);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+        float ratio = 1.0f;
+        if (action_ == BossAction::TelegraphSlam)
+            ratio = std::clamp(actionTimer_ / ((phase_ == BossPhase::Phase1) ? GameConsts::BREACH_TELEGRAPH_P1 : GameConsts::BREACH_TELEGRAPH_P2), 0.1f, 1.0f) * 0.6f;
+        else if (action_ == BossAction::TelegraphDoubleSlam || action_ == BossAction::TelegraphDoubleSlam2)
+            ratio = 0.6f * std::clamp(actionTimer_ / 0.6f, 0.1f, 1.0f);
+        else
+            ratio = 0.6f + 0.4f * std::clamp(slamProgress_, 0.0f, 1.0f);
+        Render3D::DrawFlatShadow(slamTarget_, GameConsts::BREACH_OUTER_RADIUS * ratio, 0.35f + 0.5f * ratio);
     }
     else if (action_ == BossAction::TelegraphMinions)
     {
@@ -808,11 +845,28 @@ void WhaleBoss::Draw() const
     // Khi nạp sóng thần, thân boss rung nhẹ và phình lên (A2)
     float scaleMul = 1.0f;
     Vec3 shakeOffset{ 0, 0, 0 };
+    float pitch = 0.0f;
     if (action_ == BossAction::TelegraphRadialTsunami)
     {
         scaleMul = 1.08f;
         shakeOffset.x = (rand() % 7 - 3) * 0.8f;
         shakeOffset.z = (rand() % 7 - 3) * 0.8f;
+    }
+    else if (action_ == BossAction::TelegraphTail)
+    {
+        // Giơ đuôi: chúi đầu xuống, đuôi vểnh lên + rung
+        float dur = (phase_ == BossPhase::Phase1) ? GameConsts::TAIL_TELEGRAPH_P1 : GameConsts::TAIL_TELEGRAPH_P2;
+        pitch = 0.35f * std::clamp(actionTimer_ / dur, 0.0f, 1.0f);
+        shakeOffset.x = (rand() % 5 - 2) * 0.6f;
+    }
+    else if (action_ == BossAction::PerformTail)
+    {
+        pitch = -0.2f;
+    }
+    else if (action_ == BossAction::Stunned)
+    {
+        shakeOffset.x = std::sin(stunTimer_ * 18.0f) * 3.0f;
+        pitch = 0.12f * std::sin(stunTimer_ * 9.0f);
     }
 
     // Mô hình low-poly cá voi (F11 để tắt, khi đó dùng khối box cũ bên dưới)
@@ -822,7 +876,7 @@ void WhaleBoss::Draw() const
         LowPolyModels::ApplyWhalePhaseColors(phase_ == BossPhase::Phase2);
         Vec3 drawPos = pos_ + shakeOffset;
         MV1SetPosition(whaleHandle, VGet(drawPos.x, drawPos.y, drawPos.z));
-        MV1SetRotationXYZ(whaleHandle, VGet(0.0f, yaw_, 0.0f));
+        MV1SetRotationXYZ(whaleHandle, VGet(pitch, yaw_, 0.0f));
         MV1SetScale(whaleHandle, VGet(scaleMul, scaleMul, scaleMul));
         if (hitFlashTimer_ > 0.0f)
         {
@@ -859,7 +913,7 @@ void WhaleBoss::Draw() const
 
     // Đuôi cá voi
     float tailDist = -halfBody.z - 18.0f;
-    Vec3 tailCenter = center + Vec3{ std::sin(yaw_) * tailDist, 6.0f, std::cos(yaw_) * tailDist };
+    Vec3 tailCenter = center + Vec3{ std::sin(yaw_) * tailDist, 6.0f + pitch * 80.0f, std::cos(yaw_) * tailDist };
     Render3D::DrawOrientedBox3D(tailCenter, Vec3{ 14.0f, 20.0f, 18.0f }, yaw_, bodyColor, edgeColor, true);
 }
 

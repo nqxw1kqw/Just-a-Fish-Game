@@ -25,7 +25,11 @@ enum class BossAction
     PerformDoubleSlam,
     TelegraphDoubleSlam2,   // Báo hiệu cú đập thứ 2 (Task 10 T3b)
     TelegraphRadialTsunami, // Phần A: Báo hiệu Sóng thần tỏa tròn
-    LaunchRadialTsunami     // Phần A: Phóng Sóng thần tỏa tròn
+    LaunchRadialTsunami,    // Phần A: Phóng Sóng thần tỏa tròn
+    // Boss rework (PR A)
+    TelegraphTail,          // Quật đuôi: giơ đuôi
+    PerformTail,            // Quật đuôi: hồi sau đòn
+    Stunned                 // Choáng (nhận thêm sát thương)
 };
 
 enum class BossSkill
@@ -34,7 +38,8 @@ enum class BossSkill
     Slam,
     DoubleSlam,
     Minions,
-    Tsunami
+    Tsunami,
+    Tail
 };
 
 // Cấu trúc Vành Sóng thần tỏa tròn (Radial Tsunami - Phần A3)
@@ -78,6 +83,12 @@ public:
     void ForceDoubleSlam(PlayerFish& player);
     void StartTsunamiTelegraph(PlayerFish& player, float gapDeg = 0.0f);
 
+    // Boss rework (PR A): Breach Slam, Tail Slap, Stun
+    void ForceBreach(PlayerFish& player);
+    void ForceTail(PlayerFish& player);
+    void Stun(float duration, float damageMul = GameConsts::BOSS_STUN_DAMAGE_MUL);
+    bool IsStunned() const { return action_ == BossAction::Stunned; }
+
     // Truy vấn thông số cho Debug HUD (A8)
     int GetActiveTsunamiCount() const;
     float GetTsunamiJumpWindow() const;
@@ -110,6 +121,15 @@ public:
 private:
     void PickNextAction(PlayerFish& player, EnemyManager& enemies);
     void SpawnRing(float gapDeg, const Vec3& targetPos);
+
+    // Boss rework (BossSkills.cpp): xử lý các trạng thái mới; trả về true nếu đã xử lý
+    bool UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager& enemies, EffectSystem& effects);
+    void StartBreach(PlayerFish& player);
+    void StartTail();
+    void UpdateBreachTelegraph(float dt, float duration, PlayerFish& player, EffectSystem& effects, bool trackPlayer);
+    void LandBreach(PlayerFish& player, EffectSystem& effects, float innerDamage, float outerDamage);
+    bool IsPlayerBehind(const PlayerFish& player) const;
+    void EnsureActiveForDebug();
 
     bool active_ = false;
     Vec3 pos_{ 0, 0, 0 };
@@ -145,6 +165,13 @@ private:
     float timeSinceLastJumpAttack_ = 5.0f; // Theo dõi giãn cách đòn bắt buộc nhảy (A5 >= 2.0s)
     float timeSinceLastRingLaunch_ = 5.0f; // Giãn cách giữa 2 lần phóng vòng sóng (A5 >= 2.3s)
     bool needSecondRing_ = false;          // Hỗ trợ gọi 2 vòng liên tiếp ở Phase 2
+
+    // Boss rework (PR A)
+    float tailCooldown_ = 0.0f;
+    float hugTimer_ = 0.0f;
+    float stunTimer_ = 0.0f;
+    float stunDamageMul_ = 1.0f;
+    float telegraphFxTimer_ = 0.0f;
 
     // Hiệu ứng & Hit flash
     float hitFlashTimer_ = 0.0f;

@@ -279,6 +279,23 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 }
             }
 
+            // Boss rework: Shift + số = buộc boss dùng chiêu mới
+            if (shiftHeld && !ctrlHeld)
+            {
+                int forced = 0;
+                if (input.IsPressed(KEY_INPUT_1)) forced = 1;
+                else if (input.IsPressed(KEY_INPUT_2)) forced = 2;
+                else if (input.IsPressed(KEY_INPUT_3)) forced = 3;
+                if (forced != 0)
+                {
+                    debugUsed_ = true;
+                    if (game.state_ != GameState::Boss) game.SkipToBoss();
+                    if (forced == 1) game.boss_.ForceBreach(game.player_);
+                    else if (forced == 2) game.boss_.ForceTail(game.player_);
+                    else if (forced == 3) game.boss_.Stun(2.0f);
+                }
+            }
+
             // F3: Test SFX lần lượt
             bool f3Now = input.IsPressed(KEY_INPUT_F3);
             if (f3Now)
@@ -503,5 +520,6 @@ void DebugController::DrawHUD(const GamePrototype& game) const
         FontManager::Draw(textX, textY, L"F9: God Mode  |  Shift+F9: Instant Defeat", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, game.IsRenderInterpEnabled() ? L"F10: Render Interp ON" : L"F10: Render Interp OFF", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F4: Full HP + Reset CD  |  F7: Boss Tsunami", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"Boss: Shift+1 Breach | Shift+2 Tail | Shift+3 Stun", GetColor(255, 180, 120), FontSize::Small); textY += 16;
     }
 }
