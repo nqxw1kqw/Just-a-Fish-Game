@@ -81,6 +81,7 @@ public:
     void ForceTsunami(PlayerFish& player);
     void ForceTsunamiWithGap(PlayerFish& player);
     void ForceDoubleSlam(PlayerFish& player);
+    void ForceTsunamiDouble(PlayerFish& player); // PR B: sóng đôi (không khe -> có khe)
     void StartTsunamiTelegraph(PlayerFish& player, float gapDeg = 0.0f);
 
     // Boss rework (PR A): Breach Slam, Tail Slap, Stun
@@ -127,7 +128,8 @@ private:
     void StartBreach(PlayerFish& player);
     void StartTail();
     void UpdateBreachTelegraph(float dt, float duration, PlayerFish& player, EffectSystem& effects, bool trackPlayer);
-    void LandBreach(PlayerFish& player, EffectSystem& effects, float innerDamage, float outerDamage);
+    void LandBreach(PlayerFish& player, EffectSystem& effects, float innerDamage, float outerDamage,
+                    float innerRadius = GameConsts::BREACH_INNER_RADIUS, float outerRadius = GameConsts::BREACH_OUTER_RADIUS);
     bool IsPlayerBehind(const PlayerFish& player) const;
     void EnsureActiveForDebug();
 
@@ -158,6 +160,9 @@ private:
     float slamRadius_ = 200.0f;
     float slamProgress_ = 0.0f; // Pha nhảy lên đập xuống
     bool isSecondSlam_ = false;
+    int slamCount_ = 0;              // PR B: số cú đã đáp trong Quật ba nhịp
+    float secondRingDelay_ = 0.0f;   // PR B: độ trễ vòng sóng thứ 2
+    float secondRingGapDeg_ = 0.0f;  // PR B: khe của vòng sóng thứ 2
 
     // Đòn 2: Sóng thần tỏa tròn (Radial Tsunami - Phần A)
     std::array<TsunamiRing, GameConsts::TSUNAMI_MAX_ACTIVE> tsunamiRings_{};
