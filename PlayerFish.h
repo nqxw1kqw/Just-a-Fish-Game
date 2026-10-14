@@ -181,7 +181,6 @@ private:
     float slowTimer_ = 0.0f;
     float slowFactor_ = 1.0f;
     Vec3 externalPull_{ 0.0f, 0.0f, 0.0f };
-    float tailWagAngle_ = 0.0f;
     float swimSoundTimer_ = 0.0f;
     float swimWakeTimer_ = 0.0f;
 

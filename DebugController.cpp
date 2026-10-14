@@ -5,7 +5,6 @@
 #include "Consts.h"
 #include "DxLib.h"
 #include "Input.h"
-#include "LowPolyModels.h"
 #include <algorithm>
 #include <cmath>
 

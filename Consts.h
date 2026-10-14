@@ -82,6 +82,7 @@ namespace GameConsts
     // ---- Boss rework PR A: Breach Slam / Tail Slap / AI / Stun ----
     // ---- Phản hồi trúng đòn ----
     constexpr float HIT_FLASH_TIME = 0.1f;              // Chớp trắng mô hình cá khi trúng đòn
+    constexpr float PLAYER_HIT_FLASH_TIME = 0.16f;      // Chớp trắng cá người chơi (giữ như cũ)
     constexpr float HIT_CRIT_DAMAGE = 50.0f;            // Đòn >= mức này dùng tia lửa crit
     constexpr float HIT_FX_HEIGHT = 10.0f;              // Độ cao điểm phát hạt trên thân cá
 

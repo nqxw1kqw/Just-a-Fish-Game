@@ -305,7 +305,6 @@ void PlayerFish::Reset()
     level_ = 1;
 
     hitFlashTimer_ = 0.0f;
-    tailWagAngle_ = 0.0f;
     swimSoundTimer_ = 0.0f;
     swimWakeTimer_ = 0.0f;
 }
@@ -464,7 +463,6 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
             pos_.z += moveDir_.z * speed_ * dt;
 
             swimTimer_ += dt;
-            tailWagAngle_ = std::sin(swimTimer_ * 14.0f) * 0.25f;
 
             swimSoundTimer_ += dt;
             if (swimSoundTimer_ >= 0.35f)
@@ -483,7 +481,6 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
         }
         else
         {
-            tailWagAngle_ *= 0.85f;
             swimSoundTimer_ = 0.30f;
             swimWakeTimer_ = 0.0f;
         }
@@ -528,7 +525,6 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
                 pos_.x += moveDir_.x * speed_ * dt;
                 pos_.z += moveDir_.z * speed_ * dt;
                 swimTimer_ += dt;
-                tailWagAngle_ = std::sin(swimTimer_ * 14.0f) * 0.25f;
             }
             else
             {
@@ -560,7 +556,6 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
             }
 
             // Vẫy đuôi cá theo nhịp bay
-            tailWagAngle_ = std::sin(jumpPhase_ * 3.14159f * 4.0f) * 0.35f;
 
             // 3. Cập nhật vị trí rơi dự đoán cho vòng báo decal (J5)
             float timeRemaining = (1.0f - jumpPhase_) * jumpDuration_;
@@ -614,7 +609,7 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
     hp_ -= dmg;
     damageTakenThisWave_ += dmg;
     invulnerableTimer_ = 0.35f; // Thời gian I-Frame 0.35s bảo vệ cá không bị dồn sát thương liên tục
-    hitFlashTimer_ = 0.16f;
+    hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME;
     effects.AddTrauma(0.28f); // Rung nhẹ vừa phải tạo phản hồi va đập
     effects.SpawnHitParticles(pos_ + Vec3{ 0, 10, 0 }, 8, GetColor(255, 60, 60));
     effects.SpawnHitFeedback(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, false);
@@ -778,7 +773,7 @@ void PlayerFish::Draw() const
         }
 
         // Chớp trắng emissive (HitFlash) phủ lên mọi trạng thái màu ở trên
-        HitFlash::DrawModel(fishModelHandle_, hitFlashTimer_ / 0.16f);
+        HitFlash::DrawModel(fishModelHandle_, hitFlashTimer_ / GameConsts::PLAYER_HIT_FLASH_TIME);
     }
     // Model nạp lỗi: đã báo lỗi trong Init() -> bỏ qua vẽ (không vẽ khối hộp)
 }
