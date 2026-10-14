@@ -21,7 +21,6 @@ namespace
         { L"Data/Model/LowPoly/WhaleBoss.x", L"WhaleBoss", -1 },
     };
 
-    bool s_enabled = LowPolyModels::ENABLED_BY_DEFAULT;
     bool s_loaded = false;
 
     // Màu gốc của vật liệu cá voi (để đổi qua lại giữa phase 1 và phase 2)
@@ -47,7 +46,11 @@ namespace LowPolyModels
             }
             else
             {
-                AppLogAdd(L"[LOWPOLY] WARNING: Failed to load %s (%s), using old drawing.\n", e.name, e.path);
+                AppLogAdd(L"[LOWPOLY] ERROR: Failed to load %s (%s) - object will not be drawn (no box fallback).\n", e.name, e.path);
+                printfDx(L"ERROR: model %s failed to load (%s)\n", e.name, e.path);
+                OutputDebugStringW(L"[LOWPOLY] ERROR: model failed to load: ");
+                OutputDebugStringW(e.path);
+                OutputDebugStringW(L"\n");
             }
         }
 
@@ -82,19 +85,9 @@ namespace LowPolyModels
     int GetHandle(LowPolyId id)
     {
         const int idx = static_cast<int>(id);
-        if (!s_enabled || idx < 0 || idx >= static_cast<int>(LowPolyId::Count)) return -1;
+        if (idx < 0 || idx >= static_cast<int>(LowPolyId::Count)) return -1;
         return s_entries[idx].handle;
     }
-
-    bool IsEnabled() { return s_enabled; }
-
-    void SetEnabled(bool enable)
-    {
-        s_enabled = enable;
-        AppLogAdd(L"[LOWPOLY] Low-poly models %s\n", s_enabled ? L"ON" : L"OFF");
-    }
-
-    void Toggle() { SetEnabled(!s_enabled); }
 
     void ApplyWhalePhaseColors(bool phase2)
     {

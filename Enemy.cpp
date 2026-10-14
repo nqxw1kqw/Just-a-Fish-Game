@@ -900,7 +900,7 @@ void EnemyManager::Draw() const
         float shadowRad = e.radius * 1.3f * (1.0f - 0.35f * heightRatio);
         Render3D::DrawFlatShadow(e.pos, shadowRad, 0.9f);
 
-        // 2a. Mô hình low-poly (F11 để tắt, khi đó dùng mô hình cũ / khối box bên dưới)
+        // 2a. Mô hình low-poly (ưu tiên); 2b. mô hình cũ PreModelTest nếu low-poly nạp lỗi
         int lowPolyHandle = LowPolyModels::GetHandle(static_cast<LowPolyId>(static_cast<int>(e.type)));
         if (lowPolyHandle >= 0)
         {
@@ -971,66 +971,7 @@ void EnemyManager::Draw() const
             continue;
         }
 
-        // 2. Màu sắc và kích thước theo loại
-        int fillColor = 0;
-        int edgeColor = 0;
-        Vec3 halfSize{ e.radius, e.radius, e.radius };
-
-        switch (e.type)
-        {
-        case EnemyType::Minion:
-            fillColor = GetColor(225, 45, 45); // Đỏ lính
-            edgeColor = GetColor(140, 20, 20);
-            halfSize = Vec3{ 10.0f, 9.0f, 10.0f };
-            break;
-        case EnemyType::Hopper:
-            fillColor = GetColor(240, 120, 30); // Cam cua
-            edgeColor = GetColor(160, 60, 10);
-            halfSize = Vec3{ 12.0f, 8.0f, 12.0f };
-            break;
-        case EnemyType::Tanker:
-            fillColor = GetColor(50, 155, 80); // Xanh rùa
-            edgeColor = GetColor(20, 85, 40);
-            halfSize = Vec3{ 20.0f, 16.0f, 20.0f };
-            break;
-        case EnemyType::Float:
-            fillColor = GetColor(185, 75, 235); // Tím sứa bay
-            edgeColor = GetColor(235, 160, 255);
-            halfSize = Vec3{ 14.0f, 13.0f, 14.0f };
-            break;
-        case EnemyType::Charge:
-            if (e.chargeState == 1) // Khựng nạp lực báo hiệu
-            {
-                fillColor = GetColor(255, 45, 45); // Đỏ rực cảnh báo
-                edgeColor = GetColor(255, 220, 50);
-            }
-            else if (e.chargeState == 2) // Đang lao vút
-            {
-                fillColor = GetColor(235, 70, 70);
-                edgeColor = GetColor(255, 140, 40);
-            }
-            else
-            {
-                fillColor = GetColor(70, 105, 135); // Xám cá mập
-                edgeColor = GetColor(35, 55, 75);
-            }
-            halfSize = Vec3{ 13.0f, 11.0f, 22.0f };
-            break;
-        }
-
-        if (e.hitFlashTimer > 0.0f)
-        {
-            fillColor = GetColor(255, 255, 255);
-            edgeColor = GetColor(255, 180, 180);
-        }
-
-        Vec3 center = e.pos + Vec3{ 0.0f, halfSize.y, 0.0f };
-        Render3D::DrawOrientedBox3D(center, halfSize, e.yaw, fillColor, edgeColor, true);
-
-        // Mắt quái để trông sống động
-        float eyeFwd = halfSize.z + 1.5f;
-        Vec3 eyePos = center + Vec3{ std::sin(e.yaw) * eyeFwd, 2.0f, std::cos(e.yaw) * eyeFwd };
-        Render3D::DrawOrientedBox3D(eyePos, Vec3{ 3.0f, 2.0f, 1.5f }, e.yaw, GetColor(20, 20, 20), 0, false);
+        // Không có model nào nạp được cho loại quái này: đã báo lỗi lúc nạp -> bỏ qua vẽ
     }
 }
 

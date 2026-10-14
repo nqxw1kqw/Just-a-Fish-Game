@@ -976,16 +976,6 @@ void WhaleBoss::Draw() const
     float shadowRad = 65.0f * (1.0f - std::clamp(pos_.y / 150.0f, 0.0f, 0.5f));
     Render3D::DrawFlatShadow(pos_, shadowRad, 0.95f);
 
-    // 4. Vẽ thân Boss Cá Voi 3D Box
-    int bodyColor = (phase_ == BossPhase::Phase1) ? GetColor(45, 70, 105) : GetColor(145, 30, 45);
-    int edgeColor = (phase_ == BossPhase::Phase1) ? GetColor(80, 130, 190) : GetColor(255, 90, 60);
-
-    if (hitFlashTimer_ > 0.0f)
-    {
-        bodyColor = GetColor(255, 255, 255);
-        edgeColor = GetColor(255, 120, 120);
-    }
-
     // Khi nạp sóng thần, thân boss rung nhẹ và phình lên (A2)
     float scaleMul = 1.0f;
     Vec3 shakeOffset{ 0, 0, 0 };
@@ -1018,7 +1008,7 @@ void WhaleBoss::Draw() const
         pitch = 0.07f * std::sin(bossFightTimer_ * 1.3f);
     }
 
-    // Mô hình low-poly cá voi (F11 để tắt, khi đó dùng khối box cũ bên dưới)
+    // 4. Mô hình low-poly cá voi (luôn dùng model; nạp lỗi -> đã báo lỗi lúc nạp, bỏ qua vẽ thân)
     int whaleHandle = LowPolyModels::GetHandle(LowPolyId::WhaleBoss);
     if (whaleHandle >= 0)
     {
@@ -1027,44 +1017,9 @@ void WhaleBoss::Draw() const
         MV1SetPosition(whaleHandle, VGet(drawPos.x, drawPos.y, drawPos.z));
         MV1SetRotationXYZ(whaleHandle, VGet(pitch, yaw_, 0.0f));
         MV1SetScale(whaleHandle, VGet(scaleMul, scaleMul, scaleMul));
-        if (hitFlashTimer_ > 0.0f)
-        {
-            MV1SetDifColorScale(whaleHandle, GetColorF(3.0f, 3.0f, 3.0f, 1.0f));
-        }
-        else
-        {
-            MV1SetDifColorScale(whaleHandle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
-        }
+        MV1SetDifColorScale(whaleHandle, (hitFlashTimer_ > 0.0f) ? GetColorF(3.0f, 3.0f, 3.0f, 1.0f) : GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
         HitFlash::DrawModel(whaleHandle, hitFlashTimer_ / GameConsts::HIT_FLASH_TIME);
-        if (fx_) fx_->Draw(); // PR E
-        return;
     }
-
-    Vec3 halfBody{ 50.0f * scaleMul, 26.0f * scaleMul, 75.0f * scaleMul };
-    Vec3 center = pos_ + shakeOffset + Vec3{ 0.0f, halfBody.y, 0.0f };
-    Render3D::DrawOrientedBox3D(center, halfBody, yaw_, bodyColor, edgeColor, true);
-
-    // Mắt phát quang
-    float eyeForward = halfBody.z * 0.6f;
-    float eyeSide = halfBody.x + 1.5f;
-    Vec3 leftEye = center + Vec3{
-        -std::cos(yaw_) * eyeSide + std::sin(yaw_) * eyeForward,
-        8.0f,
-        std::sin(yaw_) * eyeSide + std::cos(yaw_) * eyeForward
-    };
-    Vec3 rightEye = center + Vec3{
-        std::cos(yaw_) * eyeSide + std::sin(yaw_) * eyeForward,
-        8.0f,
-        -std::sin(yaw_) * eyeSide + std::cos(yaw_) * eyeForward
-    };
-    int eyeCol = (phase_ == BossPhase::Phase2) ? GetColor(255, 230, 40) : GetColor(255, 60, 60);
-    Render3D::DrawOrientedBox3D(leftEye, Vec3{ 3.5f, 3.5f, 3.5f }, yaw_, eyeCol, 0, false);
-    Render3D::DrawOrientedBox3D(rightEye, Vec3{ 3.5f, 3.5f, 3.5f }, yaw_, eyeCol, 0, false);
-
-    // Đuôi cá voi
-    float tailDist = -halfBody.z - 18.0f;
-    Vec3 tailCenter = center + Vec3{ std::sin(yaw_) * tailDist, 6.0f + pitch * 80.0f, std::cos(yaw_) * tailDist };
-    Render3D::DrawOrientedBox3D(tailCenter, Vec3{ 14.0f, 20.0f, 18.0f }, yaw_, bodyColor, edgeColor, true);
 
     if (fx_) fx_->Draw(); // PR E: hạt trong suốt vẽ sau thân boss
 }
