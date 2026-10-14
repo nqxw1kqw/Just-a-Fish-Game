@@ -13,6 +13,8 @@ enum class LowPolyId
     Float,
     Charge,
     WhaleBoss,
+    SharkBoss,      // Boss Cá Mập (Endless) - thân
+    SharkBossTail,  // Đuôi tách riêng để vẫy (gốc = khớp đuôi)
     Count
 };
 

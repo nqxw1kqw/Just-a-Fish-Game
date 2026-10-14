@@ -9,7 +9,8 @@ class UIRenderer
 public:
     void DrawHUD(const GamePrototype& game) const;
     void DrawBossHealthBar(const WhaleBoss& boss) const;
-    void DrawBossIntroScreen() const;
+    void DrawBossHealthBar(const SharkBoss& shark) const;
+    void DrawBossIntroScreen(bool shark = false) const;
     void DrawTitleScreen(const GamePrototype& game) const;
     void DrawVictoryScreen(const GamePrototype& game) const;
     void DrawGameOverScreen(const GamePrototype& game) const;

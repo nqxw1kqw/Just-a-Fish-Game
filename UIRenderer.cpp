@@ -12,6 +12,11 @@ void UIRenderer::DrawBossHealthBar(const WhaleBoss& boss) const
     battleHud_.DrawBossBar(boss);
 }
 
+void UIRenderer::DrawBossHealthBar(const SharkBoss& shark) const
+{
+    battleHud_.DrawBossBar(shark);
+}
+
 void UIRenderer::DrawHUD(const GamePrototype& game) const
 {
     int sw = GameConsts::SCREEN_WIDTH;
@@ -137,7 +142,7 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
     FontManager::Draw(midX - 180, boxY + 428, L"[F1]: Toggle Debug HUD  |  [F2]: Toggle Camera Shake", GetColor(140, 170, 200), FontSize::Body);
 }
 
-void UIRenderer::DrawBossIntroScreen() const
+void UIRenderer::DrawBossIntroScreen(bool shark) const
 {
     int sw = GameConsts::SCREEN_WIDTH;
     int sh = GameConsts::SCREEN_HEIGHT;
@@ -150,7 +155,7 @@ void UIRenderer::DrawBossIntroScreen() const
     int midY = sh / 2;
 
     FontManager::Draw(midX - 240, midY - 60, L"! WARNING: DEEP SEA ENERGY ANOMALY !", GetColor(255, 60, 60), FontSize::Header);
-    FontManager::Draw(midX - 210, midY - 15, L"FINAL BOSS: GIANT WHALE HAS APPEARED!", GetColor(255, 215, 60), FontSize::Medium);
+    FontManager::Draw(midX - 210, midY - 15, shark ? L"BOSS: GREAT SHARK IS HUNTING YOU!" : L"FINAL BOSS: GIANT WHALE HAS APPEARED!", GetColor(255, 215, 60), FontSize::Medium);
     FontManager::Draw(midX - 160, midY + 40, L"The battle for survival begins now...", GetColor(240, 240, 240), FontSize::Body);
 }
 

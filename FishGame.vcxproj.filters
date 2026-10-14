@@ -63,6 +63,27 @@
     <ClInclude Include="CardManager.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="SharkBoss.h">
+      <Filter>Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkFxCommon.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkBiteLungeFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkCircleFinFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkVortexFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkRageFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkFxSet.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="Boss.h">
       <Filter>Entity</Filter>
     </ClInclude>
@@ -187,6 +208,9 @@
     </ClCompile>
     <ClCompile Include="BossSkills.cpp">
       <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="SharkBoss.cpp">
+      <Filter>Entity</Filter>
     </ClCompile>
     <ClCompile Include="Boss.cpp">
       <Filter>Entity</Filter>

@@ -115,6 +115,13 @@
     <ClInclude Include="CardDatabase.h" />
     <ClInclude Include="CardFrame.h" />
     <ClInclude Include="CardManager.h" />
+    <ClInclude Include="SharkBoss.h" />
+    <ClInclude Include="Effects\Shark\SharkFxCommon.h" />
+    <ClInclude Include="Effects\Shark\SharkBiteLungeFx.h" />
+    <ClInclude Include="Effects\Shark\SharkCircleFinFx.h" />
+    <ClInclude Include="Effects\Shark\SharkVortexFx.h" />
+    <ClInclude Include="Effects\Shark\SharkRageFx.h" />
+    <ClInclude Include="Effects\Shark\SharkFxSet.h" />
     <ClInclude Include="Boss.h" />
     <ClInclude Include="FontManager.h" />
     <ClInclude Include="DebugController.h" />
@@ -161,6 +168,7 @@
     <ClCompile Include="CardFrame.cpp" />
     <ClCompile Include="CardManager.cpp" />
     <ClCompile Include="BossSkills.cpp" />
+    <ClCompile Include="SharkBoss.cpp" />
     <ClCompile Include="Boss.cpp" />
     <ClCompile Include="FontManager.cpp" />
     <ClCompile Include="DebugController.cpp" />
