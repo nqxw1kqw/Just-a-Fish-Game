@@ -25,7 +25,7 @@ public:
                 float dist = reach * rng.Range(0.45f, 1.0f);
                 VECTOR p = VAdd(VGet(mouth.x, floorY + rng.Range(4, 40), mouth.z), VScale(Dir(a), dist));
                 VECTOR toMouth = VNorm(VSub(mouth, p));
-                Particle* q = stream ? Drop(p, VScale(toMouth, 120), 2.0f, 9, 4, 0.75f, 0)
+                WhaleFx::Particle* q = stream ? Drop(p, VScale(toMouth, 120), 2.0f, 9, 4, 0.75f, 0)
                                      : Foam(p, VScale(toMouth, 60), 2.0f, rng.Range(5, 9), 3, 0.8f, 0);
                 if (q) { q->target = mouth; q->pull = 1400; q->killRadius = 18; q->drag = 0.8f; }
             }
