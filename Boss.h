@@ -141,6 +141,13 @@ public:
 
     float GetBossFightTimer() const { return bossFightTimer_; }
     int GetActionHistoryCount() const { return actionHistoryCount_; }
+    // AI pacing (debug overlay)
+    int GetBurstCount() const { return burstCount_; }
+    int GetBurstSize() const { return burstSize_; }
+    float GetRestTimer() const { return restTimer_; }
+    static const wchar_t* SkillName(BossSkill s);
+    BossSkill GetLastSkill() const { return lastSkill_; }
+    BossSkill GetPrevSkill() const { return prevSkill_; }
     const wchar_t* GetRecentAction(int indexFromNewest) const;
     void RecordActionHistory(const wchar_t* actionName);
 
@@ -177,6 +184,19 @@ private:
     float idleDuration_ = 1.8f;
     int actionCycle_ = 0;
     BossSkill lastSkill_ = BossSkill::None;
+    // AI pacing
+    BossSkill prevSkill_ = BossSkill::None;     // chiêu trước lastSkill_
+    void NoteSkill(BossSkill s);                // ghi lịch sử 2 chiêu gần nhất (1 lần / chiêu)
+    int burstCount_ = 0;
+    int burstSize_ = 3;
+    float restTimer_ = 0.0f;
+    Vec3 lastPlayerPos_{ 0.0f, 0.0f, 0.0f };
+    Vec3 playerVel_{ 0.0f, 0.0f, 0.0f };
+    bool hasLastPlayerPos_ = false;
+    int RollBurstSize() const;
+    float CurrentBurstGap() const;
+    float CurrentRestTime() const;
+    Vec3 PredictPlayerPos(const PlayerFish& player, float leadTime) const;
     float timeSinceLastTsunami_ = 10.0f;
     float currentTsunamiGapDeg_ = 0.0f;
 

@@ -499,6 +499,12 @@ void DebugController::DrawHUD(const GamePrototype& game) const
                 FontManager::DrawFormat(textX, textY, GetColor(180, 200, 220), FontSize::Small,
                     L"Active Waves: %d | Time To Impact: --", game.boss_.GetActiveTsunamiCount());
             }
+            textY += 17;
+            // AI pacing: đợt chiêu / thời gian nghỉ / 2 chiêu gần nhất
+            FontManager::DrawFormat(textX, textY, GetColor(180, 255, 180), FontSize::Small,
+                L"Burst: %d/%d | Rest: %.2fs | Last: %ls, %ls",
+                game.boss_.GetBurstCount(), game.boss_.GetBurstSize(), game.boss_.GetRestTimer(),
+                WhaleBoss::SkillName(game.boss_.GetLastSkill()), WhaleBoss::SkillName(game.boss_.GetPrevSkill()));
             textY += 18;
         }
 
