@@ -82,8 +82,24 @@ namespace GameConsts
     // ---- Boss rework PR A: Breach Slam / Tail Slap / AI / Stun ----
     // ---- Phản hồi trúng đòn ----
     constexpr float HIT_FLASH_TIME = 0.1f;              // Chớp trắng mô hình cá khi trúng đòn
+    constexpr float PLAYER_HIT_FLASH_TIME = 0.16f;      // Chớp trắng cá người chơi (giữ như cũ)
     constexpr float HIT_CRIT_DAMAGE = 50.0f;            // Đòn >= mức này dùng tia lửa crit
     constexpr float HIT_FX_HEIGHT = 10.0f;              // Độ cao điểm phát hạt trên thân cá
+    // Người chơi trúng đòn
+    constexpr float PLAYER_HURT_KNOCKBACK = 760.0f;     // Vận tốc đẩy lùi khỏi nguồn sát thương (giảm 8.5/s -> trượt ~90 đơn vị)
+    constexpr float PLAYER_HURT_FX_DMG_UNIT = 20.0f;    // amount hạt máu = sát thương / 20 (kẹp 0.25–3)
+    constexpr float PLAYER_HURT_FX_MIN = 0.25f;
+    constexpr float PLAYER_HURT_FX_MAX = 3.0f;
+    constexpr float PLAYER_IFRAME_TIME = 1.2f;          // Bất tử sau khi trúng đòn (cửa sổ an toàn để đổi vị trí)
+    constexpr float PLAYER_IFRAME_BLINK_HZ = 12.0f;     // Nhấp nháy ẩn/hiện mô hình trong lúc bất tử
+    constexpr float PLAYER_IFRAME_RING_RADIUS = 34.0f;  // Vòng an toàn dưới chân khi đang bất tử
+    // Quái chết: thu nhỏ + nảy văng ra rồi mới biến mất
+    constexpr float ENEMY_DEATH_TIME = 0.55f;
+    constexpr float ENEMY_DEATH_HOP_SPEED = 220.0f;     // Văng ngang ra xa kẻ giết
+    constexpr float ENEMY_DEATH_HOP_UP = 260.0f;        // Vận tốc nảy lên
+    constexpr float ENEMY_DEATH_GRAVITY = 1100.0f;
+    constexpr float ENEMY_DEATH_BOUNCE = 0.45f;         // Hệ số nảy khi chạm sàn
+    constexpr int   DEATH_WIPE_MAX_BURSTS = 60;         // KillAll: tối đa số vụ nổ chết mỗi lần quét (~44 hạt/vụ, pool 4096)
 
     constexpr float BOSS_TURN_RATE = 1.8f;               // rad/s: boss xoay dần về người chơi (để có thể vòng ra sau lưng)
     constexpr float BREACH_TELEGRAPH_P1 = 1.0f;          // Lặn xuống + bọt sủi ở điểm đáp

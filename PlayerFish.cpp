@@ -1,10 +1,12 @@
-#ifndef NOMINMAX
+﻿#ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
 #include <algorithm>
 #include <cmath>
 #include "PlayerFish.h"
+#include "CollisionUtil.h"
+#include "Effects/Hit/HitFeedback.h"
 #include "RenderInterp.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
@@ -34,6 +36,13 @@ void PlayerFish::Init()
             {
                 fishModelHandle_ = MV1LoadModel(L"Data/Model/fish.mv1");
             }
+        }
+        if (fishModelHandle_ < 0)
+        {
+            // Không còn khối hộp dự phòng: báo lỗi rõ ràng, cá người chơi sẽ không được vẽ
+            AppLogAdd(L"[FISH_MODEL] ERROR: failed to load player fish model (Data/Model/Main/r-fish.mv1, Data/Model/Main/fish.mv1, Data/Model/fish.mv1)\n");
+            printfDx(L"ERROR: player fish model failed to load (Data/Model/Main/r-fish.mv1)\n");
+            OutputDebugStringW(L"[FISH_MODEL] ERROR: failed to load player fish model\n");
         }
 
         if (fishModelHandle_ >= 0)
@@ -297,7 +306,6 @@ void PlayerFish::Reset()
     level_ = 1;
 
     hitFlashTimer_ = 0.0f;
-    tailWagAngle_ = 0.0f;
     swimSoundTimer_ = 0.0f;
     swimWakeTimer_ = 0.0f;
 }
@@ -456,7 +464,6 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
             pos_.z += moveDir_.z * speed_ * dt;
 
             swimTimer_ += dt;
-            tailWagAngle_ = std::sin(swimTimer_ * 14.0f) * 0.25f;
 
             swimSoundTimer_ += dt;
             if (swimSoundTimer_ >= 0.35f)
@@ -475,7 +482,6 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
         }
         else
         {
-            tailWagAngle_ *= 0.85f;
             swimSoundTimer_ = 0.30f;
             swimWakeTimer_ = 0.0f;
         }
@@ -520,7 +526,6 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
                 pos_.x += moveDir_.x * speed_ * dt;
                 pos_.z += moveDir_.z * speed_ * dt;
                 swimTimer_ += dt;
-                tailWagAngle_ = std::sin(swimTimer_ * 14.0f) * 0.25f;
             }
             else
             {
@@ -552,7 +557,6 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
             }
 
             // Vẫy đuôi cá theo nhịp bay
-            tailWagAngle_ = std::sin(jumpPhase_ * 3.14159f * 4.0f) * 0.35f;
 
             // 3. Cập nhật vị trí rơi dự đoán cho vòng báo decal (J5)
             float timeRemaining = (1.0f - jumpPhase_) * jumpDuration_;
@@ -595,7 +599,7 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
     }
 }
 
-bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
+bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects, const Vec3* sourcePos)
 {
     // J4: Bất tử suốt lúc ở trên không, đang trong thời gian I-Frame, hoặc bật God Mode (F9)
     if (isGodMode_ || IsAirborne() || invulnerableTimer_ > 0.0f)
@@ -605,11 +609,22 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
 
     hp_ -= dmg;
     damageTakenThisWave_ += dmg;
-    invulnerableTimer_ = 0.35f; // Thời gian I-Frame 0.35s bảo vệ cá không bị dồn sát thương liên tục
-    hitFlashTimer_ = 0.16f;
+    invulnerableTimer_ = GameConsts::PLAYER_IFRAME_TIME; // Cửa sổ an toàn sau khi trúng đòn
+    hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME;
     effects.AddTrauma(0.28f); // Rung nhẹ vừa phải tạo phản hồi va đập
-    effects.SpawnHitParticles(pos_ + Vec3{ 0, 10, 0 }, 8, GetColor(255, 60, 60));
-    effects.SpawnHitFeedback(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, false);
+    // Đẩy lùi mạnh ra xa nguồn sát thương
+    Vec3 hurtDir{ 0.0f, 1.0f, 0.0f };
+    if (sourcePos)
+    {
+        Vec3 away = Collision::FlatDiff(pos_, *sourcePos);
+        float l = away.Length();
+        away = (l > 0.001f) ? away * (1.0f / l) : Vec3{ 0.0f, 0.0f, -1.0f };
+        knockback_ += away * GameConsts::PLAYER_HURT_KNOCKBACK;
+        hurtDir = Vec3{ away.x, 0.5f, away.z };
+    }
+    // Máu (Fuyuu PlayerHurtEffect) + chớp trắng; không bọt, không tia lửa
+    float hurtAmount = std::clamp(dmg / GameConsts::PLAYER_HURT_FX_DMG_UNIT, GameConsts::PLAYER_HURT_FX_MIN, GameConsts::PLAYER_HURT_FX_MAX);
+    effects.SpawnPlayerHurt(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, hurtDir, hurtAmount);
 
     // Phát âm thanh khi người chơi bị trúng đòn
     SoundManager::Instance().PlaySFX(SfxId::PlayerHit);
@@ -659,40 +674,6 @@ void PlayerFish::Draw() const
     }
 
     // Đã xóa bóng đen dưới chân cá theo yêu cầu của Shin
-
-    // Xác định màu sắc (Cá phát sáng vàng kim/neon khi bay bất tử)
-    int bodyColor = 0;
-    int edgeColor = 0;
-
-    if (hitFlashTimer_ > 0.0f)
-    {
-        bodyColor = GetColor(255, 255, 255);
-        edgeColor = GetColor(255, 100, 100);
-    }
-    else if (invulnerableTimer_ > 0.0f && static_cast<int>(invulnerableTimer_ * 24.0f) % 2 == 0)
-    {
-        // Nhấp nháy nhẹ trong thời gian I-Frame sau va chạm
-        bodyColor = GetColor(255, 200, 150);
-        edgeColor = GetColor(255, 120, 80);
-    }
-    else if (IsAirborne())
-    {
-        // Khi bay bất tử: phát quang màu vàng rực rỡ
-        bodyColor = GetColor(255, 220, 60);
-        edgeColor = GetColor(255, 255, 180);
-    }
-    else if (landRecoveryTimer_ > 0.0f)
-    {
-        // Khi vừa chạm đất khựng hồi phục: màu cam sẫm nhẹ
-        bodyColor = GetColor(230, 110, 30);
-        edgeColor = GetColor(160, 50, 15);
-    }
-    else
-    {
-        // Bơi bình thường: màu cam tươi
-        bodyColor = GetColor(255, 140, 35);
-        edgeColor = GetColor(180, 70, 15);
-    }
 
     // J7: Squash & Stretch Animation
     float scaleX = 1.0f;
@@ -803,58 +784,20 @@ void PlayerFish::Draw() const
             }
         }
 
-        MV1DrawModel(fishModelHandle_);
-        return; // Bỏ qua vẽ 3D box cá
+        // Bất tử sau trúng đòn: nhấp nháy ẩn/hiện (sau chớp trắng) + vòng an toàn dưới chân
+        bool blinkHidden = false;
+        if (invulnerableTimer_ > 0.0f && hitFlashTimer_ <= 0.0f)
+        {
+            blinkHidden = (static_cast<int>(invulnerableTimer_ * GameConsts::PLAYER_IFRAME_BLINK_HZ * 2.0f) % 2) == 0;
+            float a = std::clamp(invulnerableTimer_ / GameConsts::PLAYER_IFRAME_TIME, 0.0f, 1.0f);
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(80 + 140 * a));
+            Render3D::DrawCircle3D(Vec3{ pos_.x, 0.5f, pos_.z }, GameConsts::PLAYER_IFRAME_RING_RADIUS, 28, GetColor(120, 230, 255), false);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+        }
+        // Chớp trắng emissive (HitFlash) phủ lên mọi trạng thái màu ở trên
+        if (!blinkHidden) HitFlash::DrawModel(fishModelHandle_, hitFlashTimer_ / GameConsts::PLAYER_HIT_FLASH_TIME);
     }
-
-    // Vẽ thân cá (3D Box chính áp dụng Squash & Stretch)
-    Vec3 bodyCenter = pos_ + Vec3{ 0.0f, (GameConsts::FISH_SIZE_Y * scaleY) * 0.5f, 0.0f };
-    Vec3 bodyHalfSize{
-        GameConsts::FISH_SIZE_X * 0.5f * scaleX,
-        GameConsts::FISH_SIZE_Y * 0.5f * scaleY,
-        GameConsts::FISH_SIZE_Z * 0.5f * scaleZ
-    };
-    Render3D::DrawOrientedBox3D(bodyCenter, bodyHalfSize, yaw_, bodyColor, edgeColor, true);
-
-    // Mõm cá / Đầu cá
-    float headOffsetZ = (GameConsts::FISH_SIZE_Z * 0.5f * scaleZ) + 4.0f;
-    Vec3 headCenter = bodyCenter + Vec3{
-        std::sin(yaw_) * headOffsetZ,
-        -1.0f * scaleY,
-        std::cos(yaw_) * headOffsetZ
-    };
-    Vec3 headHalfSize{ 7.0f * scaleX, 6.0f * scaleY, 4.0f * scaleZ };
-    int headColor = IsAirborne() ? GetColor(255, 235, 120) : GetColor(255, 175, 75);
-    Render3D::DrawOrientedBox3D(headCenter, headHalfSize, yaw_, headColor, edgeColor, true);
-
-    // Mắt cá
-    int eyeColor = GetColor(20, 30, 45);
-    float eyeSpread = 10.5f * scaleX;
-    float eyeForward = 10.0f * scaleZ;
-    Vec3 leftEye = bodyCenter + Vec3{
-        -std::cos(yaw_) * eyeSpread + std::sin(yaw_) * eyeForward,
-        3.0f * scaleY,
-        std::sin(yaw_) * eyeSpread + std::cos(yaw_) * eyeForward
-    };
-    Vec3 rightEye = bodyCenter + Vec3{
-        std::cos(yaw_) * eyeSpread + std::sin(yaw_) * eyeForward,
-        3.0f * scaleY,
-        -std::sin(yaw_) * eyeSpread + std::cos(yaw_) * eyeForward
-    };
-    Vec3 eyeHalfSize{ 2.5f, 2.5f, 2.5f };
-    Render3D::DrawOrientedBox3D(leftEye, eyeHalfSize, yaw_, eyeColor, eyeColor, false);
-    Render3D::DrawOrientedBox3D(rightEye, eyeHalfSize, yaw_, eyeColor, eyeColor, false);
-
-    // Đuôi cá (Vẫy đuôi)
-    float tailOffsetZ = -(GameConsts::FISH_SIZE_Z * 0.5f * scaleZ) - 6.0f;
-    Vec3 tailCenter = bodyCenter + Vec3{
-        std::sin(yaw_ + tailWagAngle_) * tailOffsetZ,
-        0.0f,
-        std::cos(yaw_ + tailWagAngle_) * tailOffsetZ
-    };
-    Vec3 tailHalfSize{ 3.5f * scaleX, 10.0f * scaleY, 6.0f * scaleZ };
-    int tailColor = IsAirborne() ? GetColor(255, 245, 140) : GetColor(255, 195, 60);
-    Render3D::DrawOrientedBox3D(tailCenter, tailHalfSize, yaw_ + tailWagAngle_, tailColor, edgeColor, true);
+    // Model nạp lỗi: đã báo lỗi trong Init() -> bỏ qua vẽ (không vẽ khối hộp)
 }
 
 

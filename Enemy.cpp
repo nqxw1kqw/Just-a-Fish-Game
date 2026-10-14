@@ -281,7 +281,7 @@ void EnemyManager::SetModelOffsetY(EnemyType type, float y)
 
 void EnemyManager::Reset()
 {
-    for (auto& e : enemies_) e.active = false;
+    for (auto& e : enemies_) { e.active = false; e.dying = false; }
     spawnTimer_ = 0.0f;
     waveTimer_ = 0.0f;
     currentWave_ = 1;
@@ -354,7 +354,7 @@ bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
 {
     for (auto& e : enemies_)
     {
-        if (!e.active)
+        if (!e.active && !e.dying)
         {
             e.type = type;
             e.pos = pos;
@@ -499,6 +499,31 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
     for (size_t i = 0; i < enemies_.size(); ++i)
     {
         auto& e = enemies_[i];
+        if (e.dying)
+        {
+            // Hoạt ảnh chết: nảy văng ra, thu nhỏ, rồi nổ HitFx và biến mất
+            e.deathTimer += dt;
+            if (e.hitFlashTimer > 0.0f) e.hitFlashTimer -= dt;
+            e.deathVel.y -= GameConsts::ENEMY_DEATH_GRAVITY * dt;
+            e.pos += e.deathVel * dt;
+            if (e.pos.y < 0.0f)
+            {
+                e.pos.y = 0.0f;
+                e.deathVel.y = -e.deathVel.y * GameConsts::ENEMY_DEATH_BOUNCE;
+                e.deathVel.x *= 0.7f;
+                e.deathVel.z *= 0.7f;
+            }
+            float lim = GameConsts::ARENA_HALF_SIZE - 20.0f;
+            e.pos.x = std::clamp(e.pos.x, -lim, lim);
+            e.pos.z = std::clamp(e.pos.z, -lim, lim);
+            e.yaw += dt * 9.0f;
+            if (e.deathTimer >= GameConsts::ENEMY_DEATH_TIME)
+            {
+                e.dying = false;
+                if (e.deathFx) effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
+            }
+            continue;
+        }
         if (!e.active) continue;
 
         if (e.hitFlashTimer > 0.0f) e.hitFlashTimer -= dt;
@@ -703,14 +728,10 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
         {
             Vec3 pushDir = (distToPlayer > 0.001f) ? (toPlayer / distToPlayer) : Vec3{ 0.0f, 0.0f, 1.0f };
 
-            if (player.TakeDamage(e.damage, effects))
+            if (player.TakeDamage(e.damage, effects, &e.pos))
             {
-                // Knockback nhẹ cho cả hai:
-                // - Quái bị nảy lùi về phía sau (ngược hướng lao tới)
+                // Quái bị nảy lùi về phía sau (ngược hướng lao tới); cá chính bị đẩy lùi mạnh trong TakeDamage
                 e.knockback = -pushDir * 180.0f;
-
-                // - Cá chính bị nảy lùi nhẹ theo hướng bị húc
-                player.ApplyKnockback(pushDir * 160.0f);
             }
             else if (!player.IsAirborne())
             {
@@ -776,16 +797,11 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
             float kbFactor = 1.0f - (dist / radius) * 0.4f;
             e.knockback = dir * (knockbackStrength * kbFactor);
 
-            // Bắn hạt nước tung tóe
-            effects.SpawnHitParticles(e.pos + Vec3{ 0, 10, 0 }, 6, GetColor(120, 220, 255));
-
             if (e.hp <= 0.0f)
             {
-                e.active = false;
+                StartDeath(e, center);
                 killedThisWave_++;
                 totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
-                effects.SpawnHitParticles(e.pos + Vec3{ 0, 12, 0 }, 18, GetColor(255, 120, 40));
-                effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
                 SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                 // G3: Bỏ EXP, quái chết có tỉ lệ 10% rơi vật hồi máu nhỏ (+10 HP)
                 if ((rand() % 100) < 10)
@@ -833,16 +849,13 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
                 effects.SpawnHitFeedback(bulletPos, bulletDir, damage >= GameConsts::HIT_CRIT_DAMAGE);
                 e.knockback = bulletDir * 120.0f;
 
-                effects.SpawnHitParticles(bulletPos, 6, GetColor(255, 230, 80));
                 effects.SpawnDamagePopup(e.pos + Vec3{ 0, e.radius + 6.0f, 0 }, damage, false);
 
                 if (e.hp <= 0.0f)
                 {
-                    e.active = false;
+                    StartDeath(e, e.pos - bulletDir * 10.0f);
                     killedThisWave_++;
                     totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
-                    effects.SpawnHitParticles(e.pos + Vec3{ 0, 12, 0 }, 20, GetColor(255, 90, 70));
-                    effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
                     SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                     if ((rand() % 100) < 10)
                     {
@@ -866,14 +879,32 @@ int EnemyManager::GetActiveCount() const
     return count;
 }
 
+void EnemyManager::StartDeath(Enemy& e, const Vec3& awayFrom, bool withFx)
+{
+    e.active = false;
+    e.dying = true;
+    e.deathFx = withFx;
+    e.deathTimer = 0.0f;
+    Vec3 away = Collision::FlatDiff(e.pos, awayFrom);
+    float l = away.Length();
+    away = (l > 0.001f) ? away * (1.0f / l) : Vec3{ 0.0f, 0.0f, 1.0f };
+    e.deathVel = Vec3{ away.x * GameConsts::ENEMY_DEATH_HOP_SPEED, GameConsts::ENEMY_DEATH_HOP_UP, away.z * GameConsts::ENEMY_DEATH_HOP_SPEED };
+    e.knockback = Vec3{ 0, 0, 0 };
+}
+
 void EnemyManager::KillAll(EffectSystem& effects)
 {
+    (void)effects;
+    // Quét cuối wave / Endless: nổ chết HitFx như quái chết thường, giới hạn số vụ để pool không tràn
+    int bursts = 0;
     for (auto& e : enemies_)
     {
         if (e.active)
         {
-            e.active = false;
-            effects.SpawnHitParticles(e.pos + Vec3{ 0, 10, 0 }, 12, GetColor(255, 120, 60));
+            // Văng ra hướng ngẫu nhiên; chỉ DEATH_WIPE_MAX_BURSTS con đầu phát nổ HitFx
+            float ang = static_cast<float>(rand() % 628) * 0.01f;
+            StartDeath(e, e.pos - Vec3{ std::sin(ang), 0.0f, std::cos(ang) } * 10.0f, bursts < GameConsts::DEATH_WIPE_MAX_BURSTS);
+            bursts++;
         }
     }
 }
@@ -882,10 +913,17 @@ void EnemyManager::Draw() const
 {
     for (const auto& e : enemies_)
     {
-        if (!e.active) continue;
+        if (!e.active && !e.dying) continue;
+        // Hoạt ảnh chết: thu nhỏ dần (ease-in)
+        float deathScale = 1.0f;
+        if (e.dying)
+        {
+            float t = std::clamp(e.deathTimer / GameConsts::ENEMY_DEATH_TIME, 0.0f, 1.0f);
+            deathScale = (std::max)(0.05f, 1.0f - t * t);
+        }
 
         // Vạch đỏ báo hiệu hướng lao thẳng của cá mập trên sàn (G4)
-        if (e.type == EnemyType::Charge && e.chargeState == 1)
+        if (e.active && e.type == EnemyType::Charge && e.chargeState == 1)
         {
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
             Vec3 pStart = e.pos + Vec3{ 0, 1.2f, 0 };
@@ -897,16 +935,16 @@ void EnemyManager::Draw() const
 
         // 1. Bóng dẹt dưới sàn
         float heightRatio = e.pos.y / 35.0f;
-        float shadowRad = e.radius * 1.3f * (1.0f - 0.35f * heightRatio);
+        float shadowRad = e.radius * 1.3f * deathScale * (1.0f - 0.35f * heightRatio);
         Render3D::DrawFlatShadow(e.pos, shadowRad, 0.9f);
 
-        // 2a. Mô hình low-poly (F11 để tắt, khi đó dùng mô hình cũ / khối box bên dưới)
+        // 2a. Mô hình low-poly (ưu tiên); 2b. mô hình cũ PreModelTest nếu low-poly nạp lỗi
         int lowPolyHandle = LowPolyModels::GetHandle(static_cast<LowPolyId>(static_cast<int>(e.type)));
         if (lowPolyHandle >= 0)
         {
             MV1SetPosition(lowPolyHandle, VGet(e.pos.x, e.pos.y, e.pos.z));
             MV1SetRotationXYZ(lowPolyHandle, VGet(0.0f, e.yaw, 0.0f));
-            MV1SetScale(lowPolyHandle, VGet(1.0f, 1.0f, 1.0f));
+            MV1SetScale(lowPolyHandle, VGet(deathScale, deathScale, deathScale));
 
             if (e.hitFlashTimer > 0.0f)
             {
@@ -940,7 +978,7 @@ void EnemyManager::Draw() const
             float finalYaw = e.yaw + cfg.rotYDeg * (DX_PI_F / 180.0f);
             MV1SetRotationXYZ(cfg.handle, VGet(0.0f, finalYaw, 0.0f));
 
-            MV1SetScale(cfg.handle, VGet(cfg.scale, cfg.scale, cfg.scale));
+            MV1SetScale(cfg.handle, VGet(cfg.scale * deathScale, cfg.scale * deathScale, cfg.scale * deathScale));
 
             if (cfg.animAttachIndex >= 0 && cfg.animTotalTime > 0.0f)
             {
@@ -971,66 +1009,7 @@ void EnemyManager::Draw() const
             continue;
         }
 
-        // 2. Màu sắc và kích thước theo loại
-        int fillColor = 0;
-        int edgeColor = 0;
-        Vec3 halfSize{ e.radius, e.radius, e.radius };
-
-        switch (e.type)
-        {
-        case EnemyType::Minion:
-            fillColor = GetColor(225, 45, 45); // Đỏ lính
-            edgeColor = GetColor(140, 20, 20);
-            halfSize = Vec3{ 10.0f, 9.0f, 10.0f };
-            break;
-        case EnemyType::Hopper:
-            fillColor = GetColor(240, 120, 30); // Cam cua
-            edgeColor = GetColor(160, 60, 10);
-            halfSize = Vec3{ 12.0f, 8.0f, 12.0f };
-            break;
-        case EnemyType::Tanker:
-            fillColor = GetColor(50, 155, 80); // Xanh rùa
-            edgeColor = GetColor(20, 85, 40);
-            halfSize = Vec3{ 20.0f, 16.0f, 20.0f };
-            break;
-        case EnemyType::Float:
-            fillColor = GetColor(185, 75, 235); // Tím sứa bay
-            edgeColor = GetColor(235, 160, 255);
-            halfSize = Vec3{ 14.0f, 13.0f, 14.0f };
-            break;
-        case EnemyType::Charge:
-            if (e.chargeState == 1) // Khựng nạp lực báo hiệu
-            {
-                fillColor = GetColor(255, 45, 45); // Đỏ rực cảnh báo
-                edgeColor = GetColor(255, 220, 50);
-            }
-            else if (e.chargeState == 2) // Đang lao vút
-            {
-                fillColor = GetColor(235, 70, 70);
-                edgeColor = GetColor(255, 140, 40);
-            }
-            else
-            {
-                fillColor = GetColor(70, 105, 135); // Xám cá mập
-                edgeColor = GetColor(35, 55, 75);
-            }
-            halfSize = Vec3{ 13.0f, 11.0f, 22.0f };
-            break;
-        }
-
-        if (e.hitFlashTimer > 0.0f)
-        {
-            fillColor = GetColor(255, 255, 255);
-            edgeColor = GetColor(255, 180, 180);
-        }
-
-        Vec3 center = e.pos + Vec3{ 0.0f, halfSize.y, 0.0f };
-        Render3D::DrawOrientedBox3D(center, halfSize, e.yaw, fillColor, edgeColor, true);
-
-        // Mắt quái để trông sống động
-        float eyeFwd = halfSize.z + 1.5f;
-        Vec3 eyePos = center + Vec3{ std::sin(e.yaw) * eyeFwd, 2.0f, std::cos(e.yaw) * eyeFwd };
-        Render3D::DrawOrientedBox3D(eyePos, Vec3{ 3.0f, 2.0f, 1.5f }, e.yaw, GetColor(20, 20, 20), 0, false);
+        // Không có model nào nạp được cho loại quái này: đã báo lỗi lúc nạp -> bỏ qua vẽ
     }
 }
 

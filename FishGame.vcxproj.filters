@@ -136,6 +136,18 @@
     <ClInclude Include="Effects\\Hit\\HitFeedback.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="Effects\\PlayerHurt\\PlayerHurtFxCommon.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\PlayerHurt\\PlayerHurtFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\EnemyHit\\EnemyHitFxCommon.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\EnemyHit\\EnemyHitFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="TsunamiWaterEffect.h">
       <Filter>System</Filter>
     </ClInclude>

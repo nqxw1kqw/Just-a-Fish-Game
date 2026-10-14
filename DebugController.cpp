@@ -5,7 +5,6 @@
 #include "Consts.h"
 #include "DxLib.h"
 #include "Input.h"
-#include "LowPolyModels.h"
 #include <algorithm>
 #include <cmath>
 
@@ -37,12 +36,6 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
     if (f1Now)
     {
         showDebugHUD_ = !showDebugHUD_;
-    }
-
-    // Phím bật tắt mô hình low-poly / mô hình cũ (F11)
-    if (input.IsPressed(KEY_INPUT_F11))
-    {
-        LowPolyModels::Toggle();
     }
 
     // Phím bật tắt rung camera (F2 - C7)

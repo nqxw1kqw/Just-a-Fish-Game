@@ -5,16 +5,20 @@
 #include "HitSparkFx.h"
 #include "HitBubblePuffFx.h"
 #include "FishDeathFx.h"
+#include "../PlayerHurt/PlayerHurtFx.h"
+#include "../EnemyHit/EnemyHitFx.h"
 
 struct HitFxSet
 {
     HitSparkFx spark;
     HitBubblePuffFx puff;
     FishDeathFx death;
+    PlayerHurtEffect playerHurt;   // Fuyuu: máu khi người chơi trúng đòn
+    EnemyHitEffect enemyHit;       // Fuyuu: trúng đòn quái/boss (thay HitBubblePuff)
 
-    void Update(float dt) { spark.Update(dt); puff.Update(dt); death.Update(dt); }
-    void Draw() const { puff.Draw(); death.Draw(); spark.Draw(); }
-    void Clear() { spark.Clear(); puff.Clear(); death.Clear(); }
+    void Update(float dt) { spark.Update(dt); puff.Update(dt); death.Update(dt); playerHurt.Update(dt); enemyHit.Update(dt); }
+    void Draw() const { puff.Draw(); death.Draw(); enemyHit.Draw(); playerHurt.Draw(); spark.Draw(); }
+    void Clear() { spark.Clear(); puff.Clear(); death.Clear(); playerHurt.Clear(); enemyHit.Clear(); }
 };
 
 namespace HitFlash

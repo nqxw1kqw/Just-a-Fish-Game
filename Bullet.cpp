@@ -1,4 +1,4 @@
-#ifndef NOMINMAX
+﻿#ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
@@ -212,7 +212,6 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
             {
                 boss->TakeDamage(b.damage, effects);
                 b.active = false;
-                effects.SpawnHitParticles(b.pos, 5, GetColor(255, 230, 80));
                 continue;
             }
         }
@@ -233,12 +232,12 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
                     int extraExp = 0;
                     float chainDmg = b.damage * 0.5f;
                     chained->hp -= chainDmg;
-                    chained->hitFlashTimer = 0.14f;
-                    effects.SpawnHitParticles(chained->pos, 6, GetColor(160, 240, 255));
+                    chained->hitFlashTimer = GameConsts::HIT_FLASH_TIME;
+                    effects.SpawnHitFeedback(chained->pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, false);
                     effects.SpawnDamagePopup(chained->pos + Vec3{ 0, chained->radius + 6.0f, 0 }, chainDmg, false);
                     if (chained->hp <= 0.0f)
                     {
-                        chained->active = false;
+                        EnemyManager::StartDeath(*chained, b.pos);
                         SoundManager::Instance().PlaySFX(SfxId::EnemySquish); // #4: tiếng quái chết (giật sét)
                         extraExp = 1;
                         effects.SpawnExpOrb(chained->pos, 1.0f);

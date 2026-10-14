@@ -29,7 +29,8 @@ public:
     void SetHooks(bool hasPufferfish, bool hasBulletRain, bool hasContinuousBounce);
 
     // Va chạm & Nhận sát thương (J4: Bất tử khi ở trên không)
-    bool TakeDamage(float dmg, EffectSystem& effects);
+    // sourcePos: nguồn sát thương (đẩy lùi ra xa). nullptr = không đẩy lùi thêm
+    bool TakeDamage(float dmg, EffectSystem& effects, const Vec3* sourcePos = nullptr);
     void Heal(float amount) { hp_ = (hp_ + amount > maxHp_) ? maxHp_ : (hp_ + amount); }
     void ApplyKnockback(const Vec3& force) { knockback_ += force; }
     // Boss rework PR C: làm chậm (lấy hệ số nhỏ nhất, gia hạn thời gian) và lực kéo ngoài (áp 1 khung rồi xoá)
@@ -181,7 +182,6 @@ private:
     float slowTimer_ = 0.0f;
     float slowFactor_ = 1.0f;
     Vec3 externalPull_{ 0.0f, 0.0f, 0.0f };
-    float tailWagAngle_ = 0.0f;
     float swimSoundTimer_ = 0.0f;
     float swimWakeTimer_ = 0.0f;
 
