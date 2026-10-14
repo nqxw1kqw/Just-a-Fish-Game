@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 #include "Vector3.h"
 #include "DxLib.h"
 #include <vector>
 #include <array>
+#include <memory>
 
 // Vòng sóng nước nở trên mặt sàn
 struct Shockwave
@@ -52,9 +53,18 @@ struct DamagePopup
 #include "WaterSplash.h"
 #include "BubbleSystem.h"
 
+struct HitFxSet; // Effects/Hit/HitFeedback.h
+
 class EffectSystem
 {
 public:
+    EffectSystem();
+    ~EffectSystem();
+    EffectSystem(const EffectSystem&) = delete;
+    EffectSystem& operator=(const EffectSystem&) = delete;
+    // Phản hồi trúng đòn (Fuyuu): tia lửa + bọt phụt tại điểm trúng; nổ bọt/vảy khi cá chết
+    void SpawnHitFeedback(const Vec3& pos, const Vec3& dir, bool crit);
+    void SpawnFishDeath(const Vec3& pos, float size);
     void Init();
     void Reset();
     void Shutdown();
@@ -81,6 +91,7 @@ public:
     int CollectExpOrbs(const Vec3& playerPos, float pickupRadius);
 
 private:
+    std::unique_ptr<HitFxSet> hitFx_;
     static constexpr size_t MAX_DAMAGE_POPUPS = 128;
 
     std::array<Shockwave, 32> shockwaves_{};

@@ -80,6 +80,11 @@ namespace GameConsts
     constexpr float BOSS_WALK_SPEED = 50.0f;             // Tốc độ bò chậm trong lúc Idle (3e)
 
     // ---- Boss rework PR A: Breach Slam / Tail Slap / AI / Stun ----
+    // ---- Phản hồi trúng đòn ----
+    constexpr float HIT_FLASH_TIME = 0.1f;              // Chớp trắng mô hình cá khi trúng đòn
+    constexpr float HIT_CRIT_DAMAGE = 50.0f;            // Đòn >= mức này dùng tia lửa crit
+    constexpr float HIT_FX_HEIGHT = 10.0f;              // Độ cao điểm phát hạt trên thân cá
+
     constexpr float BOSS_TURN_RATE = 1.8f;               // rad/s: boss xoay dần về người chơi (để có thể vòng ra sau lưng)
     constexpr float BREACH_TELEGRAPH_P1 = 1.0f;          // Lặn xuống + bọt sủi ở điểm đáp
     constexpr float BREACH_TELEGRAPH_P2 = 0.7f;

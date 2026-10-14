@@ -137,6 +137,11 @@
     <ClInclude Include="Effects\Whale\WhaleCallPodFx.h" />
     <ClInclude Include="Effects\Whale\WhaleStatusFx.h" />
     <ClInclude Include="Effects\Whale\WhaleFxSet.h" />
+    <ClInclude Include="Effects\\Hit\\HitFxCommon.h" />
+    <ClInclude Include="Effects\\Hit\\HitSparkFx.h" />
+    <ClInclude Include="Effects\\Hit\\HitBubblePuffFx.h" />
+    <ClInclude Include="Effects\\Hit\\FishDeathFx.h" />
+    <ClInclude Include="Effects\\Hit\\HitFeedback.h" />
     <ClInclude Include="TsunamiWaterEffect.h" />
     <ClInclude Include="BattleHud.h" />
     <ClInclude Include="BubbleSystem.h" />

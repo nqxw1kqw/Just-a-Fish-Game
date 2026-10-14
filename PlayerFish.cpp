@@ -609,6 +609,7 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects)
     hitFlashTimer_ = 0.16f;
     effects.AddTrauma(0.28f); // Rung nhẹ vừa phải tạo phản hồi va đập
     effects.SpawnHitParticles(pos_ + Vec3{ 0, 10, 0 }, 8, GetColor(255, 60, 60));
+    effects.SpawnHitFeedback(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, false);
 
     // Phát âm thanh khi người chơi bị trúng đòn
     SoundManager::Instance().PlaySFX(SfxId::PlayerHit);

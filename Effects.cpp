@@ -1,4 +1,4 @@
-#ifndef NOMINMAX
+﻿#ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
@@ -11,6 +11,7 @@
 #include "FontManager.h"
 #include "Consts.h"
 #include "CollisionUtil.h"
+#include "Effects/Hit/HitFeedback.h"
 #include <cwchar>
 
 namespace
@@ -20,6 +21,23 @@ namespace
         float r = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
         return minVal + r * (maxVal - minVal);
     }
+}
+
+EffectSystem::EffectSystem() : hitFx_(std::make_unique<HitFxSet>()) {}
+EffectSystem::~EffectSystem() = default;
+
+void EffectSystem::SpawnHitFeedback(const Vec3& pos, const Vec3& dir, bool crit)
+{
+    if (!hitFx_) return;
+    VECTOR p = DxConv::ToVECTOR(pos);
+    VECTOR d = DxConv::ToVECTOR(dir);
+    hitFx_->spark.Emit(p, d, crit);
+    hitFx_->puff.Emit(p, d);
+}
+
+void EffectSystem::SpawnFishDeath(const Vec3& pos, float size)
+{
+    if (hitFx_) hitFx_->death.Emit(DxConv::ToVECTOR(pos), size);
 }
 
 void EffectSystem::Init()
@@ -37,6 +55,7 @@ void EffectSystem::Reset()
     for (auto& dp : damagePopups_) dp.active = false;
     waterSplash_.Reset();
     bubbles_.Reset();
+    if (hitFx_) hitFx_->Clear();
     trauma_ = 0.0f;
     shakeTime_ = 0.0f;
 }
@@ -206,6 +225,7 @@ Vec3 EffectSystem::GetCameraShakeOffset(float shakeScale) const
 
 void EffectSystem::Update(float dt, const Vec3& playerPos)
 {
+    if (hitFx_) hitFx_->Update(dt);
     shakeTime_ += dt;
     if (trauma_ > 0.0f)
     {
@@ -370,6 +390,9 @@ void EffectSystem::Draw() const
         Render3D::DrawBox3D(minP, maxP, expColor, TRUE);
         Render3D::DrawBox3D(minP, maxP, expEdge, FALSE);
     }
+
+    // Phản hồi trúng đòn: vẽ sau cùng (trong suốt, không ghi Z). Camera đã đặt trước Effects::Draw
+    if (hitFx_) hitFx_->Draw();
 }
 
 void EffectSystem::DrawDamagePopups() const

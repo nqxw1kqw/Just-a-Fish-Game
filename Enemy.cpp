@@ -1,4 +1,4 @@
-#ifndef NOMINMAX
+﻿#ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdlib>
 #include "Enemy.h"
+#include "Effects/Hit/HitFeedback.h"
 #include "RenderInterp.h"
 #include "PlayerFish.h"
 #include "Effects.h"
@@ -764,9 +765,11 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
             }
 
             e.hp -= actualDmg;
-            e.hitFlashTimer = 0.15f;
+            e.hitFlashTimer = GameConsts::HIT_FLASH_TIME;
 
-            bool isCrit = (e.type == EnemyType::Tanker) || (actualDmg >= 50.0f);
+            bool isCrit = (e.type == EnemyType::Tanker) || (actualDmg >= GameConsts::HIT_CRIT_DAMAGE);
+            // Phản hồi trúng đòn: tia lửa + bọt bắn ra xa tâm cú đập
+            effects.SpawnHitFeedback(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ dir.x, 0.6f, dir.z }, isCrit);
             effects.SpawnDamagePopup(e.pos + Vec3{ 0, e.radius + 6.0f, 0 }, actualDmg, isCrit);
 
             // Đẩy lùi
@@ -782,6 +785,7 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
                 killedThisWave_++;
                 totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
                 effects.SpawnHitParticles(e.pos + Vec3{ 0, 12, 0 }, 18, GetColor(255, 120, 40));
+                effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
                 SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                 // G3: Bỏ EXP, quái chết có tỉ lệ 10% rơi vật hồi máu nhỏ (+10 HP)
                 if ((rand() % 100) < 10)
@@ -825,7 +829,8 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
             {
                 // Trúng đạn!
                 e.hp -= damage;
-                e.hitFlashTimer = 0.14f;
+                e.hitFlashTimer = GameConsts::HIT_FLASH_TIME;
+                effects.SpawnHitFeedback(bulletPos, bulletDir, damage >= GameConsts::HIT_CRIT_DAMAGE);
                 e.knockback = bulletDir * 120.0f;
 
                 effects.SpawnHitParticles(bulletPos, 6, GetColor(255, 230, 80));
@@ -837,6 +842,7 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
                     killedThisWave_++;
                     totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
                     effects.SpawnHitParticles(e.pos + Vec3{ 0, 12, 0 }, 20, GetColor(255, 90, 70));
+                    effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
                     SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                     if ((rand() % 100) < 10)
                     {
@@ -919,7 +925,7 @@ void EnemyManager::Draw() const
                 MV1SetDifColorScale(lowPolyHandle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
             }
 
-            MV1DrawModel(lowPolyHandle);
+            HitFlash::DrawModel(lowPolyHandle, e.hitFlashTimer / GameConsts::HIT_FLASH_TIME);
             continue;
         }
 
@@ -961,7 +967,7 @@ void EnemyManager::Draw() const
                 MV1SetDifColorScale(cfg.handle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
             }
 
-            MV1DrawModel(cfg.handle);
+            HitFlash::DrawModel(cfg.handle, e.hitFlashTimer / GameConsts::HIT_FLASH_TIME);
             continue;
         }
 
