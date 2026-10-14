@@ -3,7 +3,7 @@
 
 // Fish death: big bubble cluster rising + glittering scale flakes that slowly sink.
 // size: fish body size in game units (e.g. FISH_SIZE_Z = 38; small enemies ~20-40).
-class FishDeathFx : public HitFx::FxType<1024> {
+class FishDeathFx : public HitFx::FxType<4096> {   // Just-a-Fish: 4096 (wipe cuối wave nổ nhiều cá cùng lúc)
 public:
     void Emit(VECTOR pos, float size = 38.0f) {
         using namespace HitFx;

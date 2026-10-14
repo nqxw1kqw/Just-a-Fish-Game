@@ -85,6 +85,7 @@ namespace GameConsts
     constexpr float PLAYER_HIT_FLASH_TIME = 0.16f;      // Chớp trắng cá người chơi (giữ như cũ)
     constexpr float HIT_CRIT_DAMAGE = 50.0f;            // Đòn >= mức này dùng tia lửa crit
     constexpr float HIT_FX_HEIGHT = 10.0f;              // Độ cao điểm phát hạt trên thân cá
+    constexpr int   DEATH_WIPE_MAX_BURSTS = 60;         // KillAll: tối đa số vụ nổ chết mỗi lần quét (~44 hạt/vụ, pool 4096)
 
     constexpr float BOSS_TURN_RATE = 1.8f;               // rad/s: boss xoay dần về người chơi (để có thể vòng ra sau lưng)
     constexpr float BREACH_TELEGRAPH_P1 = 1.0f;          // Lặn xuống + bọt sủi ở điểm đáp

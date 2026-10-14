@@ -862,12 +862,18 @@ int EnemyManager::GetActiveCount() const
 
 void EnemyManager::KillAll(EffectSystem& effects)
 {
+    // Quét cuối wave / Endless: nổ chết HitFx như quái chết thường, giới hạn số vụ để pool không tràn
+    int bursts = 0;
     for (auto& e : enemies_)
     {
         if (e.active)
         {
             e.active = false;
-            effects.SpawnHitParticles(e.pos + Vec3{ 0, 10, 0 }, 12, GetColor(255, 120, 60));
+            if (bursts < GameConsts::DEATH_WIPE_MAX_BURSTS)
+            {
+                effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
+                bursts++;
+            }
         }
     }
 }
