@@ -61,8 +61,7 @@ void WhaleBoss::UpdateBreachTelegraph(float dt, float duration, PlayerFish& play
     float ratio = std::clamp(actionTimer_ / (std::max)(0.01f, duration), 0.0f, 1.0f);
     if (trackPlayer)
     {
-        slamTarget_ = player.GetPosition();
-        slamTarget_.y = 0.0f;
+        slamTarget_ = PredictPlayerPos(player, GameConsts::AIM_BREACH_LEAD); // AI pacing: đón đầu
     }
     // Lặn xuống dần
     pos_.y = -GameConsts::BREACH_SINK_DEPTH * ratio;
@@ -328,7 +327,9 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         // Hướng lao khoá theo người chơi tới 70% telegraph
         if (actionTimer_ < dur * 0.7f)
         {
-            Vec3 to = Collision::FlatDiff(player.GetPosition(), pos_);
+            // AI pacing: đón đầu theo thời gian lao tới người chơi
+            float travel = (std::min)(Collision::DistXZ(player.GetPosition(), pos_) / GameConsts::DIVE_SPEED, GameConsts::DIVE_MAX_TIME);
+            Vec3 to = Collision::FlatDiff(PredictPlayerPos(player, travel), pos_);
             float len = std::sqrt(to.x * to.x + to.z * to.z);
             if (len > 1.0f) diveDir_ = Vec3{ to.x / len, 0.0f, to.z / len };
             yaw_ = std::atan2(diveDir_.x, diveDir_.z);
@@ -431,7 +432,6 @@ void WhaleBoss::StartBubbleNet(PlayerFish& player)
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
     bubbleNetCooldown_ = GameConsts::BUBBLENET_COOLDOWN;
-    lastSkill_ = BossSkill::BubbleNet;
     RecordActionHistory(L"Bubble Net");
 }
 
@@ -453,7 +453,6 @@ void WhaleBoss::StartInhale(PlayerFish& player)
     // PR E: chạy suốt telegraph + hút. Fuyuu dùng góc TOÀN PHẦN -> 2 x 60° = 120°
     Fx().inhale.Start(DxConv::ToVECTOR(MouthPos()), DxConv::ToVECTOR(Forward(yaw_)),
                       GameConsts::INHALE_TELEGRAPH + GameConsts::INHALE_DURATION, GameConsts::INHALE_RANGE, GameConsts::INHALE_CONE_HALF_DEG * 2.0f);
-    lastSkill_ = BossSkill::Inhale;
     RecordActionHistory(L"Inhale");
 }
 
@@ -538,21 +537,21 @@ void WhaleBoss::ForcePack(PlayerFish& player)
 {
     EnsureActiveForDebug();
     pos_.y = 0.0f;
-    lastSkill_ = BossSkill::Minions;
+    NoteSkill(BossSkill::Minions);
     StartPackTelegraph(player);
     RecordActionHistory(L"Call the Pack (debug)");
 }
 
 void WhaleBoss::StartDive(PlayerFish& player)
 {
-    Vec3 to = Collision::FlatDiff(player.GetPosition(), pos_);
+    float travel = (std::min)(Collision::DistXZ(player.GetPosition(), pos_) / GameConsts::DIVE_SPEED, GameConsts::DIVE_MAX_TIME);
+    Vec3 to = Collision::FlatDiff(PredictPlayerPos(player, travel), pos_);
     float len = std::sqrt(to.x * to.x + to.z * to.z);
     diveDir_ = (len > 1.0f) ? Vec3{ to.x / len, 0.0f, to.z / len } : Forward(yaw_);
     action_ = BossAction::TelegraphDive;
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
     diveCooldown_ = GameConsts::DIVE_COOLDOWN;
-    lastSkill_ = BossSkill::Dive;
     RecordActionHistory(L"Dive Charge");
 }
 
@@ -599,3 +598,57 @@ WhaleFxSet& WhaleBoss::Fx()
 Vec3 WhaleBoss::HeadPos() const { return pos_ + Forward(yaw_) * 90.0f + Vec3{ 0.0f, 40.0f, 0.0f }; }
 Vec3 WhaleBoss::TailPos() const { return pos_ - Forward(yaw_) * 110.0f + Vec3{ 0.0f, 30.0f, 0.0f }; }
 Vec3 WhaleBoss::MouthPos() const { return pos_ + Forward(yaw_) * 60.0f + Vec3{ 0.0f, 10.0f, 0.0f }; }
+
+// ---------------- AI pacing ----------------
+void WhaleBoss::NoteSkill(BossSkill s)
+{
+    if (s == BossSkill::None) return;
+    prevSkill_ = lastSkill_;
+    lastSkill_ = s;
+}
+
+int WhaleBoss::RollBurstSize() const
+{
+    if (phase_ == BossPhase::Phase2 || enraged_) return GameConsts::BURST_SIZE_P2;
+    int span = GameConsts::BURST_MAX_P1 - GameConsts::BURST_MIN_P1 + 1;
+    return GameConsts::BURST_MIN_P1 + rand() % span;
+}
+
+float WhaleBoss::CurrentBurstGap() const
+{
+    if (enraged_) return GameConsts::BURST_GAP_RAGE;
+    return (phase_ == BossPhase::Phase2) ? GameConsts::BURST_GAP_P2 : GameConsts::BURST_GAP_P1;
+}
+
+float WhaleBoss::CurrentRestTime() const
+{
+    if (enraged_) return GameConsts::REST_TIME_RAGE;
+    return (phase_ == BossPhase::Phase2) ? GameConsts::REST_TIME_P2 : GameConsts::REST_TIME_P1;
+}
+
+Vec3 WhaleBoss::PredictPlayerPos(const PlayerFish& player, float leadTime) const
+{
+    float lead = leadTime * GameConsts::AIM_LEAD_SCALE;
+    Vec3 p = player.GetPosition() + playerVel_ * lead;
+    float lim = GameConsts::ARENA_HALF_SIZE - GameConsts::AIM_ARENA_MARGIN;
+    p.x = std::clamp(p.x, -lim, lim);
+    p.z = std::clamp(p.z, -lim, lim);
+    p.y = 0.0f;
+    return p;
+}
+
+const wchar_t* WhaleBoss::SkillName(BossSkill s)
+{
+    switch (s)
+    {
+    case BossSkill::Slam: return L"Breach";
+    case BossSkill::DoubleSlam: return L"Triple";
+    case BossSkill::Minions: return L"Pack";
+    case BossSkill::Tsunami: return L"Tsunami";
+    case BossSkill::Tail: return L"Tail";
+    case BossSkill::BubbleNet: return L"BubbleNet";
+    case BossSkill::Inhale: return L"Inhale";
+    case BossSkill::Dive: return L"Dive";
+    default: return L"-";
+    }
+}

@@ -70,6 +70,12 @@ void WhaleBoss::Reset()
     actionHistoryHead_ = 0;
     for (auto& a : actionHistory_) a = nullptr;
     lastSkill_ = BossSkill::None;
+    prevSkill_ = BossSkill::None;
+    burstCount_ = 0;
+    burstSize_ = GameConsts::BURST_MAX_P1;
+    restTimer_ = 0.0f;
+    hasLastPlayerPos_ = false;
+    playerVel_ = Vec3{ 0.0f, 0.0f, 0.0f };
     timeSinceLastTsunami_ = 10.0f;
     currentTsunamiGapDeg_ = 0.0f;
     waterFxTimer_ = 0.0f;
@@ -113,6 +119,12 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
     actionHistoryHead_ = 0;
     for (auto& a : actionHistory_) a = nullptr;
     lastSkill_ = BossSkill::None;
+    prevSkill_ = BossSkill::None;
+    burstCount_ = 0;
+    burstSize_ = GameConsts::BURST_MAX_P1;
+    restTimer_ = 0.0f;
+    hasLastPlayerPos_ = false;
+    playerVel_ = Vec3{ 0.0f, 0.0f, 0.0f };
     timeSinceLastTsunami_ = 10.0f;
     currentTsunamiGapDeg_ = 0.0f;
 
@@ -305,8 +317,8 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
 
     auto TryAddCandidate = [&](BossSkill skill, float baseWeight)
     {
-        // 1. Không lặp lại ngay chiêu vừa dùng
-        if (skill == lastSkill_) return;
+        // 1. AI pacing: không bao giờ 3 lần liên tiếp cùng 1 chiêu
+        if (skill == lastSkill_ && skill == prevSkill_) return;
 
         // 2. Luật loại trừ theo kỹ năng
         if ((skill == BossSkill::Slam || skill == BossSkill::DoubleSlam) && !canJumpAttack) return;
@@ -330,6 +342,9 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
             if (skill == BossSkill::Inhale) w *= 1.5f;
             if (skill == BossSkill::Dive) w *= 2.0f;
         }
+        // AI pacing: giảm trọng số chiêu dùng gần đây
+        if (skill == lastSkill_) w *= GameConsts::AI_REPEAT_WEIGHT_LAST;
+        else if (skill == prevSkill_) w *= GameConsts::AI_REPEAT_WEIGHT_PREV;
         if (count >= static_cast<int>(candidates.size())) return;
 
         candidates[count++] = Candidate{ skill, w };
@@ -393,13 +408,17 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         }
     }
 
-    // PR D: combo đã xếp hàng được ưu tiên
+    // PR D: combo đã xếp hàng được ưu tiên (combo = cùng 1 bước của đợt, không tính thêm)
     if (comboNext_ != BossSkill::None)
     {
         chosenSkill = comboNext_;
         comboNext_ = BossSkill::None;
     }
-    lastSkill_ = chosenSkill;
+    else
+    {
+        burstCount_++;
+    }
+    NoteSkill(chosenSkill);
 
     // Thiết lập trạng thái theo chiêu đã chọn
     switch (chosenSkill)
@@ -487,6 +506,23 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     }
     if (!active_ || hp_ <= 0.0f) return;
 
+    // AI pacing: vận tốc người chơi từ chênh lệch vị trí giữa các khung (EMA)
+    if (dt > 0.0001f)
+    {
+        const Vec3& pp = player.GetPosition();
+        if (hasLastPlayerPos_)
+        {
+            Vec3 v{ (pp.x - lastPlayerPos_.x) / dt, 0.0f, (pp.z - lastPlayerPos_.z) / dt };
+            if (v.Length() <= GameConsts::AIM_MAX_PLAYER_SPEED)
+            {
+                float a = GameConsts::AIM_VEL_SMOOTHING;
+                playerVel_ = playerVel_ * (1.0f - a) + v * a;
+            }
+        }
+        lastPlayerPos_ = pp;
+        hasLastPlayerPos_ = true;
+    }
+
     bossFightTimer_ += dt;
 
     if (hitFlashTimer_ > 0.0f) hitFlashTimer_ -= dt;
@@ -549,8 +585,42 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     {
     case BossAction::Idle:
     {
-        // 3e: Di chuyển chậm về phía người chơi nếu cự ly > 200 để không bị kẹt ở góc xa
         float distToPlayer = toPlayer.Length();
+
+        // AI pacing: hết đợt (và không còn combo chờ) -> vào cửa sổ nghỉ
+        if (comboNext_ == BossSkill::None && burstCount_ >= burstSize_ && restTimer_ <= 0.0f)
+        {
+            restTimer_ = CurrentRestTime();
+            burstCount_ = 0;
+            burstSize_ = RollBurstSize();
+            RecordActionHistory(L"Rest");
+        }
+        if (restTimer_ > 0.0f)
+        {
+            // Lượn vòng chậm quanh người chơi, giữ cự ly ~REST_PREFERRED_DIST, không tấn công
+            restTimer_ -= dt;
+            if (distToPlayer > 1.0f)
+            {
+                Vec3 radial = toPlayer * (1.0f / distToPlayer);
+                Vec3 tangent{ radial.z, 0.0f, -radial.x };
+                float radialSpd = std::clamp((distToPlayer - GameConsts::REST_PREFERRED_DIST) * 0.5f,
+                                             -GameConsts::REST_DRIFT_SPEED, GameConsts::REST_DRIFT_SPEED);
+                pos_.x += (tangent.x * GameConsts::REST_DRIFT_SPEED + radial.x * radialSpd) * dt;
+                pos_.z += (tangent.z * GameConsts::REST_DRIFT_SPEED + radial.z * radialSpd) * dt;
+                float lim = GameConsts::ARENA_HALF_SIZE - 60.0f;
+                pos_.x = std::clamp(pos_.x, -lim, lim);
+                pos_.z = std::clamp(pos_.z, -lim, lim);
+                pos_.y = 0.0f;
+            }
+            if (restTimer_ <= 0.0f)
+            {
+                restTimer_ = 0.0f;
+                actionTimer_ = 0.0f; // sau nghỉ: vẫn chờ BURST_GAP rồi mới ra chiêu đầu
+            }
+            break;
+        }
+
+        // 3e: Di chuyển chậm về phía người chơi nếu cự ly > 200 để không bị kẹt ở góc xa
         if (distToPlayer > 200.0f)
         {
             Vec3 moveDir = toPlayer * (1.0f / distToPlayer);
@@ -582,12 +652,13 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         if (hugTimer_ >= GameConsts::BOSS_HUG_TIME && tailCooldown_ <= 0.0f)
         {
             hugTimer_ = 0.0f;
-            lastSkill_ = BossSkill::Tail;
+            NoteSkill(BossSkill::Tail);
+            burstCount_++;
             StartTail();
             break;
         }
 
-        if (actionTimer_ >= idleDuration_)
+        if (actionTimer_ >= CurrentBurstGap())
         {
             PickNextAction(player, enemies);
             slamTarget_ = player.GetPosition();
@@ -617,8 +688,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         // Điểm đáp còn bám theo người chơi tới BREACH_LOCK_TIME trước khi đáp
         if ((1.0f - slamProgress_) * jumpDuration > GameConsts::BREACH_LOCK_TIME)
         {
-            slamTarget_ = player.GetPosition();
-            slamTarget_.y = 0.0f;
+            slamTarget_ = PredictPlayerPos(player, GameConsts::AIM_BREACH_LEAD); // AI pacing: đón đầu
         }
         if (slamProgress_ >= 1.0f)
         {
@@ -939,6 +1009,11 @@ void WhaleBoss::Draw() const
     {
         shakeOffset.x = std::sin(stunTimer_ * 18.0f) * 3.0f;
         pitch = 0.12f * std::sin(stunTimer_ * 9.0f);
+    }
+    else if (restTimer_ > 0.0f)
+    {
+        // AI pacing: đang nghỉ -> đuôi đung đưa chậm, lười biếng
+        pitch = 0.07f * std::sin(bossFightTimer_ * 1.3f);
     }
 
     // Mô hình low-poly cá voi (F11 để tắt, khi đó dùng khối box cũ bên dưới)

@@ -170,6 +170,29 @@ namespace GameConsts
     constexpr float RAGE_IDLE = 0.65f;
     constexpr float RAGE_COOLDOWN_MUL = 1.5f;            // Hồi chiêu nhanh hơn 1.5 lần
 
+    // ---- Boss AI pacing: chống lặp chiêu + ngắm đón đầu + nhịp tấn công/nghỉ ----
+    constexpr float AI_REPEAT_WEIGHT_LAST = 0.25f;       // Trọng số chiêu vừa dùng
+    constexpr float AI_REPEAT_WEIGHT_PREV = 0.6f;        // Trọng số chiêu trước đó
+    // (Không bao giờ chọn 1 chiêu 3 lần liên tiếp)
+
+    constexpr float AIM_LEAD_SCALE = 0.7f;               // Chỉ đón đầu 70% -> đổi hướng vẫn né được
+    constexpr float AIM_BREACH_LEAD = 0.35f;             // Breach đón đầu ~0.35s (bám tới BREACH_LOCK_TIME trước khi đáp)
+    constexpr float AIM_VEL_SMOOTHING = 0.25f;           // EMA vận tốc người chơi (tính từ chênh lệch khung)
+    constexpr float AIM_MAX_PLAYER_SPEED = 600.0f;       // Bỏ qua đột biến (knockback / dịch chuyển)
+    constexpr float AIM_ARENA_MARGIN = 40.0f;            // Điểm ngắm luôn kẹp trong đấu trường
+
+    constexpr int   BURST_MIN_P1 = 2;                    // P1: mỗi đợt 2–3 chiêu
+    constexpr int   BURST_MAX_P1 = 3;
+    constexpr int   BURST_SIZE_P2 = 3;                   // P2 / cuồng nộ: 3 chiêu
+    constexpr float BURST_GAP_P1 = 0.7f;                 // Nghỉ ngắn giữa các chiêu trong 1 đợt
+    constexpr float BURST_GAP_P2 = 0.5f;
+    constexpr float BURST_GAP_RAGE = 0.4f;
+    constexpr float REST_TIME_P1 = 2.0f;                 // Cửa sổ nghỉ dễ đọc sau mỗi đợt
+    constexpr float REST_TIME_P2 = 1.4f;
+    constexpr float REST_TIME_RAGE = 1.0f;
+    constexpr float REST_DRIFT_SPEED = 45.0f;            // Lượn vòng chậm quanh người chơi khi nghỉ
+    constexpr float REST_PREFERRED_DIST = 320.0f;
+
     // Kẻ địch
     constexpr int MAX_ENEMIES = 300;
     constexpr int MAX_BULLETS = 600;
