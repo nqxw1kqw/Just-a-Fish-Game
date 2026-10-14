@@ -75,6 +75,11 @@ void WhaleBoss::Reset()
     for (auto& r : tsunamiRings_) r.active = false;
     tsunamiWater_.Reset();
     tailCooldown_ = 0.0f;
+    diveCooldown_ = 0.0f;
+    comboNext_ = BossSkill::None;
+    pendingPhaseWave_ = false;
+    enraged_ = false;
+    packSpotCount_ = 0;
     bubblePillars_.clear();
     bubbleNetCooldown_ = 0.0f;
     inhaleCooldown_ = 0.0f;
@@ -109,6 +114,11 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
     for (auto& r : tsunamiRings_) r.active = false;
     tsunamiWater_.Reset();
     tailCooldown_ = 0.0f;
+    diveCooldown_ = 0.0f;
+    comboNext_ = BossSkill::None;
+    pendingPhaseWave_ = false;
+    enraged_ = false;
+    packSpotCount_ = 0;
     bubblePillars_.clear();
     bubbleNetCooldown_ = 0.0f;
     inhaleCooldown_ = 0.0f;
@@ -140,6 +150,19 @@ bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
         effects.AddTrauma(0.7f);
         effects.SpawnShockwave(pos_, 260.0f);
         SoundManager::Instance().PlaySFX(SfxId::BossRoar); // Chỉ phát 1 lần lúc đổi phase
+        pendingPhaseWave_ = true;     // PR D: hết khựng -> phóng 1 vòng sóng không khe
+    }
+
+    // PR D: < 20% HP -> cuồng nộ
+    if (!enraged_ && hp_ > 0.0f && hp_ <= maxHp_ * GameConsts::RAGE_HP_RATIO)
+    {
+        enraged_ = true;
+        if (phase_ == BossPhase::Phase1) phase_ = BossPhase::Phase2;
+        idleDuration_ = GameConsts::RAGE_IDLE;
+        effects.AddTrauma(0.8f);
+        effects.SpawnShockwave(pos_, 300.0f);
+        effects.SpawnBubbles(pos_, 40, 160.0f, 3.0f, 7.0f);
+        SoundManager::Instance().PlaySFX(SfxId::BossRoar);
     }
 
     if (hp_ <= 0.0f)
@@ -282,6 +305,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         if (skill == BossSkill::Minions && !canSummon) return;
         if (skill == BossSkill::Tsunami && !canTsunami) return;
         if (skill == BossSkill::BubbleNet && bubbleNetCooldown_ > 0.0f) return;
+        if (skill == BossSkill::Dive && diveCooldown_ > 0.0f) return;
         if (skill == BossSkill::Inhale && !(inhaleCooldown_ <= 0.0f && distToPlayer < GameConsts::INHALE_RANGE)) return;
         if (skill == BossSkill::Tail && !(tailCooldown_ <= 0.0f && distToPlayer < GameConsts::TAIL_TRIGGER_RANGE && IsPlayerBehind(player))) return;
 
@@ -296,6 +320,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         {
             if (skill == BossSkill::Tsunami) w *= 1.5f;
             if (skill == BossSkill::Inhale) w *= 1.5f;
+            if (skill == BossSkill::Dive) w *= 2.0f;
         }
         if (count >= static_cast<int>(candidates.size())) return;
 
@@ -311,6 +336,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         TryAddCandidate(BossSkill::Tail, 2.5f);
         TryAddCandidate(BossSkill::Inhale, 1.5f);
         TryAddCandidate(BossSkill::BubbleNet, 1.0f);
+        TryAddCandidate(BossSkill::Dive, 1.5f);
     }
     else
     {
@@ -322,6 +348,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         TryAddCandidate(BossSkill::Tail, 2.5f);
         TryAddCandidate(BossSkill::Inhale, 2.0f);
         TryAddCandidate(BossSkill::BubbleNet, 2.5f);
+        TryAddCandidate(BossSkill::Dive, 2.5f);
     }
 
     // Nếu danh sách hợp lệ rỗng: chọn Triệu hồi (nếu được) hoặc kéo dài Idle thêm nhịp ngắn, không được kẹt
@@ -358,6 +385,12 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         }
     }
 
+    // PR D: combo đã xếp hàng được ưu tiên
+    if (comboNext_ != BossSkill::None)
+    {
+        chosenSkill = comboNext_;
+        comboNext_ = BossSkill::None;
+    }
     lastSkill_ = chosenSkill;
 
     // Thiết lập trạng thái theo chiêu đã chọn
@@ -382,7 +415,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
     }
     case BossSkill::Minions:
     {
-        action_ = BossAction::TelegraphMinions;
+        StartPackTelegraph(player);
         RecordActionHistory((phase_ == BossPhase::Phase1) ? L"Triệu hồi" : L"Triệu hồi (Hỗn hợp)");
         break;
     }
@@ -426,6 +459,9 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
     case BossSkill::Inhale:
         StartInhale(player);
         break;
+    case BossSkill::Dive:
+        StartDive(player);
+        break;
     default:
         action_ = BossAction::Idle;
         idleDuration_ = 0.8f;
@@ -443,6 +479,14 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     if (phaseTransitionTimer_ > 0.0f)
     {
         phaseTransitionTimer_ -= dt;
+        if (phaseTransitionTimer_ <= 0.0f && pendingPhaseWave_)
+        {
+            pendingPhaseWave_ = false;
+            SpawnRing(0.0f, player.GetPosition());
+            effects.AddTrauma(0.4f);
+            effects.SpawnShockwave(pos_, 160.0f);
+            SoundManager::Instance().PlaySFX(SfxId::TsunamiCharge);
+        }
         return;
     }
 
@@ -451,7 +495,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     // Boss rework: xoay dần với tốc độ giới hạn (người chơi có thể vòng ra sau lưng -> Tail Slap)
     bool canTurn = action_ != BossAction::PerformSlam && action_ != BossAction::PerformDoubleSlam &&
                    action_ != BossAction::TelegraphTail && action_ != BossAction::PerformTail && action_ != BossAction::Stunned &&
-                   action_ != BossAction::BubbleNetSwim;
+                   action_ != BossAction::BubbleNetSwim && action_ != BossAction::PerformDive;
     if (toPlayer.LengthSq() > 1.0f && canTurn)
     {
         float targetYaw = std::atan2(toPlayer.x, toPlayer.z);
@@ -462,9 +506,13 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         yaw_ += std::clamp(diff, -maxStep, maxStep);
     }
 
-    if (tailCooldown_ > 0.0f) tailCooldown_ -= dt;
-    if (bubbleNetCooldown_ > 0.0f) bubbleNetCooldown_ -= dt;
-    if (inhaleCooldown_ > 0.0f) inhaleCooldown_ -= dt;
+    {
+        float cdt = enraged_ ? dt * GameConsts::RAGE_COOLDOWN_MUL : dt;
+        if (tailCooldown_ > 0.0f) tailCooldown_ -= cdt;
+        if (bubbleNetCooldown_ > 0.0f) bubbleNetCooldown_ -= cdt;
+        if (inhaleCooldown_ > 0.0f) inhaleCooldown_ -= cdt;
+        if (diveCooldown_ > 0.0f) diveCooldown_ -= cdt;
+    }
     UpdateBossHazards(dt, player, effects);
     hugTimer_ = (toPlayer.Length() < GameConsts::BOSS_NEAR_RANGE) ? hugTimer_ + dt : 0.0f;
 
@@ -502,6 +550,18 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
                 waterFxTimer_ = 0.0f;
                 effects.SpawnFishSwim(pos_, moveDir, GameConsts::BOSS_WALK_SPEED, 3.0f, false);
             }
+        }
+
+        // PR D: combo P2 — chiêu nối tiếp đã xếp hàng
+        if (comboNext_ != BossSkill::None)
+        {
+            if (actionTimer_ >= GameConsts::COMBO_DELAY)
+            {
+                PickNextAction(player, enemies);
+                slamTarget_ = player.GetPosition();
+                slamTarget_.y = 0.0f;
+            }
+            break;
         }
 
         // Boss rework 16: chống bám sát — người chơi đứng sát quá lâu thì ép Quật đuôi
@@ -566,51 +626,20 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     // 2. Gọi quái lính
     case BossAction::TelegraphMinions:
     {
-        float duration = 0.85f;
-        if (actionTimer_ >= duration)
+        // PR D: Gọi bầy — bọt sủi ở các điểm bao vây quanh người chơi, rồi cá con trồi lên
+        telegraphFxTimer_ += dt;
+        while (telegraphFxTimer_ >= 0.08f)
+        {
+            telegraphFxTimer_ -= 0.08f;
+            for (int i = 0; i < packSpotCount_; ++i) effects.SpawnBubbles(packSpots_[i], 2, 14.0f, 2.0f, 4.5f);
+        }
+        if (actionTimer_ >= GameConsts::PACK_TELEGRAPH)
         {
             action_ = BossAction::Idle;
             actionTimer_ = 0.0f;
-
             effects.SpawnShockwave(pos_, 160.0f);
             effects.AddTrauma(0.3f);
-
-            int currentAlive = enemies.GetActiveCount();
-            int maxCanSpawn = (std::max)(0, GameConsts::BOSS_MINION_ALIVE_CAP - currentAlive);
-
-            if (phase_ == BossPhase::Phase1)
-            {
-                int desired = 6;
-                int actual = (std::min)(desired, maxCanSpawn);
-                if (actual > 0)
-                {
-                    float angleStep = 6.28318f / actual;
-                    for (int i = 0; i < actual; ++i)
-                    {
-                        float a = i * angleStep;
-                        Vec3 sp = pos_ + Vec3{ std::cos(a) * 120.0f, 0.0f, std::sin(a) * 120.0f };
-                        enemies.SpawnEnemy(EnemyType::Minion, sp);
-                    }
-                }
-            }
-            else
-            {
-                // Phase 2: Triệu hồi hỗn hợp 5 Minion + 3 Hopper up to cap 12 (Task 10 T3d)
-                int minionCount = (std::min)(5, maxCanSpawn);
-                int hopperCount = (std::min)(3, maxCanSpawn - minionCount);
-                int totalSpawn = minionCount + hopperCount;
-                if (totalSpawn > 0)
-                {
-                    float angleStep = 6.28318f / totalSpawn;
-                    for (int i = 0; i < totalSpawn; ++i)
-                    {
-                        float a = i * angleStep;
-                        Vec3 sp = pos_ + Vec3{ std::cos(a) * 125.0f, 0.0f, std::sin(a) * 125.0f };
-                        EnemyType type = (i < minionCount) ? EnemyType::Minion : EnemyType::Hopper;
-                        enemies.SpawnEnemy(type, sp);
-                    }
-                }
-            }
+            SpawnPack(enemies);
         }
         break;
     }
