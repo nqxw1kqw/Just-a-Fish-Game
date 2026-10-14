@@ -150,6 +150,8 @@ void WhaleBoss::Stun(float duration, float damageMul)
     telegraphFxTimer_ = 0.0f;
     RecordActionHistory(L"Stunned");
     Fx().stun.Start(DxConv::ToVECTOR(HeadPos()), duration);
+    SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
+    SoundManager::Instance().PlaySFX(SfxId::BossStun);
 }
 
 // ---------------- State machine mở rộng ----------------
@@ -172,7 +174,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
             effects.SpawnWaterSplash(tailHit, 130.0f, 1.6f);
             effects.SpawnShockwave(tailHit, 110.0f);
             effects.AddTrauma(0.3f);
-            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
+            SoundManager::Instance().PlaySFX(SfxId::BossTailSlap);
 
             bool inCone = Collision::InConeXZ(pos_, back, GameConsts::TAIL_CONE_HALF_DEG * DEG2RAD,
                                                GameConsts::TAIL_RANGE, player.GetPosition(), player.GetHitboxRadius());
@@ -277,7 +279,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         {
             action_ = BossAction::PerformInhale;
             actionTimer_ = 0.0f;
-            SoundManager::Instance().PlaySFX(SfxId::TsunamiCharge);
+            SoundManager::Instance().PlaySFXLoop(SfxId::BossInhaleLoop); // hút bắt đầu
         }
         return true;
     }
@@ -305,6 +307,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
                 effects.SpawnWaterSplash(mouth, 80.0f, 1.5f);
                 effects.AddTrauma(0.4f);
                 Fx().inhale.Stop();
+                SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
                 Stun(GameConsts::INHALE_RECOVERY_STUN, GameConsts::BOSS_STUN_DAMAGE_MUL);
                 return true;
             }
@@ -314,6 +317,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         if (actionTimer_ >= GameConsts::INHALE_DURATION)
         {
             Fx().inhale.Stop();
+            SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
             // Hút hụt -> boss hụt hơi, choáng ngắn
             Stun(GameConsts::INHALE_RECOVERY_STUN, GameConsts::BOSS_STUN_DAMAGE_MUL);
         }
@@ -349,7 +353,6 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
             action_ = BossAction::PerformDive;
             actionTimer_ = 0.0f;
             diveHit_ = false;
-            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
             Fx().dive.Start(DxConv::ToVECTOR(Vec3{ pos_.x, 0.0f, pos_.z }), DxConv::ToVECTOR(diveDir_), GameConsts::DIVE_SPEED);
         }
         return true;
@@ -426,6 +429,7 @@ void WhaleBoss::StartBubbleNet(PlayerFish& player)
     netPillarsDropped_ = 0;
     netBreachPending_ = false;
     // PR E: chỉ dùng phần Surface() của vòng lưới Fuyuu (ring liên tục tắt: duration 0) — cột bọt phát bằng EmitPillar
+    SoundManager::Instance().PlaySFX(SfxId::BossBubbleNet);
     Fx().net.Start(DxConv::ToVECTOR(netCenter_), GameConsts::BUBBLENET_START_RADIUS, 0.0f, 0.0f, 0.0f,
                    GameConsts::BUBBLENET_END_RADIUS, false);
     action_ = BossAction::TelegraphBubbleNet;
@@ -475,6 +479,7 @@ void WhaleBoss::UpdateBossHazards(float dt, PlayerFish& player, EffectSystem& ef
         if (bp.life > 0.0f && !player.IsAirborne() &&
             Collision::DistXZ(pp, bp.pos) <= GameConsts::BUBBLENET_PILLAR_RADIUS + player.GetHitboxRadius())
         {
+            if (!player.IsSlowed()) SoundManager::Instance().PlaySFX(SfxId::PlayerSlow);
             player.ApplySlow(GameConsts::BUBBLENET_SLOW_FACTOR, GameConsts::BUBBLENET_SLOW_TIME);
             Fx().slow.Start(DxConv::ToVECTOR(pp), GameConsts::BUBBLENET_SLOW_TIME);
             if (netHitCooldown_ <= 0.0f)
@@ -503,6 +508,7 @@ void WhaleBoss::StartPackTelegraph(PlayerFish& player)
     action_ = BossAction::TelegraphMinions;
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
+    SoundManager::Instance().PlaySFX(SfxId::BossCallPack);
     Fx().pod.Start(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 40.0f, 0.0f }), GameConsts::PACK_TELEGRAPH, 320.0f); // phun bọt gọi bầy
     int total = (phase_ == BossPhase::Phase1) ? GameConsts::PACK_P1_MINIONS : (GameConsts::PACK_P2_MINIONS + GameConsts::PACK_P2_HOPPERS);
     total = (std::min)(total, static_cast<int>(packSpots_.size()));
@@ -549,6 +555,7 @@ void WhaleBoss::StartDive(PlayerFish& player)
     float len = std::sqrt(to.x * to.x + to.z * to.z);
     diveDir_ = (len > 1.0f) ? Vec3{ to.x / len, 0.0f, to.z / len } : Forward(yaw_);
     action_ = BossAction::TelegraphDive;
+    SoundManager::Instance().PlaySFX(SfxId::BossDiveCharge); // nạp lực
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
     diveCooldown_ = GameConsts::DIVE_COOLDOWN;

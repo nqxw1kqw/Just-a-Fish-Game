@@ -37,7 +37,20 @@ enum class SfxId
     TsunamiCharge,      // sfx_tsunami_charge: hút nước nạp sóng thần
     TsunamiSurge,       // sfx_tsunami_surge: vành sóng thần quét qua sàn đấu
     BossHeavySlam,      // sfx_boss_heavy_slam: địa chấn khi Boss nhảy đập
-    BossRoar,           // sfx_boss_roar: cá voi gầm cuồng nộ khi chuyển sang Phase 2
+    BossRoar,           // sfx_boss_roar: cá voi gầm cuồng nộ khi chuyển sang Phase 2 / cuồng nộ
+    BossTailSlap,       // sfx_boss_tail_slap: quật đuôi
+    BossBubbleNet,      // sfx_boss_bubble_net: bắt đầu lưới bọt
+    BossDiveCharge,     // sfx_boss_dive_charge: nạp lực lao ngầm
+    BossInhaleLoop,     // sfx_boss_inhale_loop: hút nước (lặp)
+    BossCallPack,       // sfx_boss_call_pack: gọi bầy
+    BossStun,           // sfx_stun: boss choáng
+
+    // Phản hồi trúng đòn
+    EnemyHit,           // sfx_enemy_hit
+    EnemyHitCrit,       // sfx_enemy_hit_crit
+    EnemyDeathPop,      // sfx_enemy_death_pop: cuối hoạt ảnh chết
+    PlayerHurt,         // sfx_player_hurt: lớp mới chồng lên PlayerHit
+    PlayerSlow,         // sfx_player_slow: bắt đầu bị làm chậm
 
     // Giao diện người dùng
     UiHover,            // sfx_ui_hover: lướt qua thẻ bài / nút
@@ -84,6 +97,10 @@ public:
     // Phát nhạc nền BGM (hỗ trợ fade-out BGM cũ và fade-in BGM mới)
     void PlayBGM(BgmId id, bool fade = true);
 
+    // Phát lặp / dừng toàn bộ handle của 1 SFX (dùng cho Inhale)
+    void PlaySFXLoop(SfxId id);
+    void StopSFX(SfxId id);
+
     // Dừng nhạc nền hiện tại
     void StopBGM(bool fade = true);
 
@@ -110,6 +127,8 @@ private:
         std::array<int, MAX_SFX_POOL_HANDLES> handles{ -1, -1, -1, -1, -1, -1 };
         int poolSize = 0;
         int baseVolume = 100;
+        int minIntervalMs = 0;   // chống chồng tiếng (0 = không giới hạn)
+        int lastPlayMs = -100000;
         const char* name = "";
         const wchar_t* wname = L"";
     };

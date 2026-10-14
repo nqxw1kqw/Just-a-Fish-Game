@@ -627,7 +627,9 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects, const Vec3* source
     effects.SpawnPlayerHurt(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, hurtDir, hurtAmount);
 
     // Phát âm thanh khi người chơi bị trúng đòn
+    // Giữ tiếng cũ (thu âm) + lớp synth mới nhỏ hơn cho cảm giác "đau"
     SoundManager::Instance().PlaySFX(SfxId::PlayerHit);
+    SoundManager::Instance().PlaySFX(SfxId::PlayerHurt);
 
     // Hook 6: Cá nóc - khi trúng đòn, bắn gai phản đòn
     if (hasPufferfishHook_)

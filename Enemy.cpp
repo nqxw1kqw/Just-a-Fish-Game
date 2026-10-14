@@ -521,6 +521,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
             {
                 e.dying = false;
                 if (e.deathFx) effects.SpawnFishDeath(e.pos + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, e.radius * 2.0f);
+                SoundManager::Instance().PlaySFX(SfxId::EnemyDeathPop); // giới hạn tần suất trong SoundManager
             }
             continue;
         }

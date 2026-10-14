@@ -24,5 +24,11 @@ obj/
 /Review_Bundle.md
 /Project_Architecture_And_Refactor_Plan.md
 
+# SFX dựa trên 効果音ラボ (repo công khai -> không phân phối lại file gốc). Đặt tay vào Data/Sound/SE/
+/Data/Sound/SE/sfx_boss_breach.wav
+/Data/Sound/SE/sfx_boss_roar.wav
+/Data/Sound/SE/sfx_tsunami_surge.wav
+/Data/Sound/SE/sfx_boss_call_pack.wav
+
 # Archived and vendor experiments not part of the active game project
 /_Archive/
