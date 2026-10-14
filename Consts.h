@@ -145,6 +145,31 @@ namespace GameConsts
     constexpr float INHALE_RECOVERY_STUN = 0.8f;         // Hút xong: boss choáng ngắn (cửa sổ phản công)
     constexpr float INHALE_COOLDOWN = 10.0f;
 
+    // ---- Boss rework PR D: Gọi bầy (Call the Pack) + Lao ngầm (Dive Charge) + Combo P2 + Sóng chuyển phase + Cuồng nộ ----
+    constexpr float PACK_TELEGRAPH = 0.85f;              // Bọt sủi ở điểm xuất hiện trước khi cá con trồi lên
+    constexpr float PACK_SPAWN_RADIUS = 260.0f;          // Bao vây quanh NGƯỜI CHƠI (không phải quanh boss)
+    constexpr int   PACK_P1_MINIONS = 6;
+    constexpr int   PACK_P2_MINIONS = 5;
+    constexpr int   PACK_P2_HOPPERS = 3;
+
+    constexpr float DIVE_TELEGRAPH_P1 = 0.9f;
+    constexpr float DIVE_TELEGRAPH_P2 = 0.7f;
+    constexpr float DIVE_SPEED = 700.0f;
+    constexpr float DIVE_MAX_TIME = 0.9f;
+    constexpr float DIVE_HIT_RADIUS = 60.0f;
+    constexpr float DIVE_DAMAGE = 25.0f;
+    constexpr float DIVE_KNOCKBACK = 380.0f;
+    constexpr float DIVE_WALL_STUN = 1.5f;               // Đâm vào thành đấu trường -> choáng
+    constexpr float DIVE_COOLDOWN = 7.0f;
+
+    constexpr float COMBO_DELAY = 0.25f;                 // P2: chiêu nối tiếp ra sau khoảng nghỉ ngắn
+    constexpr float COMBO_TAIL_BREACH_CHANCE = 0.5f;     // P2: Quật đuôi -> Breach
+    constexpr float COMBO_DIVE_TSUNAMI_CHANCE = 0.6f;    // P2: Lao ngầm -> Sóng thần
+
+    constexpr float RAGE_HP_RATIO = 0.2f;                // < 20% HP: cuồng nộ
+    constexpr float RAGE_IDLE = 0.65f;
+    constexpr float RAGE_COOLDOWN_MUL = 1.5f;            // Hồi chiêu nhanh hơn 1.5 lần
+
     // Kẻ địch
     constexpr int MAX_ENEMIES = 300;
     constexpr int MAX_BULLETS = 600;

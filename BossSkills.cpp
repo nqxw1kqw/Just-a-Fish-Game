@@ -20,6 +20,7 @@ namespace
     constexpr float DEG2RAD = 3.14159265f / 180.0f;
 
     Vec3 Forward(float yaw) { return Vec3{ std::sin(yaw), 0.0f, std::cos(yaw) }; }
+    float Rand01() { return static_cast<float>(rand()) / static_cast<float>(RAND_MAX); }
 }
 
 void WhaleBoss::EnsureActiveForDebug()
@@ -183,6 +184,9 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         {
             action_ = BossAction::Idle;
             actionTimer_ = 0.0f;
+            // PR D combo P2: Quật đuôi -> Breach
+            if (phase_ == BossPhase::Phase2 && Rand01() < GameConsts::COMBO_TAIL_BREACH_CHANCE)
+                comboNext_ = BossSkill::Slam;
         }
         return true;
     }
@@ -322,6 +326,78 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         }
         return true;
     }
+    case BossAction::TelegraphDive:
+    {
+        float dur = (phase_ == BossPhase::Phase1) ? GameConsts::DIVE_TELEGRAPH_P1 : GameConsts::DIVE_TELEGRAPH_P2;
+        if (enraged_) dur *= 0.8f;
+        pos_.y = -GameConsts::BREACH_SINK_DEPTH * 1.5f * std::clamp(actionTimer_ / dur, 0.0f, 1.0f);
+        // Hướng lao khoá theo người chơi tới 70% telegraph
+        if (actionTimer_ < dur * 0.7f)
+        {
+            Vec3 to = Collision::FlatDiff(player.GetPosition(), pos_);
+            float len = std::sqrt(to.x * to.x + to.z * to.z);
+            if (len > 1.0f) diveDir_ = Vec3{ to.x / len, 0.0f, to.z / len };
+            yaw_ = std::atan2(diveDir_.x, diveDir_.z);
+        }
+        // Vệt bọt chỉ đường lao
+        telegraphFxTimer_ += dt;
+        while (telegraphFxTimer_ >= 0.05f)
+        {
+            telegraphFxTimer_ -= 0.05f;
+            float d = 60.0f + static_cast<float>(rand() % 500);
+            Vec3 p = pos_ + diveDir_ * d;
+            p.y = 0.0f;
+            effects.SpawnBubbles(p, 1, 10.0f, 2.0f, 4.0f);
+        }
+        if (actionTimer_ >= dur)
+        {
+            action_ = BossAction::PerformDive;
+            actionTimer_ = 0.0f;
+            diveHit_ = false;
+            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
+        }
+        return true;
+    }
+    case BossAction::PerformDive:
+    {
+        pos_.x += diveDir_.x * GameConsts::DIVE_SPEED * dt;
+        pos_.z += diveDir_.z * GameConsts::DIVE_SPEED * dt;
+        effects.SpawnBubbles(Vec3{ pos_.x, 0.0f, pos_.z }, 2, 30.0f, 3.0f, 6.0f);
+
+        if (!diveHit_ && !player.IsAirborne() &&
+            Collision::DistXZ(player.GetPosition(), pos_) <= GameConsts::DIVE_HIT_RADIUS + player.GetHitboxRadius())
+        {
+            diveHit_ = true;
+            player.TakeDamage(GameConsts::DIVE_DAMAGE, effects);
+            player.ApplyKnockback(diveDir_ * GameConsts::DIVE_KNOCKBACK);
+            effects.AddTrauma(0.45f);
+        }
+
+        float lim = GameConsts::ARENA_HALF_SIZE - 60.0f;
+        bool hitWall = std::fabs(pos_.x) > lim || std::fabs(pos_.z) > lim;
+        if (hitWall)
+        {
+            pos_.x = std::clamp(pos_.x, -lim, lim);
+            pos_.z = std::clamp(pos_.z, -lim, lim);
+            effects.SpawnWaterSplash(Vec3{ pos_.x, 0.0f, pos_.z }, 120.0f, 2.0f);
+            effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 120.0f);
+            effects.AddTrauma(0.6f);
+            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
+            Stun(GameConsts::DIVE_WALL_STUN, GameConsts::BOSS_STUN_DAMAGE_MUL);
+            return true;
+        }
+        if (actionTimer_ >= GameConsts::DIVE_MAX_TIME)
+        {
+            pos_.y = 0.0f;
+            effects.SpawnWaterSplash(pos_, 100.0f, 1.6f);
+            action_ = BossAction::Idle;
+            actionTimer_ = 0.0f;
+            // PR D combo P2: Lao ngầm -> Sóng thần
+            if (phase_ == BossPhase::Phase2 && Rand01() < GameConsts::COMBO_DIVE_TSUNAMI_CHANCE)
+                comboNext_ = BossSkill::Tsunami;
+        }
+        return true;
+    }
     default:
         return false;
     }
@@ -415,5 +491,84 @@ void WhaleBoss::DrawBossHazards() const
     {
         float a = std::clamp(bp.life / 0.6f, 0.0f, 1.0f);
         Render3D::DrawFlatShadow(bp.pos, GameConsts::BUBBLENET_PILLAR_RADIUS, 0.45f * a);
+    }
+}
+
+// ---------------- PR D: Call the Pack / Dive Charge / Phase ----------------
+void WhaleBoss::StartPackTelegraph(PlayerFish& player)
+{
+    action_ = BossAction::TelegraphMinions;
+    actionTimer_ = 0.0f;
+    telegraphFxTimer_ = 0.0f;
+    int total = (phase_ == BossPhase::Phase1) ? GameConsts::PACK_P1_MINIONS : (GameConsts::PACK_P2_MINIONS + GameConsts::PACK_P2_HOPPERS);
+    total = (std::min)(total, static_cast<int>(packSpots_.size()));
+    float lim = GameConsts::ARENA_HALF_SIZE - 40.0f;
+    float base = static_cast<float>(rand() % 628) * 0.01f;
+    Vec3 c = player.GetPosition();
+    packSpotCount_ = total;
+    for (int i = 0; i < total; ++i)
+    {
+        float a = base + 6.2831853f * static_cast<float>(i) / static_cast<float>(total);
+        Vec3 p{ c.x + std::sin(a) * GameConsts::PACK_SPAWN_RADIUS, 0.0f, c.z + std::cos(a) * GameConsts::PACK_SPAWN_RADIUS };
+        p.x = std::clamp(p.x, -lim, lim);
+        p.z = std::clamp(p.z, -lim, lim);
+        packSpots_[i] = p;
+    }
+}
+
+void WhaleBoss::SpawnPack(EnemyManager& enemies)
+{
+    int maxCanSpawn = (std::max)(0, GameConsts::BOSS_MINION_ALIVE_CAP - enemies.GetActiveCount());
+    int minions = (phase_ == BossPhase::Phase1) ? GameConsts::PACK_P1_MINIONS : GameConsts::PACK_P2_MINIONS;
+    int spawned = 0;
+    for (int i = 0; i < packSpotCount_ && spawned < maxCanSpawn; ++i)
+    {
+        EnemyType type = (i < minions) ? EnemyType::Minion : EnemyType::Hopper;
+        if (enemies.SpawnEnemy(type, packSpots_[i])) spawned++;
+    }
+    packSpotCount_ = 0;
+}
+
+void WhaleBoss::ForcePack(PlayerFish& player)
+{
+    EnsureActiveForDebug();
+    pos_.y = 0.0f;
+    lastSkill_ = BossSkill::Minions;
+    StartPackTelegraph(player);
+    RecordActionHistory(L"Call the Pack (debug)");
+}
+
+void WhaleBoss::StartDive(PlayerFish& player)
+{
+    Vec3 to = Collision::FlatDiff(player.GetPosition(), pos_);
+    float len = std::sqrt(to.x * to.x + to.z * to.z);
+    diveDir_ = (len > 1.0f) ? Vec3{ to.x / len, 0.0f, to.z / len } : Forward(yaw_);
+    action_ = BossAction::TelegraphDive;
+    actionTimer_ = 0.0f;
+    telegraphFxTimer_ = 0.0f;
+    diveCooldown_ = GameConsts::DIVE_COOLDOWN;
+    lastSkill_ = BossSkill::Dive;
+    RecordActionHistory(L"Dive Charge");
+}
+
+void WhaleBoss::ForceDive(PlayerFish& player)
+{
+    EnsureActiveForDebug();
+    pos_.y = 0.0f;
+    StartDive(player);
+}
+
+void WhaleBoss::ForcePhaseStep(EffectSystem& effects)
+{
+    EnsureActiveForDebug();
+    if (phase_ == BossPhase::Phase1)
+    {
+        float dmg = hp_ - maxHp_ * 0.5f + 1.0f;
+        if (dmg > 0.0f) TakeDamage(dmg, effects);
+    }
+    else if (!enraged_)
+    {
+        float dmg = hp_ - maxHp_ * GameConsts::RAGE_HP_RATIO + 1.0f;
+        if (dmg > 0.0f) TakeDamage(dmg, effects);
     }
 }

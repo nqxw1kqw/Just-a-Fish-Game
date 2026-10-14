@@ -35,7 +35,10 @@ enum class BossAction
     TelegraphBubbleNet,     // Lặn xuống, bọt sủi quanh người chơi
     BubbleNetSwim,          // Bơi vòng tròn thả cột bọt (lưới khép dần)
     TelegraphInhale,        // Há miệng, nước bắt đầu xoáy vào
-    PerformInhale           // Hút: kéo người chơi về miệng
+    PerformInhale,          // Hút: kéo người chơi về miệng
+    // PR D
+    TelegraphDive,          // Lặn sâu, vệt bọt chỉ hướng lao
+    PerformDive             // Lao thẳng dưới nước
 };
 
 enum class BossSkill
@@ -47,7 +50,8 @@ enum class BossSkill
     Tsunami,
     Tail,
     BubbleNet,
-    Inhale
+    Inhale,
+    Dive
 };
 
 // Cấu trúc Vành Sóng thần tỏa tròn (Radial Tsunami - Phần A3)
@@ -92,6 +96,10 @@ public:
     void ForceTsunamiDouble(PlayerFish& player); // PR B: sóng đôi (không khe -> có khe)
     void ForceBubbleNet(PlayerFish& player);     // PR C
     void ForceInhale(PlayerFish& player);        // PR C
+    void ForcePack(PlayerFish& player);          // PR D
+    void ForceDive(PlayerFish& player);          // PR D
+    void ForcePhaseStep(EffectSystem& effects);  // PR D: P1 -> P2 (kèm sóng), P2 -> Cuồng nộ
+    bool IsEnraged() const { return enraged_; }
     void StartTsunamiTelegraph(PlayerFish& player, float gapDeg = 0.0f);
 
     // Boss rework (PR A): Breach Slam, Tail Slap, Stun
@@ -182,6 +190,18 @@ private:
     void StartInhale(PlayerFish& player);
     void UpdateBossHazards(float dt, PlayerFish& player, EffectSystem& effects);
     void DrawBossHazards() const;
+    // PR D
+    Vec3 diveDir_{ 0.0f, 0.0f, 1.0f };
+    float diveCooldown_ = 0.0f;
+    bool diveHit_ = false;
+    BossSkill comboNext_ = BossSkill::None;
+    bool pendingPhaseWave_ = false;
+    bool enraged_ = false;
+    void StartDive(PlayerFish& player);
+    void StartPackTelegraph(PlayerFish& player);
+    void SpawnPack(EnemyManager& enemies);
+    std::array<Vec3, 12> packSpots_{};
+    int packSpotCount_ = 0;
     int slamCount_ = 0;              // PR B: số cú đã đáp trong Quật ba nhịp
     float secondRingDelay_ = 0.0f;   // PR B: độ trễ vòng sóng thứ 2
     float secondRingGapDeg_ = 0.0f;  // PR B: khe của vòng sóng thứ 2
