@@ -127,6 +127,16 @@
     <ClInclude Include="WaterSplash.h" />
     <ClInclude Include="ResultScreen.h" />
     <ClInclude Include="LowPolyModels.h" />
+    <ClInclude Include="Effects\Whale\WhaleFxCommon.h" />
+    <ClInclude Include="Effects\Whale\WhaleFxBase.h" />
+    <ClInclude Include="Effects\Whale\WhaleBreachSlamFx.h" />
+    <ClInclude Include="Effects\Whale\WhaleTailSlapFx.h" />
+    <ClInclude Include="Effects\Whale\WhaleBubbleNetFx.h" />
+    <ClInclude Include="Effects\Whale\WhaleInhaleFx.h" />
+    <ClInclude Include="Effects\Whale\WhaleDiveChargeFx.h" />
+    <ClInclude Include="Effects\Whale\WhaleCallPodFx.h" />
+    <ClInclude Include="Effects\Whale\WhaleStatusFx.h" />
+    <ClInclude Include="Effects\Whale\WhaleFxSet.h" />
     <ClInclude Include="TsunamiWaterEffect.h" />
     <ClInclude Include="BattleHud.h" />
     <ClInclude Include="BubbleSystem.h" />

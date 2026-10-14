@@ -14,6 +14,8 @@
 #include "DxLib.h"
 #include "CollisionUtil.h"
 #include "Render3DUtil.h"
+#include "DxConv.h"
+#include "Effects/Whale/WhaleFxSet.h"
 
 namespace
 {
@@ -65,16 +67,16 @@ void WhaleBoss::UpdateBreachTelegraph(float dt, float duration, PlayerFish& play
     // Lặn xuống dần
     pos_.y = -GameConsts::BREACH_SINK_DEPTH * ratio;
 
-    // Bọt khí sủi lên dày dần ở điểm đáp
-    telegraphFxTimer_ += dt;
-    while (telegraphFxTimer_ >= 0.06f)
+    (void)effects;
+    // PR E: bọt sủi dày dần ở điểm đáp (WhaleBreachSlamFx). Thời gian fizz = telegraph + thời gian bay
+    // để fizz kéo tới lúc đáp; Impact() được gọi thủ công trong LandBreach.
+    WhaleFxSet& fx = Fx();
+    if (!breachFxArmed_)
     {
-        telegraphFxTimer_ -= 0.06f;
-        int n = 1 + static_cast<int>(ratio * 4.0f);
-        effects.SpawnBubbles(slamTarget_, n, 40.0f + ratio * (GameConsts::BREACH_OUTER_RADIUS - 40.0f), 2.5f, 5.0f + ratio * 3.0f);
-        // Vệt bọt quanh thân boss khi lặn
-        effects.SpawnBubbles(pos_, 1, 60.0f, 2.0f, 4.0f);
+        breachFxArmed_ = true;
+        fx.breach.Start(DxConv::ToVECTOR(slamTarget_), duration + GameConsts::BREACH_AIR_TIME + 0.5f, GameConsts::BREACH_OUTER_RADIUS);
     }
+    fx.breach.SetCenter(DxConv::ToVECTOR(slamTarget_));
 }
 
 void WhaleBoss::LandBreach(PlayerFish& player, EffectSystem& effects, float innerDamage, float outerDamage, float innerRadius, float outerRadius)
@@ -84,7 +86,18 @@ void WhaleBoss::LandBreach(PlayerFish& player, EffectSystem& effects, float inne
     effects.AddTrauma(0.55f);
     effects.SpawnShockwave(pos_, outerRadius);
     effects.SpawnWaterSplash(pos_, outerRadius, 2.2f);
-    effects.SpawnBubbles(pos_, 24, outerRadius * 0.8f, 3.0f, 7.0f);
+    {
+        WhaleFxSet& fx = Fx();
+        if (!breachFxArmed_) fx.breach.Start(DxConv::ToVECTOR(slamTarget_), 0.01f, outerRadius);
+        fx.breach.SetCenter(DxConv::ToVECTOR(slamTarget_));
+        fx.breach.Impact();
+        breachFxArmed_ = false;
+        if (netBreachPending_)
+        {
+            netBreachPending_ = false;
+            fx.net.Surface();
+        }
+    }
     SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
 
     if (player.GetHeightY() >= GameConsts::BOSS_DODGE_HEIGHT || player.IsInvulnerable()) return;
@@ -113,6 +126,10 @@ void WhaleBoss::StartTail()
     telegraphFxTimer_ = 0.0f;
     tailCooldown_ = GameConsts::TAIL_COOLDOWN;
     RecordActionHistory(L"Tail Slap");
+    // PR E: nón nước phía sau. Fuyuu dùng góc TOÀN PHẦN -> 2 x 70° = 140°
+    float dur = (phase_ == BossPhase::Phase1) ? GameConsts::TAIL_TELEGRAPH_P1 : GameConsts::TAIL_TELEGRAPH_P2;
+    Fx().tail.Start(DxConv::ToVECTOR(TailPos()), DxConv::ToVECTOR(Forward(yaw_)), dur,
+                    GameConsts::TAIL_CONE_HALF_DEG * 2.0f, GameConsts::TAIL_RANGE);
 }
 
 void WhaleBoss::ForceTail(PlayerFish&)
@@ -132,6 +149,7 @@ void WhaleBoss::Stun(float duration, float damageMul)
     stunDamageMul_ = damageMul;
     telegraphFxTimer_ = 0.0f;
     RecordActionHistory(L"Stunned");
+    Fx().stun.Start(DxConv::ToVECTOR(HeadPos()), duration);
 }
 
 // ---------------- State machine mở rộng ----------------
@@ -144,15 +162,8 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
     {
         float dur = (phase_ == BossPhase::Phase1) ? GameConsts::TAIL_TELEGRAPH_P1 : GameConsts::TAIL_TELEGRAPH_P2;
         Vec3 back = Forward(yaw_) * -1.0f;
-        Vec3 tailPos = pos_ + back * 110.0f + Vec3{ 0.0f, 30.0f, 0.0f };
-
-        // Nước nhỏ giọt từ đuôi đang giơ
-        telegraphFxTimer_ += dt;
-        while (telegraphFxTimer_ >= 0.05f)
-        {
-            telegraphFxTimer_ -= 0.05f;
-            effects.SpawnBubbles(tailPos, 2, 25.0f, 2.0f, 4.0f);
-        }
+        // PR E: nước nhỏ giọt từ đuôi (WhaleTailSlapFx bám theo đuôi)
+        Fx().tail.SetTail(DxConv::ToVECTOR(TailPos()));
 
         if (actionTimer_ >= dur)
         {
@@ -193,16 +204,11 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
     case BossAction::Stunned:
     {
         stunTimer_ -= dt;
-        // Bọt khí xoay vòng trên đầu = đang choáng
-        telegraphFxTimer_ += dt;
-        while (telegraphFxTimer_ >= 0.12f)
-        {
-            telegraphFxTimer_ -= 0.12f;
-            float a = stunTimer_ * 6.0f;
-            effects.SpawnBubbles(pos_ + Vec3{ std::cos(a) * 40.0f, 70.0f, std::sin(a) * 40.0f }, 1, 6.0f, 3.0f, 5.0f);
-        }
+        // PR E: vòng bọt + sao trên đầu (WhaleStunFx)
+        Fx().stun.SetHead(DxConv::ToVECTOR(HeadPos()));
         if (stunTimer_ <= 0.0f)
         {
+            Fx().stun.Stop();
             stunTimer_ = 0.0f;
             stunDamageMul_ = 1.0f;
             action_ = BossAction::Idle;
@@ -220,7 +226,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
             telegraphFxTimer_ -= 0.05f;
             float a = static_cast<float>(rand() % 628) * 0.01f;
             Vec3 p = netCenter_ + Vec3{ std::sin(a) * GameConsts::BUBBLENET_START_RADIUS, 0.0f, std::cos(a) * GameConsts::BUBBLENET_START_RADIUS };
-            effects.SpawnBubbles(p, 2, 12.0f, 2.0f, 4.0f);
+            Fx().net.EmitPillar(DxConv::ToVECTOR(p), 0.05f, 60.0f);
         }
         if (actionTimer_ >= GameConsts::BUBBLENET_TELEGRAPH)
         {
@@ -248,7 +254,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
             bp.pos = netCenter_ + Vec3{ std::sin(pa) * pr, 0.0f, std::cos(pa) * pr };
             bp.life = GameConsts::BUBBLENET_PILLAR_LIFE;
             bubblePillars_.push_back(bp);
-            effects.SpawnBubbles(bp.pos, 6, 10.0f, 3.0f, 6.0f);
+            Fx().net.EmitPillar(DxConv::ToVECTOR(bp.pos), 0.15f, 60.0f); // phụt bọt khi thả cột
             netPillarsDropped_++;
         }
 
@@ -258,6 +264,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
             pos_.y = 0.0f;
             StartBreach(player);
             slamTarget_ = netCenter_;
+            netBreachPending_ = true; // LandBreach -> net.Surface()
             actionTimer_ = GameConsts::BREACH_TELEGRAPH_P1 - GameConsts::BUBBLENET_FINISH_TELEGRAPH;
             if (actionTimer_ < 0.0f) actionTimer_ = 0.0f;
         }
@@ -265,15 +272,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
     }
     case BossAction::TelegraphInhale:
     {
-        telegraphFxTimer_ += dt;
-        while (telegraphFxTimer_ >= 0.04f)
-        {
-            telegraphFxTimer_ -= 0.04f;
-            Vec3 f = Forward(yaw_);
-            float side = (static_cast<float>(rand() % 200) - 100.0f);
-            Vec3 p = pos_ + f * 200.0f + Vec3{ f.z * side, 0.0f, -f.x * side };
-            effects.SpawnBubbles(p, 1, 8.0f, 2.0f, 3.5f);
-        }
+        Fx().inhale.SetMouth(DxConv::ToVECTOR(MouthPos()), DxConv::ToVECTOR(Forward(yaw_)));
         if (actionTimer_ >= GameConsts::INHALE_TELEGRAPH)
         {
             action_ = BossAction::PerformInhale;
@@ -305,22 +304,16 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
                 player.ApplyKnockback(Vec3{ f.x * GameConsts::INHALE_BITE_KNOCKBACK, 0.0f, f.z * GameConsts::INHALE_BITE_KNOCKBACK });
                 effects.SpawnWaterSplash(mouth, 80.0f, 1.5f);
                 effects.AddTrauma(0.4f);
+                Fx().inhale.Stop();
                 Stun(GameConsts::INHALE_RECOVERY_STUN, GameConsts::BOSS_STUN_DAMAGE_MUL);
                 return true;
             }
         }
-        // Dòng bọt chảy vào miệng
-        telegraphFxTimer_ += dt;
-        while (telegraphFxTimer_ >= 0.03f)
-        {
-            telegraphFxTimer_ -= 0.03f;
-            float side = (static_cast<float>(rand() % 300) - 150.0f);
-            float dist = 80.0f + static_cast<float>(rand() % 300);
-            Vec3 p = pos_ + f * dist + Vec3{ f.z * side, 0.0f, -f.x * side };
-            effects.SpawnBubbles(p, 1, 6.0f, 2.0f, 4.0f);
-        }
+        // PR E: dòng nước bị hút vào miệng (WhaleInhaleFx)
+        Fx().inhale.SetMouth(DxConv::ToVECTOR(MouthPos()), DxConv::ToVECTOR(f));
         if (actionTimer_ >= GameConsts::INHALE_DURATION)
         {
+            Fx().inhale.Stop();
             // Hút hụt -> boss hụt hơi, choáng ngắn
             Stun(GameConsts::INHALE_RECOVERY_STUN, GameConsts::BOSS_STUN_DAMAGE_MUL);
         }
@@ -355,6 +348,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
             actionTimer_ = 0.0f;
             diveHit_ = false;
             SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
+            Fx().dive.Start(DxConv::ToVECTOR(Vec3{ pos_.x, 0.0f, pos_.z }), DxConv::ToVECTOR(diveDir_), GameConsts::DIVE_SPEED);
         }
         return true;
     }
@@ -362,7 +356,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
     {
         pos_.x += diveDir_.x * GameConsts::DIVE_SPEED * dt;
         pos_.z += diveDir_.z * GameConsts::DIVE_SPEED * dt;
-        effects.SpawnBubbles(Vec3{ pos_.x, 0.0f, pos_.z }, 2, 30.0f, 3.0f, 6.0f);
+        Fx().dive.SetBoss(DxConv::ToVECTOR(Vec3{ pos_.x, 0.0f, pos_.z }), DxConv::ToVECTOR(diveDir_));
 
         if (!diveHit_ && !player.IsAirborne() &&
             Collision::DistXZ(player.GetPosition(), pos_) <= GameConsts::DIVE_HIT_RADIUS + player.GetHitboxRadius())
@@ -377,10 +371,14 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         bool hitWall = std::fabs(pos_.x) > lim || std::fabs(pos_.z) > lim;
         if (hitWall)
         {
+            // Pháp tuyến thành: hướng vào trong đấu trường theo trục bị vượt nhiều hơn
+            Vec3 n{ 0.0f, 0.0f, 0.0f };
+            if (std::fabs(pos_.x) - lim >= std::fabs(pos_.z) - lim) n.x = (pos_.x > 0.0f) ? -1.0f : 1.0f;
+            else n.z = (pos_.z > 0.0f) ? -1.0f : 1.0f;
             pos_.x = std::clamp(pos_.x, -lim, lim);
             pos_.z = std::clamp(pos_.z, -lim, lim);
-            effects.SpawnWaterSplash(Vec3{ pos_.x, 0.0f, pos_.z }, 120.0f, 2.0f);
             effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 120.0f);
+            Fx().dive.HitWall(DxConv::ToVECTOR(Vec3{ pos_.x, 0.0f, pos_.z }), DxConv::ToVECTOR(n));
             effects.AddTrauma(0.6f);
             SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
             Stun(GameConsts::DIVE_WALL_STUN, GameConsts::BOSS_STUN_DAMAGE_MUL);
@@ -390,6 +388,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         {
             pos_.y = 0.0f;
             effects.SpawnWaterSplash(pos_, 100.0f, 1.6f);
+            Fx().dive.Stop();
             action_ = BossAction::Idle;
             actionTimer_ = 0.0f;
             // PR D combo P2: Lao ngầm -> Sóng thần
@@ -423,6 +422,10 @@ void WhaleBoss::StartBubbleNet(PlayerFish& player)
     Vec3 rel = Collision::FlatDiff(pos_, netCenter_);
     netStartAngle_ = (rel.LengthSq() > 1.0f) ? std::atan2(rel.x, rel.z) : 0.0f;
     netPillarsDropped_ = 0;
+    netBreachPending_ = false;
+    // PR E: chỉ dùng phần Surface() của vòng lưới Fuyuu (ring liên tục tắt: duration 0) — cột bọt phát bằng EmitPillar
+    Fx().net.Start(DxConv::ToVECTOR(netCenter_), GameConsts::BUBBLENET_START_RADIUS, 0.0f, 0.0f, 0.0f,
+                   GameConsts::BUBBLENET_END_RADIUS, false);
     action_ = BossAction::TelegraphBubbleNet;
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
@@ -446,6 +449,9 @@ void WhaleBoss::StartInhale(PlayerFish& player)
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
     inhaleCooldown_ = GameConsts::INHALE_COOLDOWN;
+    // PR E: chạy suốt telegraph + hút. Fuyuu dùng góc TOÀN PHẦN -> 2 x 60° = 120°
+    Fx().inhale.Start(DxConv::ToVECTOR(MouthPos()), DxConv::ToVECTOR(Forward(yaw_)),
+                      GameConsts::INHALE_TELEGRAPH + GameConsts::INHALE_DURATION, GameConsts::INHALE_RANGE, GameConsts::INHALE_CONE_HALF_DEG * 2.0f);
     lastSkill_ = BossSkill::Inhale;
     RecordActionHistory(L"Inhale");
 }
@@ -464,16 +470,13 @@ void WhaleBoss::UpdateBossHazards(float dt, PlayerFish& player, EffectSystem& ef
     {
         bp.life -= dt;
         bp.fxTimer += dt;
-        while (bp.fxTimer >= 0.12f)
-        {
-            bp.fxTimer -= 0.12f;
-            effects.SpawnBubbles(bp.pos, 2, 8.0f, 2.5f, 5.0f);
-        }
+        if (bp.life > 0.0f) Fx().net.EmitPillar(DxConv::ToVECTOR(bp.pos), dt);
         // Nhảy qua tường bọt thì an toàn
         if (bp.life > 0.0f && !player.IsAirborne() &&
             Collision::DistXZ(pp, bp.pos) <= GameConsts::BUBBLENET_PILLAR_RADIUS + player.GetHitboxRadius())
         {
             player.ApplySlow(GameConsts::BUBBLENET_SLOW_FACTOR, GameConsts::BUBBLENET_SLOW_TIME);
+            Fx().slow.Start(DxConv::ToVECTOR(pp), GameConsts::BUBBLENET_SLOW_TIME);
             if (netHitCooldown_ <= 0.0f)
             {
                 player.TakeDamage(GameConsts::BUBBLENET_PILLAR_DAMAGE, effects);
@@ -500,6 +503,7 @@ void WhaleBoss::StartPackTelegraph(PlayerFish& player)
     action_ = BossAction::TelegraphMinions;
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
+    Fx().pod.Start(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 40.0f, 0.0f }), GameConsts::PACK_TELEGRAPH, 320.0f); // phun bọt gọi bầy
     int total = (phase_ == BossPhase::Phase1) ? GameConsts::PACK_P1_MINIONS : (GameConsts::PACK_P2_MINIONS + GameConsts::PACK_P2_HOPPERS);
     total = (std::min)(total, static_cast<int>(packSpots_.size()));
     float lim = GameConsts::ARENA_HALF_SIZE - 40.0f;
@@ -572,3 +576,25 @@ void WhaleBoss::ForcePhaseStep(EffectSystem& effects)
         if (dmg > 0.0f) TakeDamage(dmg, effects);
     }
 }
+
+// ---------------- PR E: hiệu ứng hạt Cá voi ----------------
+WhaleBoss::WhaleBoss() = default;
+
+WhaleBoss::~WhaleBoss()
+{
+    if (fx_) fx_->Release();
+}
+
+WhaleFxSet& WhaleBoss::Fx()
+{
+    if (!fx_)
+    {
+        fx_ = std::make_unique<WhaleFxSet>();
+        fx_->Init();
+    }
+    return *fx_;
+}
+
+Vec3 WhaleBoss::HeadPos() const { return pos_ + Forward(yaw_) * 90.0f + Vec3{ 0.0f, 40.0f, 0.0f }; }
+Vec3 WhaleBoss::TailPos() const { return pos_ - Forward(yaw_) * 110.0f + Vec3{ 0.0f, 30.0f, 0.0f }; }
+Vec3 WhaleBoss::MouthPos() const { return pos_ + Forward(yaw_) * 60.0f + Vec3{ 0.0f, 10.0f, 0.0f }; }

@@ -91,6 +91,36 @@
       <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="LowPolyModels.h">
+    <ClInclude Include="Effects\Whale\WhaleFxCommon.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleFxBase.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleBreachSlamFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleTailSlapFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleBubbleNetFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleInhaleFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleDiveChargeFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleCallPodFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleStatusFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleFxSet.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="TsunamiWaterEffect.h">
       <Filter>System</Filter>
     </ClInclude>
