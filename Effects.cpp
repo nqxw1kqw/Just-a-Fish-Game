@@ -439,3 +439,8 @@ void EffectSystem::DrawDamagePopups() const
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     }
 }
+
+void EffectSystem::SpawnBubbles(const Vec3& center, int count, float spread, float sizeMin, float sizeMax)
+{
+    bubbles_.EmitAt(center, count, spread, sizeMin, sizeMax);
+}

@@ -128,6 +128,9 @@
     <ClCompile Include="CardManager.cpp">
       <Filter>System</Filter>
     </ClCompile>
+    <ClCompile Include="BossSkills.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
     <ClCompile Include="Boss.cpp">
       <Filter>Entity</Filter>
     </ClCompile>

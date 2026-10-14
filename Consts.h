@@ -79,6 +79,34 @@ namespace GameConsts
     constexpr float BOSS_TSUNAMI_COOLDOWN = 6.0f;        // Hồi chiêu tối thiểu giữa 2 lần chọn chiêu Sóng thần (3a)
     constexpr float BOSS_WALK_SPEED = 50.0f;             // Tốc độ bò chậm trong lúc Idle (3e)
 
+    // ---- Boss rework PR A: Breach Slam / Tail Slap / AI / Stun ----
+    constexpr float BOSS_TURN_RATE = 1.8f;               // rad/s: boss xoay dần về người chơi (để có thể vòng ra sau lưng)
+    constexpr float BREACH_TELEGRAPH_P1 = 1.0f;          // Lặn xuống + bọt sủi ở điểm đáp
+    constexpr float BREACH_TELEGRAPH_P2 = 0.7f;
+    constexpr float BREACH_SINK_DEPTH = 20.0f;           // Boss chìm xuống khi gồng
+    constexpr float BREACH_AIR_TIME = 0.65f;             // Thời gian bay
+    constexpr float BREACH_JUMP_HEIGHT = 130.0f;
+    constexpr float BREACH_LOCK_TIME = 0.25f;            // Điểm đáp bám theo người chơi tới 0.25s trước khi đáp
+    constexpr float BREACH_INNER_RADIUS = 120.0f;
+    constexpr float BREACH_OUTER_RADIUS = 200.0f;
+    constexpr float BREACH_INNER_DAMAGE = 35.0f;
+    constexpr float BREACH_OUTER_DAMAGE = 20.0f;
+    constexpr float BOSS_DODGE_HEIGHT = 28.0f;           // Cao hơn mức này = né được đòn đập/quật
+    constexpr float TAIL_TRIGGER_RANGE = 180.0f;         // Người chơi trong tầm này + sau lưng/bên hông
+    constexpr float TAIL_TRIGGER_ANGLE_DEG = 60.0f;      // Lệch khỏi hướng mặt boss tối thiểu
+    constexpr float TAIL_TELEGRAPH_P1 = 0.6f;
+    constexpr float TAIL_TELEGRAPH_P2 = 0.45f;
+    constexpr float TAIL_CONE_HALF_DEG = 70.0f;          // Nón 140 độ phía sau
+    constexpr float TAIL_RANGE = 220.0f;
+    constexpr float TAIL_DAMAGE = 20.0f;
+    constexpr float TAIL_KNOCKBACK = 300.0f;
+    constexpr float TAIL_RECOVERY = 0.3f;
+    constexpr float TAIL_COOLDOWN = 4.0f;
+    constexpr float BOSS_NEAR_RANGE = 180.0f;            // AI: gần -> ưu tiên Tail/Breach
+    constexpr float BOSS_FAR_RANGE = 450.0f;             // AI: xa -> ưu tiên Tsunami
+    constexpr float BOSS_HUG_TIME = 2.5f;                // Bám sát lâu hơn -> ép Tail Slap
+    constexpr float BOSS_STUN_DAMAGE_MUL = 1.5f;         // Hệ số sát thương nhận khi choáng (mặc định)
+
     // Kẻ địch
     constexpr int MAX_ENEMIES = 300;
     constexpr int MAX_BULLETS = 600;

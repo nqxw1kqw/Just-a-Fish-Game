@@ -42,4 +42,19 @@ namespace Collision
         if (!(std::abs(a.y - b.y) < maxDeltaY)) return false;
         return CirclesOverlapXZ(a, radiusA, b, radiusB);
     }
+
+    // Nón trên mặt XZ: point nằm trong nón đỉnh origin, hướng dir (không cần chuẩn hoá),
+    // nửa góc halfAngleRad, tầm range (+ bán kính mục tiêu targetRadius)
+    inline bool InConeXZ(const Vec3& origin, const Vec3& dir, float halfAngleRad, float range, const Vec3& point, float targetRadius = 0.0f)
+    {
+        Vec3 d = FlatDiff(point, origin);
+        float distSq = d.x * d.x + d.z * d.z;
+        float maxR = range + targetRadius;
+        if (distSq > maxR * maxR) return false;
+        if (distSq < 1.0f) return true;
+        float dl = std::sqrt(dir.x * dir.x + dir.z * dir.z);
+        if (dl < 1e-4f) return false;
+        float cosA = (d.x * dir.x + d.z * dir.z) / (std::sqrt(distSq) * dl);
+        return cosA >= std::cos(halfAngleRad);
+    }
 }

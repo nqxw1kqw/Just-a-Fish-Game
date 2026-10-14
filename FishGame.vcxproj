@@ -141,6 +141,7 @@
     <ClCompile Include="PlayerFish.cpp" />
     <ClCompile Include="CardFrame.cpp" />
     <ClCompile Include="CardManager.cpp" />
+    <ClCompile Include="BossSkills.cpp" />
     <ClCompile Include="Boss.cpp" />
     <ClCompile Include="FontManager.cpp" />
     <ClCompile Include="DebugController.cpp" />
