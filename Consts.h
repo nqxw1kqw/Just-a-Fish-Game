@@ -85,6 +85,11 @@ namespace GameConsts
     constexpr float PLAYER_HIT_FLASH_TIME = 0.16f;      // Chớp trắng cá người chơi (giữ như cũ)
     constexpr float HIT_CRIT_DAMAGE = 50.0f;            // Đòn >= mức này dùng tia lửa crit
     constexpr float HIT_FX_HEIGHT = 10.0f;              // Độ cao điểm phát hạt trên thân cá
+    // Âm thanh: chống chồng tiếng khi hạ hàng loạt (ms tối thiểu giữa 2 lần phát cùng 1 SFX)
+    constexpr int SFX_HIT_MIN_INTERVAL_MS = 45;
+    constexpr int SFX_DEATH_MIN_INTERVAL_MS = 70;
+    constexpr int SFX_PLAYER_HURT_BASE_VOL = 80;        // Lớp tiếng mới (synth) chồng lên sfx_player_hit cũ
+
     // Người chơi trúng đòn
     constexpr float PLAYER_HURT_KNOCKBACK = 760.0f;     // Vận tốc đẩy lùi khỏi nguồn sát thương (giảm 8.5/s -> trượt ~90 đơn vị)
     constexpr float PLAYER_HURT_FX_DMG_UNIT = 20.0f;    // amount hạt máu = sát thương / 20 (kẹp 0.25–3)

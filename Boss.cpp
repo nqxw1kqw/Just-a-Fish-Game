@@ -87,6 +87,7 @@ void WhaleBoss::Reset()
     breachFxArmed_ = false;
     netBreachPending_ = false;
     if (fx_) fx_->ClearAll();
+    SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
     diveCooldown_ = 0.0f;
     comboNext_ = BossSkill::None;
     pendingPhaseWave_ = false;
@@ -135,6 +136,7 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
     breachFxArmed_ = false;
     netBreachPending_ = false;
     if (fx_) fx_->ClearAll();
+    SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
     diveCooldown_ = 0.0f;
     comboNext_ = BossSkill::None;
     pendingPhaseWave_ = false;

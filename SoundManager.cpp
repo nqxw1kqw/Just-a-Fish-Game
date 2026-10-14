@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <windows.h>
+#include "Consts.h"
 
 // Helper cấu hình SFX tĩnh lúc khởi tạo
 struct SfxInitConfig
@@ -28,8 +29,19 @@ static const SfxInitConfig kSfxConfigs[] = {
     { SfxId::WhaleGroan,     "sfx_whale_groan",     L"sfx_whale_groan",     4, 100, nullptr },
     { SfxId::TsunamiCharge,  "sfx_tsunami_charge",  L"sfx_tsunami_charge",  4, 95,  nullptr },
     { SfxId::TsunamiSurge,   "sfx_tsunami_surge",   L"sfx_tsunami_surge",   4, 100, nullptr },
-    { SfxId::BossHeavySlam,  "sfx_boss_heavy_slam", L"sfx_boss_heavy_slam", 4, 100, nullptr },
+    { SfxId::BossHeavySlam,  "sfx_boss_heavy_slam", L"sfx_boss_heavy_slam", 4, 100, L"Data/Sound/SE/sfx_boss_breach.wav" },
     { SfxId::BossRoar,       "sfx_boss_roar",       L"sfx_boss_roar",       2, 100, nullptr },
+    { SfxId::BossTailSlap,   "sfx_boss_tail_slap",  L"sfx_boss_tail_slap",  2, 95,  nullptr },
+    { SfxId::BossBubbleNet,  "sfx_boss_bubble_net", L"sfx_boss_bubble_net", 2, 90,  nullptr },
+    { SfxId::BossDiveCharge, "sfx_boss_dive_charge",L"sfx_boss_dive_charge",2, 95,  nullptr },
+    { SfxId::BossInhaleLoop, "sfx_boss_inhale_loop",L"sfx_boss_inhale_loop",1, 85,  nullptr },
+    { SfxId::BossCallPack,   "sfx_boss_call_pack",  L"sfx_boss_call_pack",  2, 95,  nullptr },
+    { SfxId::BossStun,       "sfx_stun",            L"sfx_stun",            2, 85,  nullptr },
+    { SfxId::EnemyHit,       "sfx_enemy_hit",       L"sfx_enemy_hit",       6, 70,  nullptr },
+    { SfxId::EnemyHitCrit,   "sfx_enemy_hit_crit",  L"sfx_enemy_hit_crit",  4, 85,  nullptr },
+    { SfxId::EnemyDeathPop,  "sfx_enemy_death_pop", L"sfx_enemy_death_pop", 6, 75,  nullptr },
+    { SfxId::PlayerHurt,     "sfx_player_hurt",     L"sfx_player_hurt",     2, GameConsts::SFX_PLAYER_HURT_BASE_VOL, nullptr },
+    { SfxId::PlayerSlow,     "sfx_player_slow",     L"sfx_player_slow",     2, 80,  nullptr },
     { SfxId::UiHover,        "sfx_ui_hover",        L"sfx_ui_hover",        2, 60,  nullptr },
     { SfxId::CardFlip,       "sfx_card_flip",       L"sfx_card_flip",       4, 80,  nullptr },
     { SfxId::CardSelect,     "sfx_card_select",     L"sfx_card_select",     4, 90,  nullptr },
@@ -127,6 +139,9 @@ void SoundManager::Init()
         entry.wname = cfg.wname;
         entry.poolSize = cfg.poolSize;
         entry.baseVolume = cfg.baseVolume;
+        // Chống chồng tiếng cho SFX trúng đòn / chết khi hạ hàng loạt
+        if (cfg.id == SfxId::EnemyHit || cfg.id == SfxId::EnemyHitCrit) entry.minIntervalMs = GameConsts::SFX_HIT_MIN_INTERVAL_MS;
+        else if (cfg.id == SfxId::EnemyDeathPop || cfg.id == SfxId::EnemySquish) entry.minIntervalMs = GameConsts::SFX_DEATH_MIN_INTERVAL_MS;
 
         int baseHandle = TryLoadSoundFile(cfg.name, false, cfg.customFallback);
         if (baseHandle != -1)
@@ -225,8 +240,51 @@ void SoundManager::ApplyBgmVolume(int handle, int baseVolume, float fadeRatio)
     ChangeVolumeSoundMem(std::clamp(curVol255, 0, 255), handle);
 }
 
+void SoundManager::PlaySFXLoop(SfxId id)
+{
+    int idx = static_cast<int>(id);
+    if (idx < 0 || idx >= SFX_COUNT) return;
+    auto& entry = sfxList_[idx];
+    for (int h = 0; h < entry.poolSize; ++h)
+    {
+        int handle = entry.handles[h];
+        if (handle == -1) continue;
+        if (CheckSoundMem(handle) == 1) return; // đang lặp rồi
+    }
+    for (int h = 0; h < entry.poolSize; ++h)
+    {
+        int handle = entry.handles[h];
+        if (handle == -1) continue;
+        ChangeVolumeSoundMem(CalculateVolume255(entry.baseVolume, SoundChannel::SFX), handle);
+        PlaySoundMem(handle, DX_PLAYTYPE_LOOP, TRUE);
+        return;
+    }
+}
+
+void SoundManager::StopSFX(SfxId id)
+{
+    int idx = static_cast<int>(id);
+    if (idx < 0 || idx >= SFX_COUNT) return;
+    auto& entry = sfxList_[idx];
+    for (int h = 0; h < entry.poolSize; ++h)
+    {
+        if (entry.handles[h] != -1 && CheckSoundMem(entry.handles[h]) == 1) StopSoundMem(entry.handles[h]);
+    }
+}
+
 void SoundManager::ApplyAllVolumes()
 {
+    // SFX đang phát (vd. Inhale lặp) cũng theo âm lượng SFX mới
+    for (auto& entry : sfxList_)
+    {
+        for (int h = 0; h < entry.poolSize; ++h)
+        {
+            int handle = entry.handles[h];
+            if (handle != -1 && CheckSoundMem(handle) == 1)
+                ChangeVolumeSoundMem(CalculateVolume255(entry.baseVolume, SoundChannel::SFX), handle);
+        }
+    }
+
     // Cập nhật âm lượng BGM hiện tại
     if (currentBgm_ != BgmId::Count)
     {
@@ -265,6 +323,13 @@ void SoundManager::PlaySFX(SfxId id)
 
     auto& entry = sfxList_[idx];
     if (entry.poolSize <= 0) return;
+
+    if (entry.minIntervalMs > 0)
+    {
+        int now = GetNowCount();
+        if (now - entry.lastPlayMs < entry.minIntervalMs) return;
+        entry.lastPlayMs = now;
+    }
 
     // Duyệt pool tìm handle đang rảnh (CheckSoundMem == 0)
     for (int h = 0; h < entry.poolSize; ++h)

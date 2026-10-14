@@ -11,6 +11,7 @@
 #include "FontManager.h"
 #include "Consts.h"
 #include "CollisionUtil.h"
+#include "SoundManager.h"
 #include "Effects/Hit/HitFeedback.h"
 #include <cwchar>
 
@@ -34,6 +35,8 @@ void EffectSystem::SpawnHitFeedback(const Vec3& pos, const Vec3& dir, bool crit)
     // Quái/Boss trúng đòn: EnemyHitEffect (Fuyuu); tia lửa streak chỉ thêm cho đòn crit để không rối
     hitFx_->enemyHit.Emit(p, d, crit);
     if (crit) hitFx_->spark.Emit(p, d, true);
+    // Âm thanh trúng đòn (SoundManager tự giới hạn tần suất khi hạ hàng loạt)
+    SoundManager::Instance().PlaySFX(crit ? SfxId::EnemyHitCrit : SfxId::EnemyHit);
 }
 
 void EffectSystem::SpawnPlayerHurt(const Vec3& pos, const Vec3& dir, float amount)
