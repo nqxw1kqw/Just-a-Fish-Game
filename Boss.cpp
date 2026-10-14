@@ -75,6 +75,10 @@ void WhaleBoss::Reset()
     for (auto& r : tsunamiRings_) r.active = false;
     tsunamiWater_.Reset();
     tailCooldown_ = 0.0f;
+    bubblePillars_.clear();
+    bubbleNetCooldown_ = 0.0f;
+    inhaleCooldown_ = 0.0f;
+    netHitCooldown_ = 0.0f;
     hugTimer_ = 0.0f;
     stunTimer_ = 0.0f;
     stunDamageMul_ = 1.0f;
@@ -105,6 +109,10 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
     for (auto& r : tsunamiRings_) r.active = false;
     tsunamiWater_.Reset();
     tailCooldown_ = 0.0f;
+    bubblePillars_.clear();
+    bubbleNetCooldown_ = 0.0f;
+    inhaleCooldown_ = 0.0f;
+    netHitCooldown_ = 0.0f;
     hugTimer_ = 0.0f;
     stunTimer_ = 0.0f;
     stunDamageMul_ = 1.0f;
@@ -273,6 +281,8 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         if ((skill == BossSkill::Slam || skill == BossSkill::DoubleSlam) && !canJumpAttack) return;
         if (skill == BossSkill::Minions && !canSummon) return;
         if (skill == BossSkill::Tsunami && !canTsunami) return;
+        if (skill == BossSkill::BubbleNet && bubbleNetCooldown_ > 0.0f) return;
+        if (skill == BossSkill::Inhale && !(inhaleCooldown_ <= 0.0f && distToPlayer < GameConsts::INHALE_RANGE)) return;
         if (skill == BossSkill::Tail && !(tailCooldown_ <= 0.0f && distToPlayer < GameConsts::TAIL_TRIGGER_RANGE && IsPlayerBehind(player))) return;
 
         // 3. Điều chỉnh trọng số theo cự ly người chơi (Boss rework 16)
@@ -285,6 +295,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         else if (distToPlayer > GameConsts::BOSS_FAR_RANGE)
         {
             if (skill == BossSkill::Tsunami) w *= 1.5f;
+            if (skill == BossSkill::Inhale) w *= 1.5f;
         }
         if (count >= static_cast<int>(candidates.size())) return;
 
@@ -298,6 +309,8 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         TryAddCandidate(BossSkill::Minions, 2.0f);
         TryAddCandidate(BossSkill::Tsunami, 3.0f);
         TryAddCandidate(BossSkill::Tail, 2.5f);
+        TryAddCandidate(BossSkill::Inhale, 1.5f);
+        TryAddCandidate(BossSkill::BubbleNet, 1.0f);
     }
     else
     {
@@ -307,6 +320,8 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         TryAddCandidate(BossSkill::Minions, 2.0f);
         TryAddCandidate(BossSkill::Slam, 2.0f);
         TryAddCandidate(BossSkill::Tail, 2.5f);
+        TryAddCandidate(BossSkill::Inhale, 2.0f);
+        TryAddCandidate(BossSkill::BubbleNet, 2.5f);
     }
 
     // Nếu danh sách hợp lệ rỗng: chọn Triệu hồi (nếu được) hoặc kéo dài Idle thêm nhịp ngắn, không được kẹt
@@ -405,6 +420,12 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         }
         break;
     }
+    case BossSkill::BubbleNet:
+        StartBubbleNet(player);
+        break;
+    case BossSkill::Inhale:
+        StartInhale(player);
+        break;
     default:
         action_ = BossAction::Idle;
         idleDuration_ = 0.8f;
@@ -429,7 +450,8 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     Vec3 toPlayer = Collision::FlatDiff(player.GetPosition(), pos_);
     // Boss rework: xoay dần với tốc độ giới hạn (người chơi có thể vòng ra sau lưng -> Tail Slap)
     bool canTurn = action_ != BossAction::PerformSlam && action_ != BossAction::PerformDoubleSlam &&
-                   action_ != BossAction::TelegraphTail && action_ != BossAction::PerformTail && action_ != BossAction::Stunned;
+                   action_ != BossAction::TelegraphTail && action_ != BossAction::PerformTail && action_ != BossAction::Stunned &&
+                   action_ != BossAction::BubbleNetSwim;
     if (toPlayer.LengthSq() > 1.0f && canTurn)
     {
         float targetYaw = std::atan2(toPlayer.x, toPlayer.z);
@@ -441,6 +463,9 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     }
 
     if (tailCooldown_ > 0.0f) tailCooldown_ -= dt;
+    if (bubbleNetCooldown_ > 0.0f) bubbleNetCooldown_ -= dt;
+    if (inhaleCooldown_ > 0.0f) inhaleCooldown_ -= dt;
+    UpdateBossHazards(dt, player, effects);
     hugTimer_ = (toPlayer.Length() < GameConsts::BOSS_NEAR_RANGE) ? hugTimer_ + dt : 0.0f;
 
     actionTimer_ += dt;
@@ -800,6 +825,8 @@ float WhaleBoss::GetTimeToHitPlayer(const Vec3& playerPos) const
 void WhaleBoss::Draw() const
 {
     if (!active_ || hp_ <= 0.0f) return;
+
+    DrawBossHazards(); // PR C: cột bọt của Bubble Net
 
     // 1. Vẽ Decal báo hiệu trước khi tung đòn
     // Boss rework: bỏ decal đỏ/vàng của đòn đập — thay bằng bóng đổ to dần ở điểm đáp (+ bọt khí trong Update)

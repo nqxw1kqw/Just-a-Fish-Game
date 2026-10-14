@@ -2,6 +2,7 @@
 #include "Vector3.h"
 #include "Consts.h"
 #include "Stats.h"
+#include <algorithm>
 
 class EffectSystem;
 
@@ -31,6 +32,14 @@ public:
     bool TakeDamage(float dmg, EffectSystem& effects);
     void Heal(float amount) { hp_ = (hp_ + amount > maxHp_) ? maxHp_ : (hp_ + amount); }
     void ApplyKnockback(const Vec3& force) { knockback_ += force; }
+    // Boss rework PR C: làm chậm (lấy hệ số nhỏ nhất, gia hạn thời gian) và lực kéo ngoài (áp 1 khung rồi xoá)
+    void ApplySlow(float factor, float duration)
+    {
+        if (slowTimer_ <= 0.0f || factor < slowFactor_) slowFactor_ = factor;
+        slowTimer_ = (std::max)(slowTimer_, duration);
+    }
+    bool IsSlowed() const { return slowTimer_ > 0.0f; }
+    void AddExternalPull(const Vec3& velocity) { externalPull_ += velocity; }
     bool IsInvulnerable() const { return invulnerableTimer_ > 0.0f; }
     float GetDamageTakenThisWave() const { return damageTakenThisWave_; }
     void ResetDamageTakenThisWave() { damageTakenThisWave_ = 0.0f; }
@@ -112,6 +121,7 @@ public:
     float GetSlamKnockback() const { return slamKnockback_; }
 
 private:
+    void UpdateCore(float dt, EffectSystem& effects);
     void StartJump(const Vec3& inputDir);
     void OnLand(EffectSystem& effects);
 
@@ -168,6 +178,9 @@ private:
 
     // Hiệu ứng
     float hitFlashTimer_ = 0.0f;
+    float slowTimer_ = 0.0f;
+    float slowFactor_ = 1.0f;
+    Vec3 externalPull_{ 0.0f, 0.0f, 0.0f };
     float tailWagAngle_ = 0.0f;
     float swimSoundTimer_ = 0.0f;
     float swimWakeTimer_ = 0.0f;

@@ -119,6 +119,32 @@ namespace GameConsts
     constexpr float TRIPLE_DAMAGE = 25.0f;
     constexpr float TRIPLE_FINAL_RADIUS = 240.0f;        // Cú thứ 3 to nhất
 
+    // ---- Boss rework PR C: Lưới bọt (Bubble Net) + Hút nước (Inhale) + hiệu ứng làm chậm ----
+    constexpr float BUBBLENET_TELEGRAPH = 0.5f;
+    constexpr float BUBBLENET_SWIM_TIME = 2.0f;          // Thời gian boss bơi trọn 1 vòng
+    constexpr float BUBBLENET_START_RADIUS = 260.0f;
+    constexpr float BUBBLENET_END_RADIUS = 130.0f;       // Vòng lưới khép dần
+    constexpr int   BUBBLENET_PILLARS = 18;              // Số cột bọt trong 1 vòng (mỗi 20°)
+    constexpr float BUBBLENET_PILLAR_LIFE = 4.0f;
+    constexpr float BUBBLENET_PILLAR_RADIUS = 22.0f;
+    constexpr float BUBBLENET_PILLAR_DAMAGE = 5.0f;
+    constexpr float BUBBLENET_SLOW_FACTOR = 0.6f;        // Chạm cột bọt: còn 60% tốc độ
+    constexpr float BUBBLENET_SLOW_TIME = 1.5f;
+    constexpr float BUBBLENET_HIT_INTERVAL = 0.5f;
+    constexpr float BUBBLENET_FINISH_TELEGRAPH = 0.6f;   // Sau vòng lưới: Breach ngay giữa lưới
+    constexpr float BUBBLENET_COOLDOWN = 12.0f;
+
+    constexpr float INHALE_TELEGRAPH = 0.6f;
+    constexpr float INHALE_DURATION = 2.0f;
+    constexpr float INHALE_RANGE = 420.0f;
+    constexpr float INHALE_CONE_HALF_DEG = 60.0f;
+    constexpr float INHALE_PULL_SPEED = 140.0f;          // Vận tốc kéo (đơn vị/giây), nửa giá trị khi đang nhảy
+    constexpr float INHALE_MOUTH_RADIUS = 70.0f;
+    constexpr float INHALE_BITE_DAMAGE = 25.0f;
+    constexpr float INHALE_BITE_KNOCKBACK = 400.0f;
+    constexpr float INHALE_RECOVERY_STUN = 0.8f;         // Hút xong: boss choáng ngắn (cửa sổ phản công)
+    constexpr float INHALE_COOLDOWN = 10.0f;
+
     // Kẻ địch
     constexpr int MAX_ENEMIES = 300;
     constexpr int MAX_BULLETS = 600;

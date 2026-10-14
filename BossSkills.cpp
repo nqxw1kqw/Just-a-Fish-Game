@@ -13,6 +13,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
+#include "Render3DUtil.h"
 
 namespace
 {
@@ -205,6 +206,122 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         }
         return true;
     }
+    case BossAction::TelegraphBubbleNet:
+    {
+        // Lặn xuống, bọt sủi vòng ngoài quanh người chơi
+        pos_.y = -GameConsts::BREACH_SINK_DEPTH * std::clamp(actionTimer_ / GameConsts::BUBBLENET_TELEGRAPH, 0.0f, 1.0f);
+        telegraphFxTimer_ += dt;
+        while (telegraphFxTimer_ >= 0.05f)
+        {
+            telegraphFxTimer_ -= 0.05f;
+            float a = static_cast<float>(rand() % 628) * 0.01f;
+            Vec3 p = netCenter_ + Vec3{ std::sin(a) * GameConsts::BUBBLENET_START_RADIUS, 0.0f, std::cos(a) * GameConsts::BUBBLENET_START_RADIUS };
+            effects.SpawnBubbles(p, 2, 12.0f, 2.0f, 4.0f);
+        }
+        if (actionTimer_ >= GameConsts::BUBBLENET_TELEGRAPH)
+        {
+            action_ = BossAction::BubbleNetSwim;
+            actionTimer_ = 0.0f;
+            netPillarsDropped_ = 0;
+        }
+        return true;
+    }
+    case BossAction::BubbleNetSwim:
+    {
+        float t = std::clamp(actionTimer_ / GameConsts::BUBBLENET_SWIM_TIME, 0.0f, 1.0f);
+        float radius = GameConsts::BUBBLENET_START_RADIUS + (GameConsts::BUBBLENET_END_RADIUS - GameConsts::BUBBLENET_START_RADIUS) * t;
+        float ang = netStartAngle_ + t * 6.2831853f;
+        pos_ = netCenter_ + Vec3{ std::sin(ang) * radius, -GameConsts::BREACH_SINK_DEPTH * 0.5f, std::cos(ang) * radius };
+        yaw_ = ang + 1.5707963f; // hướng tiếp tuyến
+
+        int want = static_cast<int>(t * GameConsts::BUBBLENET_PILLARS);
+        while (netPillarsDropped_ < want && netPillarsDropped_ < GameConsts::BUBBLENET_PILLARS)
+        {
+            float pa = netStartAngle_ + (static_cast<float>(netPillarsDropped_) + 0.5f) / GameConsts::BUBBLENET_PILLARS * 6.2831853f;
+            float pt = (static_cast<float>(netPillarsDropped_) + 0.5f) / GameConsts::BUBBLENET_PILLARS;
+            float pr = GameConsts::BUBBLENET_START_RADIUS + (GameConsts::BUBBLENET_END_RADIUS - GameConsts::BUBBLENET_START_RADIUS) * pt;
+            BubblePillar bp;
+            bp.pos = netCenter_ + Vec3{ std::sin(pa) * pr, 0.0f, std::cos(pa) * pr };
+            bp.life = GameConsts::BUBBLENET_PILLAR_LIFE;
+            bubblePillars_.push_back(bp);
+            effects.SpawnBubbles(bp.pos, 6, 10.0f, 3.0f, 6.0f);
+            netPillarsDropped_++;
+        }
+
+        if (actionTimer_ >= GameConsts::BUBBLENET_SWIM_TIME)
+        {
+            // Kết thúc: Breach từ dưới lên ngay giữa lưới
+            pos_.y = 0.0f;
+            StartBreach(player);
+            slamTarget_ = netCenter_;
+            actionTimer_ = GameConsts::BREACH_TELEGRAPH_P1 - GameConsts::BUBBLENET_FINISH_TELEGRAPH;
+            if (actionTimer_ < 0.0f) actionTimer_ = 0.0f;
+        }
+        return true;
+    }
+    case BossAction::TelegraphInhale:
+    {
+        telegraphFxTimer_ += dt;
+        while (telegraphFxTimer_ >= 0.04f)
+        {
+            telegraphFxTimer_ -= 0.04f;
+            Vec3 f = Forward(yaw_);
+            float side = (static_cast<float>(rand() % 200) - 100.0f);
+            Vec3 p = pos_ + f * 200.0f + Vec3{ f.z * side, 0.0f, -f.x * side };
+            effects.SpawnBubbles(p, 1, 8.0f, 2.0f, 3.5f);
+        }
+        if (actionTimer_ >= GameConsts::INHALE_TELEGRAPH)
+        {
+            action_ = BossAction::PerformInhale;
+            actionTimer_ = 0.0f;
+            SoundManager::Instance().PlaySFX(SfxId::TsunamiCharge);
+        }
+        return true;
+    }
+    case BossAction::PerformInhale:
+    {
+        Vec3 f = Forward(yaw_);
+        Vec3 mouth = pos_ + f * 60.0f;
+        mouth.y = 0.0f;
+        const Vec3& pp = player.GetPosition();
+        bool inCone = Collision::InConeXZ(pos_, f, GameConsts::INHALE_CONE_HALF_DEG * DEG2RAD, GameConsts::INHALE_RANGE, pp, player.GetHitboxRadius());
+        if (inCone)
+        {
+            Vec3 toMouth = Collision::FlatDiff(mouth, pp);
+            float len = std::sqrt(toMouth.x * toMouth.x + toMouth.z * toMouth.z);
+            if (len > 1.0f)
+            {
+                float spd = GameConsts::INHALE_PULL_SPEED * (player.IsAirborne() ? 0.5f : 1.0f);
+                player.AddExternalPull(Vec3{ toMouth.x / len * spd, 0.0f, toMouth.z / len * spd });
+            }
+            if (len <= GameConsts::INHALE_MOUTH_RADIUS && !player.IsAirborne())
+            {
+                // Bị nuốt -> đớp + phun ra
+                player.TakeDamage(GameConsts::INHALE_BITE_DAMAGE, effects);
+                player.ApplyKnockback(Vec3{ f.x * GameConsts::INHALE_BITE_KNOCKBACK, 0.0f, f.z * GameConsts::INHALE_BITE_KNOCKBACK });
+                effects.SpawnWaterSplash(mouth, 80.0f, 1.5f);
+                effects.AddTrauma(0.4f);
+                Stun(GameConsts::INHALE_RECOVERY_STUN, GameConsts::BOSS_STUN_DAMAGE_MUL);
+                return true;
+            }
+        }
+        // Dòng bọt chảy vào miệng
+        telegraphFxTimer_ += dt;
+        while (telegraphFxTimer_ >= 0.03f)
+        {
+            telegraphFxTimer_ -= 0.03f;
+            float side = (static_cast<float>(rand() % 300) - 150.0f);
+            float dist = 80.0f + static_cast<float>(rand() % 300);
+            Vec3 p = pos_ + f * dist + Vec3{ f.z * side, 0.0f, -f.x * side };
+            effects.SpawnBubbles(p, 1, 6.0f, 2.0f, 4.0f);
+        }
+        if (actionTimer_ >= GameConsts::INHALE_DURATION)
+        {
+            // Hút hụt -> boss hụt hơi, choáng ngắn
+            Stun(GameConsts::INHALE_RECOVERY_STUN, GameConsts::BOSS_STUN_DAMAGE_MUL);
+        }
+        return true;
+    }
     default:
         return false;
     }
@@ -220,4 +337,83 @@ void WhaleBoss::ForceTsunamiDouble(PlayerFish& player)
     secondRingGapDeg_ = GameConsts::TSUNAMI_GAP_DEG_P2;
     StartTsunamiTelegraph(player, 0.0f);
     RecordActionHistory(L"Tsunami Double (debug)");
+}
+
+// ---------------- PR C: Bubble Net / Inhale ----------------
+void WhaleBoss::StartBubbleNet(PlayerFish& player)
+{
+    netCenter_ = player.GetPosition();
+    netCenter_.y = 0.0f;
+    Vec3 rel = Collision::FlatDiff(pos_, netCenter_);
+    netStartAngle_ = (rel.LengthSq() > 1.0f) ? std::atan2(rel.x, rel.z) : 0.0f;
+    netPillarsDropped_ = 0;
+    action_ = BossAction::TelegraphBubbleNet;
+    actionTimer_ = 0.0f;
+    telegraphFxTimer_ = 0.0f;
+    bubbleNetCooldown_ = GameConsts::BUBBLENET_COOLDOWN;
+    lastSkill_ = BossSkill::BubbleNet;
+    RecordActionHistory(L"Bubble Net");
+}
+
+void WhaleBoss::ForceBubbleNet(PlayerFish& player)
+{
+    EnsureActiveForDebug();
+    StartBubbleNet(player);
+}
+
+void WhaleBoss::StartInhale(PlayerFish& player)
+{
+    Vec3 to = Collision::FlatDiff(player.GetPosition(), pos_);
+    if (to.LengthSq() > 1.0f) yaw_ = std::atan2(to.x, to.z);
+    pos_.y = 0.0f;
+    action_ = BossAction::TelegraphInhale;
+    actionTimer_ = 0.0f;
+    telegraphFxTimer_ = 0.0f;
+    inhaleCooldown_ = GameConsts::INHALE_COOLDOWN;
+    lastSkill_ = BossSkill::Inhale;
+    RecordActionHistory(L"Inhale");
+}
+
+void WhaleBoss::ForceInhale(PlayerFish& player)
+{
+    EnsureActiveForDebug();
+    StartInhale(player);
+}
+
+void WhaleBoss::UpdateBossHazards(float dt, PlayerFish& player, EffectSystem& effects)
+{
+    if (netHitCooldown_ > 0.0f) netHitCooldown_ -= dt;
+    const Vec3& pp = player.GetPosition();
+    for (auto& bp : bubblePillars_)
+    {
+        bp.life -= dt;
+        bp.fxTimer += dt;
+        while (bp.fxTimer >= 0.12f)
+        {
+            bp.fxTimer -= 0.12f;
+            effects.SpawnBubbles(bp.pos, 2, 8.0f, 2.5f, 5.0f);
+        }
+        // Nhảy qua tường bọt thì an toàn
+        if (bp.life > 0.0f && !player.IsAirborne() &&
+            Collision::DistXZ(pp, bp.pos) <= GameConsts::BUBBLENET_PILLAR_RADIUS + player.GetHitboxRadius())
+        {
+            player.ApplySlow(GameConsts::BUBBLENET_SLOW_FACTOR, GameConsts::BUBBLENET_SLOW_TIME);
+            if (netHitCooldown_ <= 0.0f)
+            {
+                player.TakeDamage(GameConsts::BUBBLENET_PILLAR_DAMAGE, effects);
+                netHitCooldown_ = GameConsts::BUBBLENET_HIT_INTERVAL;
+            }
+        }
+    }
+    bubblePillars_.erase(std::remove_if(bubblePillars_.begin(), bubblePillars_.end(),
+        [](const BubblePillar& b) { return b.life <= 0.0f; }), bubblePillars_.end());
+}
+
+void WhaleBoss::DrawBossHazards() const
+{
+    for (const auto& bp : bubblePillars_)
+    {
+        float a = std::clamp(bp.life / 0.6f, 0.0f, 1.0f);
+        Render3D::DrawFlatShadow(bp.pos, GameConsts::BUBBLENET_PILLAR_RADIUS, 0.45f * a);
+    }
 }

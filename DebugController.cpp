@@ -288,6 +288,8 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 else if (input.IsPressed(KEY_INPUT_3)) forced = 3;
                 else if (input.IsPressed(KEY_INPUT_4)) forced = 4;
                 else if (input.IsPressed(KEY_INPUT_5)) forced = 5;
+                else if (input.IsPressed(KEY_INPUT_6)) forced = 6;
+                else if (input.IsPressed(KEY_INPUT_7)) forced = 7;
                 if (forced != 0)
                 {
                     debugUsed_ = true;
@@ -297,6 +299,8 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                     else if (forced == 3) game.boss_.Stun(2.0f);
                     else if (forced == 4) game.boss_.ForceDoubleSlam(game.player_); // Triple Slam
                     else if (forced == 5) game.boss_.ForceTsunamiDouble(game.player_);
+                    else if (forced == 6) game.boss_.ForceBubbleNet(game.player_);
+                    else if (forced == 7) game.boss_.ForceInhale(game.player_);
                 }
             }
 
@@ -524,6 +528,6 @@ void DebugController::DrawHUD(const GamePrototype& game) const
         FontManager::Draw(textX, textY, L"F9: God Mode  |  Shift+F9: Instant Defeat", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, game.IsRenderInterpEnabled() ? L"F10: Render Interp ON" : L"F10: Render Interp OFF", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F4: Full HP + Reset CD  |  F7: Boss Tsunami", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"Boss: Shift+1 Breach | 2 Tail | 3 Stun | 4 Triple | 5 Wave x2", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"Boss: Shift+1 Breach | 2 Tail | 3 Stun | 4 Triple | 5 Wave x2 | 6 Net | 7 Inhale", GetColor(255, 180, 120), FontSize::Small); textY += 16;
     }
 }
