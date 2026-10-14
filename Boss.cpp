@@ -1,4 +1,4 @@
-#ifndef NOMINMAX
+﻿#ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
@@ -200,7 +200,7 @@ void WhaleBoss::ForceDoubleSlam(PlayerFish& player)
     actionTimer_ = 0.0f;
     slamTarget_ = player.GetPosition();
     slamTarget_.y = 0.0f;
-    isSecondSlam_ = false;
+    slamCount_ = 0;
     RecordActionHistory(L"Đập kép (F7)");
 }
 
@@ -356,8 +356,8 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
     case BossSkill::DoubleSlam:
     {
         action_ = BossAction::TelegraphDoubleSlam;
-        isSecondSlam_ = false;
-        RecordActionHistory(L"Đập kép");
+        slamCount_ = 0;
+        RecordActionHistory(L"Triple Slam");
         break;
     }
     case BossSkill::Tail:
@@ -380,17 +380,27 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         }
         else
         {
-            // Phase 2: 50% hai vòng liên tiếp, 50% một vòng có khe hở 50 độ
-            bool withGap = (rand() % 2 == 0);
-            if (withGap)
+            // Phase 2 (PR B): 1/3 một vòng có khe, 1/3 hai vòng cách 2.3s, 1/3 SÓNG ĐÔI (không khe -> 0.8s -> có khe)
+            int variant = rand() % 3;
+            if (variant == 0)
             {
                 needSecondRing_ = false;
                 StartTsunamiTelegraph(player, GameConsts::TSUNAMI_GAP_DEG_P2);
             }
+            else if (variant == 1)
+            {
+                needSecondRing_ = true;
+                secondRingDelay_ = GameConsts::TSUNAMI_REPEAT_DELAY;
+                secondRingGapDeg_ = 0.0f;
+                StartTsunamiTelegraph(player, 0.0f);
+            }
             else
             {
                 needSecondRing_ = true;
+                secondRingDelay_ = GameConsts::TSUNAMI_DOUBLE_DELAY;
+                secondRingGapDeg_ = GameConsts::TSUNAMI_GAP_DEG_P2;
                 StartTsunamiTelegraph(player, 0.0f);
+                RecordActionHistory(L"Tsunami Double");
             }
         }
         break;
@@ -439,9 +449,9 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     timeSinceLastTsunami_ += dt;
 
     // Hỗ trợ gọi vòng thứ 2 cách vòng 1 tối thiểu 2.3s (A5)
-    if (needSecondRing_ && timeSinceLastRingLaunch_ >= 2.3f)
+    if (needSecondRing_ && timeSinceLastRingLaunch_ >= secondRingDelay_)
     {
-        SpawnRing(0.0f, player.GetPosition());
+        SpawnRing(secondRingGapDeg_, player.GetPosition());
         needSecondRing_ = false;
         effects.AddTrauma(0.35f);
         effects.SpawnShockwave(pos_, 120.0f);
@@ -583,35 +593,28 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     // 3. Nhảy đập đôi (Phase 2 - Task 10 T3b)
     case BossAction::TelegraphDoubleSlam:
     {
-        UpdateBreachTelegraph(dt, 0.6f, player, effects, false);
-        if (actionTimer_ >= 0.6f)
+        UpdateBreachTelegraph(dt, GameConsts::TRIPLE_TELEGRAPH_FIRST, player, effects, false);
+        if (actionTimer_ >= GameConsts::TRIPLE_TELEGRAPH_FIRST)
         {
             action_ = BossAction::PerformDoubleSlam;
             actionTimer_ = 0.0f;
             slamProgress_ = 0.0f;
-            isSecondSlam_ = false;
+            slamCount_ = 0;
         }
         break;
     }
     case BossAction::PerformDoubleSlam:
     {
-        float jumpDur = 0.5f;
+        // PR B: Quật ba nhịp (P2) — 3 cú, cú cuối to nhất
+        float jumpDur = GameConsts::TRIPLE_AIR_TIME;
         slamProgress_ += dt / jumpDur;
         if (slamProgress_ >= 1.0f)
         {
-            pos_ = slamTarget_;
-            pos_.y = 0.0f;
-            effects.AddTrauma(0.55f);
-            effects.SpawnShockwave(pos_, slamRadius_);
-            effects.SpawnWaterSplash(pos_, slamRadius_, 2.2f);
-            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
+            slamCount_++;
+            float radius = (slamCount_ >= GameConsts::TRIPLE_SLAM_COUNT) ? GameConsts::TRIPLE_FINAL_RADIUS : GameConsts::BREACH_OUTER_RADIUS;
+            LandBreach(player, effects, GameConsts::TRIPLE_DAMAGE, GameConsts::TRIPLE_DAMAGE, radius, radius);
 
-            if (Collision::DistXZ(player.GetPosition(), pos_) <= slamRadius_ && player.GetHeightY() < 28.0f)
-            {
-                player.TakeDamage(30.0f, effects);
-            }
-
-            if (!isSecondSlam_)
+            if (slamCount_ < GameConsts::TRIPLE_SLAM_COUNT)
             {
                 // Task 10 T3b: Chuyển sang Telegraph cú 2, báo hiệu 0.45s tại vị trí mới
                 action_ = BossAction::TelegraphDoubleSlam2;
@@ -629,7 +632,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         else
         {
             float t = slamProgress_;
-            pos_.y = 4.0f * 110.0f * t * (1.0f - t);
+            pos_.y = 4.0f * GameConsts::TRIPLE_JUMP_HEIGHT * t * (1.0f - t);
             pos_.x += (slamTarget_.x - pos_.x) * (dt * 6.0f);
             pos_.z += (slamTarget_.z - pos_.z) * (dt * 6.0f);
         }
@@ -637,13 +640,12 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
     }
     case BossAction::TelegraphDoubleSlam2:
     {
-        UpdateBreachTelegraph(dt, GameConsts::BOSS_DOUBLE_SLAM_TELEGRAPH2, player, effects, false);
-        if (actionTimer_ >= GameConsts::BOSS_DOUBLE_SLAM_TELEGRAPH2)
+        UpdateBreachTelegraph(dt, GameConsts::TRIPLE_TELEGRAPH_NEXT, player, effects, false);
+        if (actionTimer_ >= GameConsts::TRIPLE_TELEGRAPH_NEXT)
         {
             action_ = BossAction::PerformDoubleSlam;
             actionTimer_ = 0.0f;
             slamProgress_ = 0.0f;
-            isSecondSlam_ = true;
         }
         break;
     }
@@ -712,9 +714,9 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
 
         if (inBand && !ring.hitPlayer)
         {
-            // NÉ BẰNG NHẢY TRÊN KHÔNG (A4):
-            // Cá đang ở trên không (Y > 0.01f hoặc IsAirborne()) thì hoàn toàn bất tử, không bị thương!
-            if (player.GetHeightY() > 0.01f || player.IsAirborne())
+            // NÉ BẰNG NHẢY CANH NHỊP (PR B): chỉ né được khi đang cao hơn TSUNAMI_DODGE_HEIGHT
+            // lúc vành sóng đi qua (nhảy quá sớm, đáp xuống giữa sóng vẫn bị trúng)
+            if (player.GetHeightY() >= GameConsts::TSUNAMI_DODGE_HEIGHT)
             {
                 if (!ring.dodgedNotice)
                 {
@@ -808,7 +810,7 @@ void WhaleBoss::Draw() const
         if (action_ == BossAction::TelegraphSlam)
             ratio = std::clamp(actionTimer_ / ((phase_ == BossPhase::Phase1) ? GameConsts::BREACH_TELEGRAPH_P1 : GameConsts::BREACH_TELEGRAPH_P2), 0.1f, 1.0f) * 0.6f;
         else if (action_ == BossAction::TelegraphDoubleSlam || action_ == BossAction::TelegraphDoubleSlam2)
-            ratio = 0.6f * std::clamp(actionTimer_ / 0.6f, 0.1f, 1.0f);
+            ratio = 0.6f * std::clamp(actionTimer_ / GameConsts::TRIPLE_TELEGRAPH_NEXT, 0.1f, 1.0f);
         else
             ratio = 0.6f + 0.4f * std::clamp(slamProgress_, 0.0f, 1.0f);
         Render3D::DrawFlatShadow(slamTarget_, GameConsts::BREACH_OUTER_RADIUS * ratio, 0.35f + 0.5f * ratio);

@@ -107,6 +107,18 @@ namespace GameConsts
     constexpr float BOSS_HUG_TIME = 2.5f;                // Bám sát lâu hơn -> ép Tail Slap
     constexpr float BOSS_STUN_DAMAGE_MUL = 1.5f;         // Hệ số sát thương nhận khi choáng (mặc định)
 
+    // ---- Boss rework PR B: Tsunami canh nhịp nhảy + Sóng đôi P2 + Quật ba nhịp P2 ----
+    constexpr float TSUNAMI_DODGE_HEIGHT = 40.0f;        // Chỉ né được sóng khi đang cao hơn mức này lúc sóng đi qua (canh nhịp)
+    constexpr float TSUNAMI_DOUBLE_DELAY = 0.8f;         // Sóng đôi: vòng 2 (có khe) phóng sau vòng 1 (không khe)
+    constexpr float TSUNAMI_REPEAT_DELAY = 2.3f;         // Biến thể cũ: 2 vòng không khe cách nhau
+    constexpr int   TRIPLE_SLAM_COUNT = 3;
+    constexpr float TRIPLE_TELEGRAPH_FIRST = 0.6f;
+    constexpr float TRIPLE_TELEGRAPH_NEXT = 0.45f;
+    constexpr float TRIPLE_AIR_TIME = 0.5f;
+    constexpr float TRIPLE_JUMP_HEIGHT = 110.0f;
+    constexpr float TRIPLE_DAMAGE = 25.0f;
+    constexpr float TRIPLE_FINAL_RADIUS = 240.0f;        // Cú thứ 3 to nhất
+
     // Kẻ địch
     constexpr int MAX_ENEMIES = 300;
     constexpr int MAX_BULLETS = 600;

@@ -75,23 +75,23 @@ void WhaleBoss::UpdateBreachTelegraph(float dt, float duration, PlayerFish& play
     }
 }
 
-void WhaleBoss::LandBreach(PlayerFish& player, EffectSystem& effects, float innerDamage, float outerDamage)
+void WhaleBoss::LandBreach(PlayerFish& player, EffectSystem& effects, float innerDamage, float outerDamage, float innerRadius, float outerRadius)
 {
     pos_ = slamTarget_;
     pos_.y = 0.0f;
     effects.AddTrauma(0.55f);
-    effects.SpawnShockwave(pos_, GameConsts::BREACH_OUTER_RADIUS);
-    effects.SpawnWaterSplash(pos_, GameConsts::BREACH_OUTER_RADIUS, 2.2f);
-    effects.SpawnBubbles(pos_, 24, GameConsts::BREACH_OUTER_RADIUS * 0.8f, 3.0f, 7.0f);
+    effects.SpawnShockwave(pos_, outerRadius);
+    effects.SpawnWaterSplash(pos_, outerRadius, 2.2f);
+    effects.SpawnBubbles(pos_, 24, outerRadius * 0.8f, 3.0f, 7.0f);
     SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
 
     if (player.GetHeightY() >= GameConsts::BOSS_DODGE_HEIGHT || player.IsInvulnerable()) return;
     float d = Collision::DistXZ(player.GetPosition(), pos_);
-    if (d <= GameConsts::BREACH_INNER_RADIUS)
+    if (d <= innerRadius)
     {
         player.TakeDamage(innerDamage, effects);
     }
-    else if (d <= GameConsts::BREACH_OUTER_RADIUS)
+    else if (d <= outerRadius)
     {
         player.TakeDamage(outerDamage, effects);
     }
@@ -208,4 +208,16 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
     default:
         return false;
     }
+}
+
+// ---------------- PR B: Sóng đôi ----------------
+void WhaleBoss::ForceTsunamiDouble(PlayerFish& player)
+{
+    EnsureActiveForDebug();
+    phase_ = BossPhase::Phase2;
+    needSecondRing_ = true;
+    secondRingDelay_ = GameConsts::TSUNAMI_DOUBLE_DELAY;
+    secondRingGapDeg_ = GameConsts::TSUNAMI_GAP_DEG_P2;
+    StartTsunamiTelegraph(player, 0.0f);
+    RecordActionHistory(L"Tsunami Double (debug)");
 }
