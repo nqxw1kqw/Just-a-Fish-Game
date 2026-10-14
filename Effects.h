@@ -65,7 +65,7 @@ public:
     // Phản hồi trúng đòn (Fuyuu): tia lửa + bọt phụt tại điểm trúng; nổ bọt/vảy khi cá chết
     void SpawnHitFeedback(const Vec3& pos, const Vec3& dir, bool crit);
     void SpawnFishDeath(const Vec3& pos, float size);
-    void SpawnHitSparksOnly(const Vec3& pos, const Vec3& dir, bool crit); // người chơi trúng đòn (chờ hạt máu của Fuyuu)
+    void SpawnPlayerHurt(const Vec3& pos, const Vec3& dir, float amount); // người chơi trúng đòn: máu (Fuyuu), amount 0.25–3
     void Init();
     void Reset();
     void Shutdown();

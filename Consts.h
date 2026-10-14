@@ -87,6 +87,9 @@ namespace GameConsts
     constexpr float HIT_FX_HEIGHT = 10.0f;              // Độ cao điểm phát hạt trên thân cá
     // Người chơi trúng đòn
     constexpr float PLAYER_HURT_KNOCKBACK = 760.0f;     // Vận tốc đẩy lùi khỏi nguồn sát thương (giảm 8.5/s -> trượt ~90 đơn vị)
+    constexpr float PLAYER_HURT_FX_DMG_UNIT = 20.0f;    // amount hạt máu = sát thương / 20 (kẹp 0.25–3)
+    constexpr float PLAYER_HURT_FX_MIN = 0.25f;
+    constexpr float PLAYER_HURT_FX_MAX = 3.0f;
     constexpr float PLAYER_IFRAME_TIME = 1.2f;          // Bất tử sau khi trúng đòn (cửa sổ an toàn để đổi vị trí)
     constexpr float PLAYER_IFRAME_BLINK_HZ = 12.0f;     // Nhấp nháy ẩn/hiện mô hình trong lúc bất tử
     constexpr float PLAYER_IFRAME_RING_RADIUS = 34.0f;  // Vòng an toàn dưới chân khi đang bất tử

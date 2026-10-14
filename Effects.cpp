@@ -31,14 +31,14 @@ void EffectSystem::SpawnHitFeedback(const Vec3& pos, const Vec3& dir, bool crit)
     if (!hitFx_) return;
     VECTOR p = DxConv::ToVECTOR(pos);
     VECTOR d = DxConv::ToVECTOR(dir);
-    hitFx_->spark.Emit(p, d, crit);
-    // TODO(Fuyuu): thay HitBubblePuff bằng hạt trúng đòn mới cho quái (không phải bọt) — chỉ cần đổi dòng này
-    hitFx_->puff.Emit(p, d);
+    // Quái/Boss trúng đòn: EnemyHitEffect (Fuyuu); tia lửa streak chỉ thêm cho đòn crit để không rối
+    hitFx_->enemyHit.Emit(p, d, crit);
+    if (crit) hitFx_->spark.Emit(p, d, true);
 }
 
-void EffectSystem::SpawnHitSparksOnly(const Vec3& pos, const Vec3& dir, bool crit)
+void EffectSystem::SpawnPlayerHurt(const Vec3& pos, const Vec3& dir, float amount)
 {
-    if (hitFx_) hitFx_->spark.Emit(DxConv::ToVECTOR(pos), DxConv::ToVECTOR(dir), crit);
+    if (hitFx_) hitFx_->playerHurt.Emit(DxConv::ToVECTOR(pos), DxConv::ToVECTOR(dir), amount);
 }
 
 void EffectSystem::SpawnFishDeath(const Vec3& pos, float size)

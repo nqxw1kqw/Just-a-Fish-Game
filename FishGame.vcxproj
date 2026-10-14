@@ -142,6 +142,10 @@
     <ClInclude Include="Effects\\Hit\\HitBubblePuffFx.h" />
     <ClInclude Include="Effects\\Hit\\FishDeathFx.h" />
     <ClInclude Include="Effects\\Hit\\HitFeedback.h" />
+    <ClInclude Include="Effects\\PlayerHurt\\PlayerHurtFxCommon.h" />
+    <ClInclude Include="Effects\\PlayerHurt\\PlayerHurtFx.h" />
+    <ClInclude Include="Effects\\EnemyHit\\EnemyHitFxCommon.h" />
+    <ClInclude Include="Effects\\EnemyHit\\EnemyHitFx.h" />
     <ClInclude Include="TsunamiWaterEffect.h" />
     <ClInclude Include="BattleHud.h" />
     <ClInclude Include="BubbleSystem.h" />

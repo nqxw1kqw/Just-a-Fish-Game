@@ -613,15 +613,18 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects, const Vec3* source
     hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME;
     effects.AddTrauma(0.28f); // Rung nhẹ vừa phải tạo phản hồi va đập
     // Đẩy lùi mạnh ra xa nguồn sát thương
+    Vec3 hurtDir{ 0.0f, 1.0f, 0.0f };
     if (sourcePos)
     {
         Vec3 away = Collision::FlatDiff(pos_, *sourcePos);
         float l = away.Length();
         away = (l > 0.001f) ? away * (1.0f / l) : Vec3{ 0.0f, 0.0f, -1.0f };
         knockback_ += away * GameConsts::PLAYER_HURT_KNOCKBACK;
+        hurtDir = Vec3{ away.x, 0.5f, away.z };
     }
-    // TODO(Fuyuu): hạt "máu" đỏ khi người chơi trúng đòn — tạm thời không phát bọt (HitBubblePuff), chỉ tia lửa
-    effects.SpawnHitSparksOnly(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, false);
+    // Máu (Fuyuu PlayerHurtEffect) + chớp trắng; không bọt, không tia lửa
+    float hurtAmount = std::clamp(dmg / GameConsts::PLAYER_HURT_FX_DMG_UNIT, GameConsts::PLAYER_HURT_FX_MIN, GameConsts::PLAYER_HURT_FX_MAX);
+    effects.SpawnPlayerHurt(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, hurtDir, hurtAmount);
 
     // Phát âm thanh khi người chơi bị trúng đòn
     SoundManager::Instance().PlaySFX(SfxId::PlayerHit);
