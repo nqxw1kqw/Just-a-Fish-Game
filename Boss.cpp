@@ -10,6 +10,8 @@
 #include "Enemy.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
+#include "DxConv.h"
+#include "Effects/Whale/WhaleFxSet.h"
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
@@ -75,6 +77,9 @@ void WhaleBoss::Reset()
     for (auto& r : tsunamiRings_) r.active = false;
     tsunamiWater_.Reset();
     tailCooldown_ = 0.0f;
+    breachFxArmed_ = false;
+    netBreachPending_ = false;
+    if (fx_) fx_->ClearAll();
     diveCooldown_ = 0.0f;
     comboNext_ = BossSkill::None;
     pendingPhaseWave_ = false;
@@ -114,6 +119,9 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
     for (auto& r : tsunamiRings_) r.active = false;
     tsunamiWater_.Reset();
     tailCooldown_ = 0.0f;
+    breachFxArmed_ = false;
+    netBreachPending_ = false;
+    if (fx_) fx_->ClearAll();
     diveCooldown_ = 0.0f;
     comboNext_ = BossSkill::None;
     pendingPhaseWave_ = false;
@@ -471,6 +479,12 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
 
 void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, EffectSystem& effects)
 {
+    // PR E: hạt Cá voi vẫn tàn dần kể cả khi boss khựng/chết
+    if (fx_)
+    {
+        fx_->Update(dt);
+        if (fx_->slow.IsActive()) fx_->slow.SetTarget(DxConv::ToVECTOR(player.GetPosition()));
+    }
     if (!active_ || hp_ <= 0.0f) return;
 
     bossFightTimer_ += dt;
@@ -945,6 +959,7 @@ void WhaleBoss::Draw() const
             MV1SetDifColorScale(whaleHandle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
         }
         MV1DrawModel(whaleHandle);
+        if (fx_) fx_->Draw(); // PR E
         return;
     }
 
@@ -973,6 +988,8 @@ void WhaleBoss::Draw() const
     float tailDist = -halfBody.z - 18.0f;
     Vec3 tailCenter = center + Vec3{ std::sin(yaw_) * tailDist, 6.0f + pitch * 80.0f, std::cos(yaw_) * tailDist };
     Render3D::DrawOrientedBox3D(tailCenter, Vec3{ 14.0f, 20.0f, 18.0f }, yaw_, bodyColor, edgeColor, true);
+
+    if (fx_) fx_->Draw(); // PR E: hạt trong suốt vẽ sau thân boss
 }
 
 void WhaleBoss::RecordActionHistory(const wchar_t* actionName)

@@ -4,6 +4,9 @@
 #include "TsunamiWaterEffect.h"
 #include <array>
 #include <vector>
+#include <memory>
+
+struct WhaleFxSet; // Effects/Whale/WhaleFxSet.h (cấp phát trên heap)
 
 class PlayerFish;
 class EnemyManager;
@@ -71,6 +74,10 @@ struct TsunamiRing
 class WhaleBoss
 {
 public:
+    WhaleBoss();
+    ~WhaleBoss();
+    WhaleBoss(const WhaleBoss&) = delete;
+    WhaleBoss& operator=(const WhaleBoss&) = delete;
     void Init();
     void Reset();
     void Update(float dt, PlayerFish& player, EnemyManager& enemies, EffectSystem& effects);
@@ -202,6 +209,14 @@ private:
     void SpawnPack(EnemyManager& enemies);
     std::array<Vec3, 12> packSpots_{};
     int packSpotCount_ = 0;
+    // PR E: hiệu ứng hạt Cá voi (Fuyuu)
+    std::unique_ptr<WhaleFxSet> fx_;
+    WhaleFxSet& Fx();
+    bool breachFxArmed_ = false;
+    bool netBreachPending_ = false;
+    Vec3 HeadPos() const;
+    Vec3 TailPos() const;
+    Vec3 MouthPos() const;
     int slamCount_ = 0;              // PR B: số cú đã đáp trong Quật ba nhịp
     float secondRingDelay_ = 0.0f;   // PR B: độ trễ vòng sóng thứ 2
     float secondRingGapDeg_ = 0.0f;  // PR B: khe của vòng sóng thứ 2
