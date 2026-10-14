@@ -121,6 +121,21 @@
     <ClInclude Include="Effects\Whale\WhaleFxSet.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="Effects\\Hit\\HitFxCommon.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\HitSparkFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\HitBubblePuffFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\FishDeathFx.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\HitFeedback.h">
+      <Filter>System</Filter>
+    </ClInclude>
     <ClInclude Include="TsunamiWaterEffect.h">
       <Filter>System</Filter>
     </ClInclude>

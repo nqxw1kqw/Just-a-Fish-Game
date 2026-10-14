@@ -12,6 +12,7 @@
 #include "Render3DUtil.h"
 #include "DxConv.h"
 #include "Effects/Whale/WhaleFxSet.h"
+#include "Effects/Hit/HitFeedback.h"
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
@@ -157,7 +158,8 @@ bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
     if (action_ == BossAction::Stunned) dmg *= stunDamageMul_;
 
     hp_ -= dmg;
-    hitFlashTimer_ = 0.14f;
+    hitFlashTimer_ = GameConsts::HIT_FLASH_TIME;
+    effects.SpawnHitFeedback(pos_ + Vec3{ 0, 30.0f, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, dmg >= GameConsts::HIT_CRIT_DAMAGE);
     effects.SpawnHitParticles(pos_ + Vec3{ 0, 25, 0 }, 6, GetColor(255, 120, 60));
     effects.SpawnDamagePopup(pos_ + Vec3{ 0, 45.0f, 0 }, dmg, (dmg >= 50.0f));
 
@@ -1033,7 +1035,7 @@ void WhaleBoss::Draw() const
         {
             MV1SetDifColorScale(whaleHandle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
         }
-        MV1DrawModel(whaleHandle);
+        HitFlash::DrawModel(whaleHandle, hitFlashTimer_ / GameConsts::HIT_FLASH_TIME);
         if (fx_) fx_->Draw(); // PR E
         return;
     }
