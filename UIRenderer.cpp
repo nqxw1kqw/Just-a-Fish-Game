@@ -36,7 +36,11 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
         int waveSecLeft = (std::max)(0, static_cast<int>(game.waveDuration_ - game.waveTimer_));
         if (game.mode_ == GameMode::Endless)
         {
-            FontManager::DrawFormat(sw / 2 - 150, 24, GetColor(100, 220, 255), FontSize::Header, L"ENDLESS STAGE %d / %d", game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
+            FontManager::DrawFormat(sw / 2 - 150, 24, GetColor(100, 220, 255), FontSize::Header, L"NORMAL STAGE %d / %d", game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
+        }
+        else if (game.mode_ == GameMode::Hell)
+        {
+            FontManager::DrawFormat(sw / 2 - 140, 24, GetColor(255, 90, 70), FontSize::Header, L"HELL STAGE %d / %d", game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
         }
         else
         {
@@ -103,28 +107,40 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
     FontManager::Draw(boxX + 50, boxY + 180, L"- Landing Shockwave: Deals 40 damage, knocks back and breaks armor.", GetColor(255, 180, 120), FontSize::Body);
 
     // Lựa chọn chế độ chơi (Task 10 T4a)
-    int mode1Y = boxY + 225;
-    int mode2Y = boxY + 285;
+    int mode1Y = boxY + 215;
+    int mode2Y = boxY + 262;
+    int mode3Y = boxY + 309;
     bool isClassicSelected = (game.titleSelectedMode_ == 0);
     bool isEndlessSelected = (game.titleSelectedMode_ == 1);
+    bool isHellSelected = (game.titleSelectedMode_ == 2);
+    const int modeBoxH = 40;
 
     // Box Mode 1: Classic
     int bgCol1 = isClassicSelected ? GetColor(25, 55, 95) : GetColor(15, 25, 40);
     int edgeCol1 = isClassicSelected ? GetColor(255, 220, 80) : GetColor(60, 90, 130);
-    DrawBox(boxX + 50, mode1Y, boxX + boxW - 50, mode1Y + 48, bgCol1, TRUE);
-    DrawBox(boxX + 50, mode1Y, boxX + boxW - 50, mode1Y + 48, edgeCol1, FALSE);
+    DrawBox(boxX + 50, mode1Y, boxX + boxW - 50, mode1Y + modeBoxH, bgCol1, TRUE);
+    DrawBox(boxX + 50, mode1Y, boxX + boxW - 50, mode1Y + modeBoxH, edgeCol1, FALSE);
     const wchar_t* pfx1 = isClassicSelected ? L"> [1] STORY MODE :" : L"  [1] STORY MODE :";
-    FontManager::Draw(boxX + 65, mode1Y + 12, pfx1, isClassicSelected ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
-    FontManager::Draw(boxX + 270, mode1Y + 14, L"3-Wave Tutorial + Whale, then Endless", GetColor(200, 220, 255), FontSize::Body);
+    FontManager::Draw(boxX + 65, mode1Y + 8, pfx1, isClassicSelected ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
+    FontManager::Draw(boxX + 270, mode1Y + 10, L"Tutorial (3x15s) + Whale, then Normal / Hell", GetColor(200, 220, 255), FontSize::Body);
 
     // Box Mode 2: Endless
     int bgCol2 = isEndlessSelected ? GetColor(25, 55, 95) : GetColor(15, 25, 40);
     int edgeCol2 = isEndlessSelected ? GetColor(255, 220, 80) : GetColor(60, 90, 130);
-    DrawBox(boxX + 50, mode2Y, boxX + boxW - 50, mode2Y + 48, bgCol2, TRUE);
-    DrawBox(boxX + 50, mode2Y, boxX + boxW - 50, mode2Y + 48, edgeCol2, FALSE);
-    const wchar_t* pfx2 = isEndlessSelected ? L"> [2] ENDLESS MODE :" : L"  [2] ENDLESS MODE :";
-    FontManager::Draw(boxX + 65, mode2Y + 12, pfx2, isEndlessSelected ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
-    FontManager::Draw(boxX + 270, mode2Y + 14, L"30 Stages (20s), Stacking Cards, Boss every 5", GetColor(255, 180, 120), FontSize::Body);
+    DrawBox(boxX + 50, mode2Y, boxX + boxW - 50, mode2Y + modeBoxH, bgCol2, TRUE);
+    DrawBox(boxX + 50, mode2Y, boxX + boxW - 50, mode2Y + modeBoxH, edgeCol2, FALSE);
+    const wchar_t* pfx2 = isEndlessSelected ? L"> [2] NORMAL MODE :" : L"  [2] NORMAL MODE :";
+    FontManager::Draw(boxX + 65, mode2Y + 8, pfx2, isEndlessSelected ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
+    FontManager::Draw(boxX + 270, mode2Y + 10, L"30 Stages (20s), Stacking Cards, Boss every 5", GetColor(255, 180, 120), FontSize::Body);
+
+    // Box Mode 3: Hell
+    int bgCol3 = isHellSelected ? GetColor(70, 20, 20) : GetColor(15, 25, 40);
+    int edgeCol3 = isHellSelected ? GetColor(255, 90, 70) : GetColor(60, 90, 130);
+    DrawBox(boxX + 50, mode3Y, boxX + boxW - 50, mode3Y + modeBoxH, bgCol3, TRUE);
+    DrawBox(boxX + 50, mode3Y, boxX + boxW - 50, mode3Y + modeBoxH, edgeCol3, FALSE);
+    const wchar_t* pfx3 = isHellSelected ? L"> [3] HELL MODE :" : L"  [3] HELL MODE :";
+    FontManager::Draw(boxX + 65, mode3Y + 8, pfx3, isHellSelected ? GetColor(255, 140, 110) : GetColor(200, 220, 240), FontSize::Medium);
+    FontManager::Draw(boxX + 270, mode3Y + 10, L"Dmg taken x1.5, Random Cards, No Wipe", GetColor(255, 120, 100), FontSize::Body);
 
     // Kỷ lục Endless Highscore (Task 10 T4e)
     const auto& hs = game.GetHighscore();
@@ -132,14 +148,75 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
     {
         int hsMin = static_cast<int>(hs.maxSurvivalTime) / 60;
         int hsSec = static_cast<int>(hs.maxSurvivalTime) % 60;
-        FontManager::DrawFormat(boxX + 55, boxY + 348, GetColor(255, 215, 80), FontSize::Body,
-            L"[ENDLESS RECORD]: Max Stage %d  |  Kills: %d  |  Time: %02d:%02d  |  Score: %d",
+        FontManager::DrawFormat(boxX + 55, boxY + 352, GetColor(255, 215, 80), FontSize::Body,
+            L"[NORMAL RECORD]: Max Stage %d  |  Kills: %d  |  Time: %02d:%02d  |  Score: %d",
             hs.maxWave, hs.maxKills, hsMin, hsSec, hs.maxScore);
+    }
+    const auto& hh = game.GetHellHighscore();
+    if (hh.maxWave > 0)
+    {
+        FontManager::DrawFormat(boxX + 55, boxY + 374, GetColor(255, 120, 100), FontSize::Body,
+            L"[HELL RECORD]: Max Stage %d  |  Kills: %d  |  Score: %d", hh.maxWave, hh.maxKills, hh.maxScore);
     }
 
     // Nút Bắt đầu
-    FontManager::Draw(midX - 225, boxY + 388, L"Press [1] or [2], or [UP/DOWN] + [ENTER/SPACE] to START!", GetColor(255, 255, 255), FontSize::Medium);
-    FontManager::Draw(midX - 180, boxY + 428, L"[F1]: Toggle Debug HUD  |  [F2]: Toggle Camera Shake", GetColor(140, 170, 200), FontSize::Body);
+    FontManager::Draw(midX - 225, boxY + 400, L"Press [1] [2] [3], or [UP/DOWN] + [ENTER/SPACE] to START!", GetColor(255, 255, 255), FontSize::Medium);
+    FontManager::Draw(midX - 180, boxY + 438, L"[F1]: Toggle Debug HUD  |  [F2]: Toggle Camera Shake", GetColor(140, 170, 200), FontSize::Body);
+}
+
+void UIRenderer::DrawModeSelectScreen(const GamePrototype& game) const
+{
+    int sw = GameConsts::SCREEN_WIDTH;
+    int sh = GameConsts::SCREEN_HEIGHT;
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
+    DrawBox(0, 0, sw, sh, GetColor(8, 18, 32), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+
+    int midX = sw / 2;
+    int midY = sh / 2;
+    FontManager::Draw(midX - 200, midY - 150, L"TUTORIAL CLEAR!  CHOOSE YOUR MODE", GetColor(100, 220, 255), FontSize::Header);
+    FontManager::Draw(midX - 230, midY - 110, L"Your cards and the whale-clear heal carry over.", GetColor(200, 220, 240), FontSize::Body);
+
+    const wchar_t* names[2] = { L"[1] NORMAL", L"[2] HELL" };
+    const wchar_t* descs[2] = {
+        L"30 stages (20s), pick 1 of 3 cards, field cleared each stage, boss every 5",
+        L"Damage taken x1.5, random card (no pause), enemies stay between stages" };
+    for (int i = 0; i < 2; ++i)
+    {
+        bool sel = (game.modeSelectIdx_ == i);
+        int y = midY - 60 + i * 80;
+        int edge = sel ? (i == 1 ? GetColor(255, 90, 70) : GetColor(255, 220, 80)) : GetColor(60, 90, 130);
+        int bg = sel ? (i == 1 ? GetColor(70, 20, 20) : GetColor(25, 55, 95)) : GetColor(15, 25, 40);
+        DrawBox(midX - 380, y, midX + 380, y + 62, bg, TRUE);
+        DrawBox(midX - 380, y, midX + 380, y + 62, edge, FALSE);
+        FontManager::Draw(midX - 360, y + 8, names[i], sel ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
+        FontManager::Draw(midX - 360, y + 36, descs[i], GetColor(200, 215, 235), FontSize::Small);
+    }
+    FontManager::Draw(midX - 200, midY + 120, L"[UP/DOWN] + [ENTER/SPACE], or [1] / [2]", GetColor(255, 255, 255), FontSize::Body);
+}
+
+void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const
+{
+    int sw = GameConsts::SCREEN_WIDTH;
+    if (game.hellCardToastTimer_ > 0.0f && game.mode_ == GameMode::Hell)
+    {
+        DrawBox(sw / 2 - 220, 104, sw / 2 + 220, 136, GetColor(60, 15, 15), TRUE);
+        DrawBox(sw / 2 - 220, 104, sw / 2 + 220, 136, GetColor(255, 90, 70), FALSE);
+        FontManager::Draw(sw / 2 - 205, 110, game.hellCardToast_, GetColor(255, 200, 160), FontSize::Body);
+    }
+    if (game.activeTip_ < 0 || game.paused_) return;
+
+    static const wchar_t* kTips[GamePrototype::Tip_Count] = {
+        L"MOVE: Swim with [WASD] / Arrow keys",
+        L"JUMP / SLAM: Press [SPACE] - airborne = invincible, landing hits",
+        L"ATTACK: Land a slam on an enemy to defeat it",
+        L"CARDS: Pick 1 upgrade - [A/D] + [ENTER] or [1] [2] [3]",
+        L"BOSS: Dodge its attacks in the air, slam it when it is open!" };
+    int y = (game.state_ == GameState::CardPick) ? 150 : 104;
+    DrawBox(sw / 2 - 340, y, sw / 2 + 340, y + 52, GetColor(15, 40, 70), TRUE);
+    DrawBox(sw / 2 - 340, y, sw / 2 + 340, y + 52, GetColor(255, 220, 80), FALSE);
+    FontManager::Draw(sw / 2 - 325, y + 6, kTips[game.activeTip_], GetColor(255, 235, 120), FontSize::Medium);
+    FontManager::Draw(sw / 2 - 325, y + 32, L"[TAB] Skip tips", GetColor(170, 190, 215), FontSize::Small);
 }
 
 void UIRenderer::DrawBossIntroScreen(bool shark) const

@@ -127,6 +127,12 @@ namespace
 
 void GamePrototype::LoadHighscore()
 {
+    highscoreHell_ = HighscoreData{};
+    {
+        wchar_t hellPath[MAX_PATH] = {};
+        BuildExeDataPath(hellPath, MAX_PATH, L"highscore_hell.dat");
+        ReadHighscoreFile(hellPath, highscoreHell_); // không có file -> giữ 0
+    }
     highscore_ = HighscoreData{};
     wchar_t path[MAX_PATH] = {};
     BuildExeDataPath(path, MAX_PATH, L"highscore.dat");
@@ -153,42 +159,44 @@ void GamePrototype::SaveHighscore()
     // Task 10 T4e: Không lưu kỷ lục nếu đã dùng phím debug
     if (debugController_.WasDebugUsed()) return;
 
+    const bool hell = (mode_ == GameMode::Hell);
+    HighscoreData& hs = hell ? highscoreHell_ : highscore_;
     bool updated = false;
-    if (currentWave_ > highscore_.maxWave)
+    if (currentWave_ > hs.maxWave)
     {
-        highscore_.maxWave = currentWave_;
+        hs.maxWave = currentWave_;
         updated = true;
     }
     int totalKills = enemies_.GetTotalKills();
-    if (totalKills > highscore_.maxKills)
+    if (totalKills > hs.maxKills)
     {
-        highscore_.maxKills = totalKills;
+        hs.maxKills = totalKills;
         updated = true;
     }
-    if (gameTime_ > highscore_.maxSurvivalTime)
+    if (gameTime_ > hs.maxSurvivalTime)
     {
-        highscore_.maxSurvivalTime = gameTime_;
+        hs.maxSurvivalTime = gameTime_;
         updated = true;
     }
     int score = ResultScreen::ComputeScore(BuildResultStats());
-    if (score > highscore_.maxScore)
+    if (score > hs.maxScore)
     {
-        highscore_.maxScore = score;
+        hs.maxScore = score;
         updated = true;
     }
     if (!updated) return;
 
     wchar_t dir[MAX_PATH] = {}, path[MAX_PATH] = {}, tmpPath[MAX_PATH] = {};
     BuildExeDataPath(dir, MAX_PATH, L"");
-    BuildExeDataPath(path, MAX_PATH, L"highscore.dat");
-    BuildExeDataPath(tmpPath, MAX_PATH, L"highscore.tmp");
+    BuildExeDataPath(path, MAX_PATH, hell ? L"highscore_hell.dat" : L"highscore.dat");
+    BuildExeDataPath(tmpPath, MAX_PATH, hell ? L"highscore_hell.tmp" : L"highscore.tmp");
     CreateDirectoryW(dir, NULL); // đã tồn tại thì bỏ qua
 
     HighscoreFileV3 f{};
-    f.maxWave = highscore_.maxWave;
-    f.maxKills = highscore_.maxKills;
-    f.maxSurvivalTime = highscore_.maxSurvivalTime;
-    f.maxScore = highscore_.maxScore;
+    f.maxWave = hs.maxWave;
+    f.maxKills = hs.maxKills;
+    f.maxSurvivalTime = hs.maxSurvivalTime;
+    f.maxScore = hs.maxScore;
     f.checksum = ComputeHighscoreChecksum(f);
 
     // Ghi an toàn: ghi ra file tạm, kiểm tra lỗi, rồi mới thay thế file thật
@@ -205,7 +213,7 @@ void GamePrototype::SaveHighscore()
     if (ok && MoveFileExW(tmpPath, path, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
     {
         AppLogAdd(L"[HIGHSCORE] Saved %s: Wave=%d, Kills=%d, Time=%.1fs, Score=%d\n",
-            path, highscore_.maxWave, highscore_.maxKills, highscore_.maxSurvivalTime, highscore_.maxScore);
+            path, hs.maxWave, hs.maxKills, hs.maxSurvivalTime, hs.maxScore);
     }
     else
     {
@@ -217,7 +225,7 @@ void GamePrototype::SaveHighscore()
 void GamePrototype::SaveHighscoreIfEndlessRun()
 {
     // Chỉ lưu khi đang có một ván Endless (không lưu ở màn Title)
-    if (mode_ == GameMode::Endless && state_ != GameState::Title)
+    if (IsEndlessLike() && state_ != GameState::Title && state_ != GameState::ModeSelect)
     {
         SaveHighscore();
     }
@@ -261,8 +269,11 @@ void GamePrototype::Reset()
     shark_.Reset();
     sharkFight_ = false;
 
-    enemies_.SetEndless(mode_ == GameMode::Endless);
-    cardManager_.SetEndless(mode_ == GameMode::Endless);
+    enemies_.SetEndless(IsEndlessLike());
+    cardManager_.SetEndless(IsEndlessLike());
+    hellCardToastTimer_ = 0.0f;
+    activeTip_ = -1;
+    ApplyModeRules();
 
     hitStopTimer_ = 0.0f;
 
@@ -302,7 +313,7 @@ void GamePrototype::StartRun(GameMode mode)
 {
     mode_ = mode;
     runStartMode_ = mode;
-    titleSelectedMode_ = (mode == GameMode::Endless) ? 1 : 0;
+    titleSelectedMode_ = (mode == GameMode::Hell) ? 2 : (mode == GameMode::Endless) ? 1 : 0;
     paused_ = false;
     Reset();
     StartStage(1);
@@ -317,10 +328,12 @@ void GamePrototype::StartWave(int wave)
 
     if (mode_ == GameMode::Classic)
     {
-        // Tutorial: TUTORIAL_WAVES wave, mỗi wave 30s - 35s
-        if (wave <= 2) waveDuration_ = 30.0f;
-        else if (wave <= 4) waveDuration_ = 35.0f;
-        else waveDuration_ = 40.0f;
+        // Phase 1: Tutorial TUTORIAL_WAVES stage, mỗi stage 15s
+        waveDuration_ = GameConsts::TUTORIAL_WAVE_DURATION;
+    }
+    else if (mode_ == GameMode::Hell)
+    {
+        waveDuration_ = GameConsts::HELL_WAVE_DURATION;
     }
     else
     {
@@ -329,7 +342,7 @@ void GamePrototype::StartWave(int wave)
     }
 
     player_.ResetDamageTakenThisWave();
-    enemies_.SetWave(wave, mode_ == GameMode::Endless);
+    enemies_.SetWave(wave, IsEndlessLike());
     enemies_.SetAutoSpawn(true);
     SoundManager::Instance().PlayBGM(BgmId::Battle, true);
 }
@@ -370,7 +383,7 @@ void GamePrototype::BeginBossIntro()
 
 void GamePrototype::StartStage(int stage)
 {
-    if (mode_ == GameMode::Endless && stage % GameConsts::ENDLESS_BOSS_EVERY == 0)
+    if (IsEndlessLike() && stage % GameConsts::ENDLESS_BOSS_EVERY == 0)
     {
         currentWave_ = stage;
         waveTimer_ = 0.0f;
@@ -406,18 +419,100 @@ void GamePrototype::AdvanceAfterCardPick()
     StartStage(currentWave_ + 1);
 }
 
-void GamePrototype::EnterEndlessFromTutorial()
+void GamePrototype::EnterEndlessFromTutorial(GameMode mode)
 {
-    AppLogAdd(L"[ENDLESS] Tutorial cleared -> Endless stage 1\n");
-    mode_ = GameMode::Endless;
-    titleSelectedMode_ = 1;
+    AppLogAdd(L"[FLOW] Tutorial cleared -> %s stage 1\n", mode == GameMode::Hell ? L"HELL" : L"NORMAL");
+    mode_ = mode;
+    titleSelectedMode_ = (mode == GameMode::Hell) ? 2 : 1;
     enemies_.SetEndless(true);
     cardManager_.SetEndless(true);
+    ApplyModeRules();
     boss_.Reset();
     shark_.Reset();
     sharkFight_ = false;
-    player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
+    // Hồi máu đã được cộng lúc hạ Cá Voi (trước màn chọn chế độ); thẻ được giữ nguyên
     StartStage(1);
+    Input::Instance().Flush();
+}
+
+void GamePrototype::ApplyModeRules()
+{
+    const bool hell = (mode_ == GameMode::Hell);
+    player_.SetDamageTakenMul(hell ? GameConsts::HELL_DAMAGE_TAKEN_MUL : 1.0f);
+    enemies_.SetMaxAlive(hell ? GameConsts::HELL_MAX_ALIVE : 0);
+}
+
+void GamePrototype::HellAutoPickCard()
+{
+    cardManager_.Roll3Cards(currentWave_);
+    const Card* c = cardManager_.AutoPickRandom();
+    if (c)
+    {
+        ReapplyAllStats();
+        swprintf_s(hellCardToast_, L"HELL CARD: %s", c->name.c_str());
+        hellCardToastTimer_ = GameConsts::HELL_CARD_TOAST_TIME;
+        SoundManager::Instance().PlaySFX(SfxId::CardSelect);
+        AppLogAdd(L"[HELL] Auto card: %s\n", c->name.c_str());
+    }
+    AdvanceAfterCardPick();
+}
+
+float GamePrototype::UpdateTutorialTips(float dt)
+{
+    if (hellCardToastTimer_ > 0.0f) hellCardToastTimer_ -= dt;
+    if (mode_ != GameMode::Classic || tipsSkipped_) { activeTip_ = -1; return 1.0f; }
+
+    const Input& input = Input::Instance();
+    if (activeTip_ >= 0 && input.IsPressed(KEY_INPUT_TAB))
+    {
+        tipsSkipped_ = true; // Bỏ qua toàn bộ gợi ý còn lại
+        activeTip_ = -1;
+        return 1.0f;
+    }
+
+    // Kích hoạt gợi ý kế tiếp theo thứ tự: Move -> Jump -> Hit -> Card -> Boss
+    if (activeTip_ < 0)
+    {
+        int next = -1;
+        if (state_ == GameState::Wave)
+        {
+            if (!tipShown_[Tip_Move]) { if (waveTimer_ >= GameConsts::TIP_START_DELAY) next = Tip_Move; }
+            else if (!tipShown_[Tip_Jump]) next = Tip_Jump;
+            else if (!tipShown_[Tip_Hit]) next = Tip_Hit;
+        }
+        else if (state_ == GameState::CardPick && !tipShown_[Tip_Card]) next = Tip_Card;
+        else if (state_ == GameState::Boss && !tipShown_[Tip_Boss]) next = Tip_Boss;
+        if (next >= 0)
+        {
+            activeTip_ = next;
+            tipShown_[next] = true;
+            tipTimer_ = 0.0f;
+            tipMoveStart_ = player_.GetPosition();
+        }
+    }
+    if (activeTip_ < 0) return 1.0f;
+
+    tipTimer_ += dt;
+    bool done = tipTimer_ >= GameConsts::TIP_MAX_TIME;
+    switch (activeTip_)
+    {
+    case Tip_Move:
+    {
+        Vec3 d = player_.GetPosition() - tipMoveStart_;
+        if (d.x * d.x + d.z * d.z >= GameConsts::TIP_MOVE_DISTANCE * GameConsts::TIP_MOVE_DISTANCE) done = true;
+        break;
+    }
+    case Tip_Jump: if (player_.IsJumping()) done = true; break;
+    case Tip_Hit:  if (enemies_.GetTotalKills() > 0) done = true; break;
+    case Tip_Card: if (state_ != GameState::CardPick) done = true; break;
+    case Tip_Boss: if (tipTimer_ >= GameConsts::TIP_BOSS_SHOW_TIME || state_ != GameState::Boss) done = true; break;
+    }
+    if (done) { activeTip_ = -1; return 1.0f; }
+
+    // Làm chậm nhẹ (không dừng hẳn) chỉ trong giây đầu khi đang chiến đấu
+    if ((state_ == GameState::Wave || state_ == GameState::Boss) && tipTimer_ < GameConsts::TIP_SOFT_PAUSE_TIME)
+        return GameConsts::TIP_SOFT_PAUSE_SCALE;
+    return 1.0f;
 }
 
 void GamePrototype::EnterEndlessClear()
@@ -442,8 +537,8 @@ void GamePrototype::OnWaveComplete()
                currentWave_, spawned, killed, dmgTaken, timeSpent);
     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
 
-    // Hết giờ wave: Quái còn lại biến mất (G2)
-    enemies_.KillAll(effects_);
+    // Hết giờ wave: Quái còn lại biến mất (G2). Hell: KHÔNG dọn quái giữa stage
+    if (mode_ != GameMode::Hell) enemies_.KillAll(effects_);
 
     // G3: Cuối mỗi wave hồi 30% máu tối đa
     player_.Heal(player_.GetMaxHp() * GameConsts::WAVE_HEAL_PERCENT);
@@ -457,12 +552,19 @@ void GamePrototype::OnWaveComplete()
     }
 
     // Task 10 T4d: Trong Endless, nếu pool thẻ đã hết sạch
-    if (mode_ == GameMode::Endless && cardManager_.GetAvailableCardsPoolCount() == 0)
+    if (IsEndlessLike() && cardManager_.GetAvailableCardsPoolCount() == 0)
     {
         player_.Heal(player_.GetMaxHp() * GameConsts::ENDLESS_EMPTY_POOL_HEAL);
         effects_.SpawnHitParticles(player_.GetPosition() + Vec3{ 0, 20, 0 }, 30, GetColor(255, 215, 60));
 
         AdvanceAfterCardPick();
+        return;
+    }
+
+    // Hell: thẻ ngẫu nhiên tự chọn, không dừng game
+    if (mode_ == GameMode::Hell)
+    {
+        HellAutoPickCard();
         return;
     }
 
@@ -742,9 +844,15 @@ void GamePrototype::Update(float dt)
         bool downPressed = input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S);
         bool k1Pressed = input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1);
         bool k2Pressed = input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2);
+        bool k3Pressed = input.IsPressed(KEY_INPUT_3) || input.IsPressed(KEY_INPUT_NUMPAD3);
 
-        if (upPressed) titleSelectedMode_ = 0;
-        if (downPressed) titleSelectedMode_ = 1;
+        if (upPressed) titleSelectedMode_ = (titleSelectedMode_ + 2) % 3;
+        if (downPressed) titleSelectedMode_ = (titleSelectedMode_ + 1) % 3;
+        if (k3Pressed)
+        {
+            StartRun(GameMode::Hell);
+            return;
+        }
 
         if (k1Pressed)
         {
@@ -758,7 +866,7 @@ void GamePrototype::Update(float dt)
         }
         if (input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
         {
-            StartRun((titleSelectedMode_ == 1) ? GameMode::Endless : GameMode::Classic);
+            StartRun((titleSelectedMode_ == 2) ? GameMode::Hell : (titleSelectedMode_ == 1) ? GameMode::Endless : GameMode::Classic);
             return;
         }
 
@@ -775,7 +883,7 @@ void GamePrototype::Update(float dt)
             state_ = GameState::GameOver;
             effects_.AddTrauma(0.85f);
             SoundManager::Instance().PlayBGM(BgmId::GameOver, true);
-            if (mode_ == GameMode::Endless)
+            if (IsEndlessLike())
             {
                 SaveHighscore();
             }
@@ -804,6 +912,29 @@ void GamePrototype::Update(float dt)
         return;
     }
 
+    // Phase 1: Màn chọn chế độ sau tutorial (Normal / Hell)
+    if (state_ == GameState::ModeSelect)
+    {
+        if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) ||
+            input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S))
+        {
+            modeSelectIdx_ = 1 - modeSelectIdx_;
+            SoundManager::Instance().PlaySFX(SfxId::UiHover);
+        }
+        int choose = -1;
+        if (input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1)) choose = 0;
+        if (input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2)) choose = 1;
+        if (input.IsPressed(KEY_INPUT_RETURN) || input.IsPressed(KEY_INPUT_NUMPADENTER) || input.IsPressed(KEY_INPUT_SPACE)) choose = modeSelectIdx_;
+        if (choose >= 0)
+        {
+            SoundManager::Instance().PlaySFX(SfxId::CardSelect);
+            EnterEndlessFromTutorial(choose == 1 ? GameMode::Hell : GameMode::Endless);
+            return;
+        }
+        effects_.Update(dt, player_.GetPosition());
+        return;
+    }
+
     // Phím R: chơi lại từ wave 1 (cùng chế độ) - chỉ trong các trạng thái đang chơi,
     // chỉ khi vừa nhấn (giữ phím không reset liên tục). Lưu kỷ lục Endless trước khi reset.
     // Chỉ khi đang chiến đấu (Wave / Boss): không reset khi đang chọn thẻ hoặc Boss Intro.
@@ -813,6 +944,9 @@ void GamePrototype::Update(float dt)
         StartRun(runStartMode_);
         return;
     }
+
+    // Gợi ý tutorial: làm chậm nhẹ khi gợi ý vừa hiện
+    dt *= UpdateTutorialTips(dt);
 
     // --- XỬ LÝ THEO TRẠNG THÁI GAME ---
     if (state_ == GameState::Wave)
@@ -996,12 +1130,16 @@ void GamePrototype::Update(float dt)
             {
                 if (mode_ == GameMode::Classic)
                 {
-                    // Balance pass: hạ Cá Voi tutorial -> tự vào Endless (không qua menu)
+                    // Phase 1: hạ Cá Voi tutorial -> màn chọn chế độ Normal / Hell (giữ thẻ + hồi máu)
                     effects_.AddTrauma(0.7f);
                     enemies_.KillAll(effects_);
                     swprintf_s(lastSummaryBuffer_, L"Boss: %.1f giây", bossTime);
                     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
-                    EnterEndlessFromTutorial();
+                    player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
+                    modeSelectIdx_ = 0;
+                    state_ = GameState::ModeSelect;
+                    SoundManager::Instance().PlayBGM(BgmId::Victory, true);
+                    Input::Instance().Flush();
                 }
                 else
                 {
@@ -1019,6 +1157,10 @@ void GamePrototype::Update(float dt)
                     if (currentWave_ >= GameConsts::ENDLESS_MAX_STAGE)
                     {
                         EnterEndlessClear();
+                    }
+                    else if (mode_ == GameMode::Hell)
+                    {
+                        HellAutoPickCard();
                     }
                     else
                     {
@@ -1155,6 +1297,12 @@ void GamePrototype::Draw() const
         uiRenderer_.DrawBossIntroScreen(sharkFight_);
     }
 
+    if (state_ == GameState::ModeSelect)
+    {
+        uiRenderer_.DrawModeSelectScreen(*this);
+    }
+    uiRenderer_.DrawFlowOverlay(*this); // gợi ý tutorial + thẻ Hell
+
     // 11. Màn hình Tiêu đề Title
     if (state_ == GameState::Title)
     {
@@ -1182,16 +1330,17 @@ ResultStats GamePrototype::BuildResultStats() const
 {
     ResultStats s;
     s.victory = (state_ == GameState::Victory);
-    s.endless = (mode_ == GameMode::Endless);
+    s.endless = IsEndlessLike();
     s.diedAtBoss = resultScreen_.DiedAtBoss();
     s.debugUsed = debugController_.WasDebugUsed();
     s.time = gameTime_;
     s.kills = GetTotalKills();
     s.level = player_.GetLevel();
     s.wave = currentWave_;
-    s.bestWave = highscore_.maxWave;
-    s.bestKills = highscore_.maxKills;
-    s.bestTime = highscore_.maxSurvivalTime;
-    s.bestScore = highscore_.maxScore;
+    const HighscoreData& hs = (mode_ == GameMode::Hell) ? highscoreHell_ : highscore_;
+    s.bestWave = hs.maxWave;
+    s.bestKills = hs.maxKills;
+    s.bestTime = hs.maxSurvivalTime;
+    s.bestScore = hs.maxScore;
     return s;
 }

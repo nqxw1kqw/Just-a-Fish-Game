@@ -288,6 +288,14 @@ bool CardManager::Update(float dt)
     return false;
 }
 
+const Card* CardManager::AutoPickRandom()
+{
+    if (offeredCount_ <= 0) return nullptr;
+    activeCards_.push_back(currentOffer_[rand() % offeredCount_]);
+    offeredCount_ = 0;
+    return &activeCards_.back();
+}
+
 void CardManager::ApplyToStats(PlayerStats& stats) const
 {
     stats.ResetToBase();

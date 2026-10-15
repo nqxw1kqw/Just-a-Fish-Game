@@ -39,6 +39,7 @@ public:
     void SetEndless(bool enable) { isEndless_ = enable; }
     bool IsEndless() const { return isEndless_; }
     int GetOfferedCardCount() const { return offeredCount_; }
+    const Card* AutoPickRandom(); // Hell: chọn ngẫu nhiên 1 thẻ trong lượt vừa roll (nullptr nếu không có)
 
     const std::vector<Card>& GetActiveCards() const { return activeCards_; }
     const std::array<Card, 3>& GetCurrentOffer() const { return currentOffer_; }

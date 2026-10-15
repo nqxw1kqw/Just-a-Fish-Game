@@ -620,6 +620,7 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects, const Vec3* source
         return false;
     }
 
+    dmg *= damageTakenMul_;
     hp_ -= dmg;
     damageTakenThisWave_ += dmg;
     invulnerableTimer_ = GameConsts::PLAYER_IFRAME_TIME; // Cửa sổ an toàn sau khi trúng đòn
@@ -670,6 +671,7 @@ bool PlayerFish::Grab(float dmg, EffectSystem& effects)
     knockback_ = Vec3{ 0.0f, 0.0f, 0.0f };
     if (!isGodMode_)
     {
+        dmg *= damageTakenMul_;
         hp_ -= dmg;
         damageTakenThisWave_ += dmg;
         if (hp_ < 0.0f) hp_ = 0.0f;

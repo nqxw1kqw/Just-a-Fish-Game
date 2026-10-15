@@ -482,6 +482,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
 
                 // Kiểm tra trần chi phí quái sống của wave: chỉ sinh nếu không vượt trần
                 float cost = GetEnemyCost(typeToSpawn);
+                if (maxAlive_ > 0 && GetActiveCount() >= maxAlive_) break; // Hell: trần số quái sống
                 if (GetAliveCost() + cost <= GetWaveCostCap(currentWave_))
                 {
                     SpawnRandomEdge(typeToSpawn, player.GetPosition());

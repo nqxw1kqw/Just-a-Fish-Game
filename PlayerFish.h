@@ -53,6 +53,7 @@ public:
     // Hỗ trợ Debug & Quy tắc công bằng (Phần D & Phần A5)
     void SetGodMode(bool enable) { isGodMode_ = enable; }
     bool IsGodMode() const { return isGodMode_; }
+    void SetDamageTakenMul(float mul) { damageTakenMul_ = mul; } // Hell: x1.5
     void ResetJumpCooldown() { jumpCooldownTimer_ = 0.0f; }
     void FullHealAndResetJumpCooldown()
     {
@@ -147,6 +148,7 @@ private:
     float swimTimer_ = 0.0f;
     float invulnerableTimer_ = 0.0f;
     bool isGodMode_ = false;
+    float damageTakenMul_ = 1.0f;
     float damageTakenThisWave_ = 0.0f;
 
     // Cơ chế nhảy & tấn công (J1 -> J5)

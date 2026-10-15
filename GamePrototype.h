@@ -20,6 +20,7 @@ enum class GameState
     CardPick,     // Đang chọn 1 trong 3 thẻ nâng cấp (C2)
     BossIntro,    // Chuyển cảnh giới thiệu trùm cuối (G1, B4)
     Boss,         // Trận đấu Boss Cá Voi (B)
+    ModeSelect,   // Phase 1: Sau khi hạ Cá Voi tutorial -> chọn Normal / Hell
     Victory,      // Màn Thắng cuộc (Result Win)
     GameOver      // Màn Thất bại (Result Lose)
 };
@@ -27,7 +28,8 @@ enum class GameState
 enum class GameMode
 {
     Classic, // Chế độ Cổ điển: 5 wave + Boss Cá Voi (Gốc)
-    Endless  // Chế độ Vô tận: wave vô hạn, scaling quái, Boss định kỳ mỗi 5 wave (Task 10 T4)
+    Endless, // NORMAL: 30 stage 20s, chọn thẻ, dọn quái giữa stage, Boss mỗi 5 stage
+    Hell     // HELL (Phase 1 stub): sát thương nhận x1.5, thẻ ngẫu nhiên tự chọn, không dọn quái
 };
 
 struct HighscoreData
@@ -59,6 +61,8 @@ public:
     GameMode GetGameMode() const { return mode_; }
     void SetGameMode(GameMode mode) { mode_ = mode; }
     const HighscoreData& GetHighscore() const { return highscore_; }
+    const HighscoreData& GetHellHighscore() const { return highscoreHell_; }
+    bool IsEndlessLike() const { return mode_ != GameMode::Classic; }
     int GetTotalKills() const { return enemies_.GetTotalKills(); }
 
     // Màn hình tạm dừng (Task #13)
@@ -76,7 +80,20 @@ private:
     void StartStage(int stage);          // Endless: stage chia hết cho ENDLESS_BOSS_EVERY -> Boss
     void BeginBossIntro();
     void AdvanceAfterCardPick();         // Sau khi chọn thẻ: sang wave/stage kế tiếp hoặc Boss
-    void EnterEndlessFromTutorial();     // Hạ Cá Voi tutorial -> tự vào Endless stage 1 (giữ thẻ)
+    void EnterEndlessFromTutorial(GameMode mode); // Màn chọn chế độ -> vào Normal/Hell stage 1 (giữ thẻ)
+    void ApplyModeRules();               // Áp luật riêng của chế độ (Hell: x1.5 dmg, trần quái)
+    void HellAutoPickCard();             // Hell: tự chọn 1 thẻ ngẫu nhiên, không dừng game
+    float UpdateTutorialTips(float dt);  // Trả về hệ số thời gian (làm chậm nhẹ khi gợi ý vừa hiện)
+
+    enum TipId { Tip_Move, Tip_Jump, Tip_Hit, Tip_Card, Tip_Boss, Tip_Count };
+    bool tipShown_[Tip_Count] = {};      // Mỗi gợi ý chỉ hiện 1 lần / phiên (không reset khi Retry)
+    int activeTip_ = -1;
+    float tipTimer_ = 0.0f;
+    bool tipsSkipped_ = false;
+    Vec3 tipMoveStart_{};
+    int modeSelectIdx_ = 0;              // 0 = Normal, 1 = Hell
+    float hellCardToastTimer_ = 0.0f;
+    wchar_t hellCardToast_[96] = L"";
     void EnterEndlessClear();            // Qua stage ENDLESS_MAX_STAGE -> màn CLEAR
     void OnWaveComplete();
     void ReapplyAllStats();
@@ -104,6 +121,7 @@ private:
     GameMode runStartMode_ = GameMode::Classic; // Chế độ lúc bắt đầu ván (tutorial tự chuyển sang Endless giữa ván)
     int titleSelectedMode_ = 0; // 0 = Classic, 1 = Endless
     HighscoreData highscore_{};
+    HighscoreData highscoreHell_{}; // Kỷ lục riêng của Hell (highscore_hell.dat)
 
     int currentWave_ = 1;
     float waveTimer_ = 0.0f;

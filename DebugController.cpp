@@ -213,7 +213,7 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 {
                     // Shift+F6: Endless stage kế tiếp (Ctrl+Shift+F6: lùi 1 stage), giữ nguyên chế độ Endless
                     int target = game.currentWave_ + (ctrlHeld ? -1 : 1);
-                    if (game.mode_ != GameMode::Endless) target = 1;
+                    if (!game.IsEndlessLike()) target = 1;
                     game.SkipToEndlessWave((std::max)(1, target));
                 }
                 else

@@ -254,6 +254,19 @@ namespace GameConsts
     constexpr int   TUTORIAL_WAVES = 3;              // Tutorial (Cá Voi): 5 -> 3 wave, rồi Boss Cá Voi, rồi tự vào Endless
     constexpr int   ENDLESS_BOSS_EVERY = 5;          // Stage 5, 10, 15... là stage Boss (ngẫu nhiên Cá Voi / Cá Mập)
     constexpr int   ENDLESS_MAX_STAGE = 30;          // Endless tối đa 30 stage -> màn CLEAR
+    // Phase 1 flow: Tutorial 15s/stage -> Whale -> chọn chế độ Normal / Hell
+    constexpr float TUTORIAL_WAVE_DURATION = 15.0f;  // Mỗi stage tutorial 15 giây
+    constexpr float HELL_WAVE_DURATION = 20.0f;      // Hell: 20 giây mỗi stage
+    constexpr float HELL_DAMAGE_TAKEN_MUL = 1.5f;    // Hell: sát thương nhận vào x1.5
+    constexpr int   HELL_MAX_ALIVE = 40;             // Hell: trần số quái sống (không dọn quái giữa stage)
+    constexpr float HELL_CARD_TOAST_TIME = 2.5f;     // Hell: thời gian hiện tên thẻ tự chọn
+    // Gợi ý tutorial (mỗi gợi ý hiện 1 lần / phiên, [TAB] bỏ qua)
+    constexpr float TIP_SOFT_PAUSE_TIME = 0.8f;      // Thời gian làm chậm khi gợi ý vừa hiện
+    constexpr float TIP_SOFT_PAUSE_SCALE = 0.35f;    // Tốc độ game khi làm chậm
+    constexpr float TIP_MAX_TIME = 8.0f;             // Gợi ý tự tắt sau thời gian này
+    constexpr float TIP_BOSS_SHOW_TIME = 4.0f;       // Gợi ý Boss hiện trong thời gian này
+    constexpr float TIP_MOVE_DISTANCE = 120.0f;      // Bơi đủ quãng này = hoàn thành gợi ý di chuyển
+    constexpr float TIP_START_DELAY = 0.4f;          // Trễ trước gợi ý đầu tiên của stage 1
     constexpr float TUTORIAL_BOSS_CLEAR_HEAL = 0.50f;// Hồi máu khi hạ Cá Voi tutorial trước khi vào Endless
     // Sát thương của cá chính lên quái thường (không áp dụng cho Boss)
     constexpr float PLAYER_DMG_MUL_VS_ENEMY = 1.35f;
