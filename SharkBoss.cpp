@@ -301,10 +301,25 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         Vec3 vel = (pos_ - old) * (1.0f / (std::max)(dt, 0.0001f));
         // Vây nhô khỏi cát + vệt nước/bọt (TODO(SharkFx/Fuyuu): SandFinTrail)
         Fx().fin.SetFin(DxConv::ToVECTOR(Vec3{ pos_.x, 6.0f, pos_.z } - Fwd() * 20.0f), DxConv::ToVECTOR(vel));
-        // Khoá khi đã áp sát (hoặc hết giờ bám)
-        if (Collision::DistXZ(pos_, pp) <= GameConsts::SHARK_HUNT_LOCK_DIST || actionTimer_ >= GameConsts::SHARK_HUNT_TRACK_TIME)
+        // Bám ngắn rồi khoá vị trí người chơi từ xa (vòng đỏ hiện ngay)
+        if (actionTimer_ >= GameConsts::SHARK_HUNT_TRACK_TIME)
         {
             huntLockPos_ = Vec3{ pp.x, 0.0f, pp.z };
+            // Không để vòng sinh sát thân: lùi vây (đang dưới cát) ra tối thiểu LOCK_MIN_DIST
+            Vec3 away = Collision::FlatDiff(pos_, huntLockPos_);
+            float da = away.Length();
+            if (da < GameConsts::SHARK_HUNT_LOCK_MIN_DIST)
+            {
+                Vec3 dirA = (da > 1.0f) ? away * (1.0f / da) : Fwd() * -1.0f;
+                Vec3 np = huntLockPos_ + dirA * GameConsts::SHARK_HUNT_LOCK_MIN_DIST;
+                float lim = ArenaLimit();
+                np.x = std::clamp(np.x, -lim, lim);
+                np.z = std::clamp(np.z, -lim, lim);
+                pos_.x = np.x; pos_.z = np.z;
+                prevPos_ = pos_;
+            }
+            Vec3 face = Collision::FlatDiff(huntLockPos_, pos_);
+            if (face.LengthSq() > 1.0f) yaw_ = YawOf(face);
             Fx().fin.Stop();
             action_ = SharkAction::HuntLock;
             actionTimer_ = 0.0f;
@@ -317,9 +332,34 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
         if (actionTimer_ >= GameConsts::SHARK_HUNT_LOCK_TIME)
         {
-            // Đặt thân ngay dưới vòng đỏ (mõm ở tâm), rồi phóng thẳng lên
+            // Vây lao ngầm tới vòng: thời gian cố định, tối thiểu DASH_MIN_SPEED
             Vec3 face = Collision::FlatDiff(huntLockPos_, pos_);
-            if (face.LengthSq() > 1.0f) yaw_ = YawOf(face);
+            float dist = face.Length();
+            if (dist > 1.0f) yaw_ = YawOf(face);
+            huntDashSpeed_ = (std::max)(GameConsts::SHARK_HUNT_DASH_MIN_SPEED, dist / GameConsts::SHARK_HUNT_DASH_TIME);
+            Fx().fin.Start();
+            action_ = SharkAction::HuntDash;
+            actionTimer_ = 0.0f;
+            SoundManager::Instance().PlaySFX(SfxId::BossTailSlap); // whoosh
+        }
+        break;
+    case SharkAction::HuntDash:
+    {
+        actionTimer_ += dt;
+        Vec3 to = Collision::FlatDiff(huntLockPos_ - Fwd() * GameConsts::SHARK_HUNT_JAW_Z, pos_);
+        float d = to.Length();
+        float step = huntDashSpeed_ * dt;
+        Vec3 old = pos_;
+        bool arrived = (d <= step) || actionTimer_ >= GameConsts::SHARK_HUNT_DASH_TIME * 2.0f;
+        if (!arrived) pos_ += to * (step / d);
+        pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
+        tailSpeedMul_ = 4.0f;
+        Fx().fin.SetFin(DxConv::ToVECTOR(Vec3{ pos_.x, 6.0f, pos_.z } - Fwd() * 20.0f),
+                        DxConv::ToVECTOR((pos_ - old) * (1.0f / (std::max)(dt, 0.0001f))));
+        if (arrived)
+        {
+            Fx().fin.Stop();
+            // Đặt thân ngay dưới vòng đỏ (mõm ở tâm), rồi phóng thẳng lên
             pos_ = huntLockPos_ - Fwd() * GameConsts::SHARK_HUNT_JAW_Z;
             pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
             prevPos_ = pos_; prevYaw_ = yaw_; // không nội suy cú dịch chuyển dưới cát
@@ -339,6 +379,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
         }
         break;
+    }
     case SharkAction::HuntBurst:
     {
         actionTimer_ += dt;
@@ -646,6 +687,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     case SharkAction::HuntLeap:
     case SharkAction::HuntTrack:
     case SharkAction::HuntLock:
+    case SharkAction::HuntDash:
     case SharkAction::HuntBurst:
     case SharkAction::HuntDrag:
     case SharkAction::HuntRecover:
@@ -729,9 +771,9 @@ void SharkBoss::Draw() const
         }
 
         // Hunt: vòng cảnh báo khi đã khoá vị trí (vây đứng yên)
-        if (action_ == SharkAction::HuntLock)
+        if (action_ == SharkAction::HuntLock || action_ == SharkAction::HuntDash)
         {
-            float k = std::clamp(actionTimer_ / GameConsts::SHARK_HUNT_LOCK_TIME, 0.0f, 1.0f);
+            float k = (action_ == SharkAction::HuntDash) ? 1.0f : std::clamp(actionTimer_ / GameConsts::SHARK_HUNT_LOCK_TIME, 0.0f, 1.0f);
             float pulse = 0.5f + 0.5f * std::sin(actionTimer_ * 30.0f);
             SetUseLighting(FALSE);
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(90 + 120 * k * pulse));

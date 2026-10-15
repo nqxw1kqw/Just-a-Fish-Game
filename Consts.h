@@ -377,11 +377,13 @@ namespace GameConsts
     constexpr float SHARK_HUNT_LEAP_HEIGHT = 140.0f;
     constexpr float SHARK_HUNT_LEAP_FWD_SPEED = 160.0f;
     constexpr float SHARK_HUNT_BURROW_DEPTH = 72.0f;     // Thân chìm dưới cát, chỉ vây lưng (~27u) nhô lên
-    constexpr float SHARK_HUNT_TRACK_TIME = 4.0f;        // Tối đa; thường khoá sớm khi đã tới gần
-    constexpr float SHARK_HUNT_LOCK_DIST = 90.0f;        // Vây tới gần người chơi <= mức này -> khoá vị trí
+    constexpr float SHARK_HUNT_TRACK_TIME = 1.1f;        // Bám ngắn rồi khoá vị trí người chơi từ xa
+    constexpr float SHARK_HUNT_LOCK_MIN_DIST = 160.0f;   // Vòng đỏ không sinh sát thân: lùi vây ra ít nhất mức này
+    constexpr float SHARK_HUNT_DASH_TIME = 0.35f;        // Vây lao ngầm tới vòng trong thời gian cố định
+    constexpr float SHARK_HUNT_DASH_MIN_SPEED = 1400.0f; // ...nhưng không chậm hơn mức này
     constexpr float SHARK_HUNT_TRACK_SPEED = 190.0f;     // < người chơi 280 -> chạy thoát được
     constexpr float SHARK_HUNT_TRACK_TURN = 2.5f;
-    constexpr float SHARK_HUNT_LOCK_TIME = 0.6f;         // Vây đứng yên + vòng cảnh báo đỏ
+    constexpr float SHARK_HUNT_LOCK_TIME = 0.5f;         // Vòng đỏ hiện ngay + vây khựng lại
     constexpr float SHARK_HUNT_BURST_TIME = 0.08f;       // Phóng thẳng lên gần như tức thì
     constexpr float SHARK_HUNT_BITE_RADIUS = 75.0f;
     constexpr float SHARK_HUNT_BITE_DAMAGE = 25.0f;

@@ -27,6 +27,7 @@ enum class SharkAction
     HuntLeap,       // Nhảy lên rồi lao xuống cát
     HuntTrack,      // Dưới cát, chỉ thấy vây, bám theo người chơi
     HuntLock,       // Vây dừng + vòng cảnh báo
+    HuntDash,       // Vây lao ngầm cực nhanh tới vòng đỏ
     HuntBurst,      // Phóng thẳng lên (gần như tức thì) -> ngoạm mọi người chơi trong vòng
     HuntDrag,       // Ngoạm trúng: quay vòng kéo người chơi (camera cận cảnh)
     HuntRecover     // Cắn hụt: đứng phơi (cơ hội phản công)
@@ -80,7 +81,7 @@ public:
     void ForceFrenzy(EffectSystem& effects);
     void ForceHunt(PlayerFish& player);
     bool IsCinematic() const { return grabbedPlayer_ != nullptr; }
-    bool IsBurrowed() const { return action_ == SharkAction::HuntTrack || action_ == SharkAction::HuntLock || action_ == SharkAction::HuntBurst; }
+    bool IsBurrowed() const { return action_ == SharkAction::HuntTrack || action_ == SharkAction::HuntLock || action_ == SharkAction::HuntDash || action_ == SharkAction::HuntBurst; }
     float GetHuntCooldown() const { return huntCooldown_; }
     SharkAction GetAction() const { return action_; }
     SharkSkill GetLastSkill() const { return lastSkill_; }
@@ -158,6 +159,7 @@ private:
     float swingAngle_ = 0.0f;
     float swingSwept_ = 0.0f;
     float swingRadius_ = 0.0f;
+    float huntDashSpeed_ = 0.0f;
     PlayerFish* grabbedPlayer_ = nullptr;
 
     Vec3 playerVel_{ 0.0f, 0.0f, 0.0f };
