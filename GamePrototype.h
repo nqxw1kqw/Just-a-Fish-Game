@@ -36,6 +36,7 @@ struct HighscoreData
     int maxWave = 0;
     int maxKills = 0;
     float maxSurvivalTime = 0.0f;
+    int maxScore = 0; // v3: điểm cao nhất (ResultScreen::ComputeScore)
 };
 
 class GamePrototype
@@ -70,6 +71,7 @@ private:
     bool renderInterpActive_ = false;
     void StartWave(int wave);
     void StartBossFight();
+    void StartRun(GameMode mode);        // Điểm vào DUY NHẤT để bắt đầu / chơi lại một ván (Title, R, Retry)
     // Balance pass: luồng Tutorial (3 wave + Cá Voi) -> Endless (30 stage, Boss mỗi 5 stage)
     void StartStage(int stage);          // Endless: stage chia hết cho ENDLESS_BOSS_EVERY -> Boss
     void BeginBossIntro();
@@ -99,6 +101,7 @@ private:
 
     GameState state_ = GameState::Title;
     GameMode mode_ = GameMode::Classic;
+    GameMode runStartMode_ = GameMode::Classic; // Chế độ lúc bắt đầu ván (tutorial tự chuyển sang Endless giữa ván)
     int titleSelectedMode_ = 0; // 0 = Classic, 1 = Endless
     HighscoreData highscore_{};
 

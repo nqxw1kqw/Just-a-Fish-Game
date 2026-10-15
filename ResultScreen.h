@@ -23,6 +23,7 @@ struct ResultStats
     int bestWave = 0;
     int bestKills = 0;
     float bestTime = 0.0f;
+    int bestScore = 0;
 };
 
 class ResultScreen
