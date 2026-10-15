@@ -108,7 +108,7 @@ struct PlayerStats
     StatValue shockwaveRadius{ GameConsts::SLAM_RADIUS };
 
     StatValue bulletDamage{ 22.0f };
-    StatValue fireCooldown{ 0.16f };
+    StatValue fireCooldown{ GameConsts::WEAPON_FIRE_COOLDOWN };
     StatValue bulletSpeed{ 850.0f };
     StatValue bulletCount{ 1.0f }; // Số tia đạn
 

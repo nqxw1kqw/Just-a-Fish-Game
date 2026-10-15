@@ -162,31 +162,14 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                     }
                     else if (game.state_ == GameState::CardPick)
                     {
-                        if (game.currentWave_ >= 5)
-                        {
-                            game.state_ = GameState::BossIntro;
-                            game.bossIntroTimer_ = 2.0f;
-                            game.enemies_.KillAll(game.effects_);
-                        }
-                        else
-                        {
-                            game.StartWave(game.currentWave_ + 1);
-                        }
+                        game.AdvanceAfterCardPick();
                     }
                     else if (game.state_ == GameState::Wave)
                     {
                         // Shift+F8: bỏ qua wave và bỏ luôn lượt chọn thẻ (D2)
                         game.enemies_.KillAll(game.effects_);
                         game.effects_.Reset();
-                        if (game.currentWave_ >= 5)
-                        {
-                            game.state_ = GameState::BossIntro;
-                            game.bossIntroTimer_ = 2.0f;
-                        }
-                        else
-                        {
-                            game.StartWave(game.currentWave_ + 1);
-                        }
+                        game.AdvanceAfterCardPick();
                     }
                 }
                 else
@@ -213,11 +196,11 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 if (k2) game.SkipToWave(2);
                 if (k3) game.SkipToWave(3);
                 if (k4) game.SkipToWave(4);
-                if (k5) game.SkipToWave(5);
+                if (k5) game.SkipToEndlessWave(5);  // Ctrl+5: Endless stage 5 (Boss đầu tiên)
                 if (k6) game.SkipToBoss();
-                if (k7) game.SkipToEndlessWave(10);
-                if (k8) game.SkipToEndlessWave(30);
-                if (k9) game.SkipToEndlessWave(50);
+                if (k7) game.SkipToEndlessWave(1);   // Ctrl+7: Endless stage 1
+                if (k8) game.SkipToEndlessWave(15);  // Ctrl+8: Endless stage 15 (Boss)
+                if (k9) game.SkipToEndlessWave(GameConsts::ENDLESS_MAX_STAGE); // Ctrl+9: stage 30 (Boss cuối)
                 bool k0 = (input.IsPressed(KEY_INPUT_0) || input.IsPressed(KEY_INPUT_NUMPAD0));
                 if (k0) game.SkipToSharkBoss(); // Ctrl+0: Boss Cá Mập (Endless)
             }
@@ -226,7 +209,17 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
             bool f6Now = input.IsPressed(KEY_INPUT_F6);
             if (f6Now)
             {
-                game.SkipToBoss();
+                if (shiftHeld)
+                {
+                    // Shift+F6: Endless stage kế tiếp (Ctrl+Shift+F6: lùi 1 stage), giữ nguyên chế độ Endless
+                    int target = game.currentWave_ + (ctrlHeld ? -1 : 1);
+                    if (game.mode_ != GameMode::Endless) target = 1;
+                    game.SkipToEndlessWave((std::max)(1, target));
+                }
+                else
+                {
+                    game.SkipToBoss();
+                }
             }
 
             // F9 / Shift+F9: God Mode / Instant Lose
@@ -396,7 +389,7 @@ void DebugController::DrawHUD(const GamePrototype& game) const
             FontManager::Draw(textX, textY, L"--- WAVE METRICS (TASK 10 T1) ---", GetColor(100, 220, 255), FontSize::Small);
             textY += 17;
             FontManager::DrawFormat(textX, textY, GetColor(255, 230, 120), FontSize::Small,
-                L"Wave: %d/5 | Time: %.1fs / %.1fs",
+                L"Wave: %d | Time: %.1fs / %.1fs",
                 game.currentWave_, game.waveTimer_, game.waveDuration_);
             textY += 17;
             FontManager::DrawFormat(textX, textY, GetColor(200, 230, 255), FontSize::Small,
@@ -551,7 +544,7 @@ void DebugController::DrawHUD(const GamePrototype& game) const
         FontManager::Draw(textX, textY, L"[DEBUG TEST KEYS]:", GetColor(255, 205, 80), FontSize::Small); textY += 17;
         FontManager::Draw(textX, textY, L"F3: Test SFX  |  F5: Test BGM  |  C/V, Z/X, H/J: Vol", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F8: Skip Wave  |  Shift+F8: Kill Boss/Skip Card", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"Ctrl+1..5: Jump Wave  |  F6/Ctrl+6: Go To Boss", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"Ctrl+1..3: Tutorial Wave | Ctrl+6/F6: Whale | Ctrl+5/7/8/9: Endless 5/1/15/30 | Shift+F6: Stage+1 (Ctrl: -1)", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F9: God Mode  |  Shift+F9: Instant Defeat", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, game.IsRenderInterpEnabled() ? L"F10: Render Interp ON" : L"F10: Render Interp OFF", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F4: Full HP + Reset CD  |  F7: Boss Tsunami", GetColor(255, 180, 120), FontSize::Small); textY += 16;

@@ -18,7 +18,7 @@ public:
                 L"",
                 CardRarity::Common,
                 false,
-                3, // maxStack = 3 (Common)
+                6, // maxStack (Endless), trần MAX_SLAM_RADIUS
                 {
                     { "slamRadius", ModifierType::Percent, 0.25f }
                 },
@@ -29,13 +29,12 @@ public:
                 "cudam",
                 L"Heavy Slam",
                 L"+ Slam Damage +40%",
-                L"- Jump Cooldown +15%",
+                L"",
                 CardRarity::Common,
                 false,
-                3, // maxStack = 3 (Common)
+                6, // maxStack (Endless)
                 {
-                    { "slamDamage", ModifierType::Percent, 0.40f },
-                    { "jumpCooldown", ModifierType::Percent, 0.15f }
+                    { "slamDamage", ModifierType::Percent, 0.40f }
                 },
                 HookType::None
             },
@@ -43,14 +42,13 @@ public:
             {
                 "nhaygon",
                 L"Nimble Leap",
-                L"+ Jump Cooldown -20%",
-                L"- Slam Damage -10%",
+                L"+ Jump Cooldown x0.8",
+                L"",
                 CardRarity::Common,
                 false,
-                3, // maxStack = 3 (Common)
+                6, // maxStack (Endless) - nhân x0.8 mỗi lần, sàn MIN_JUMP_COOLDOWN
                 {
-                    { "jumpCooldown", ModifierType::Percent, -0.20f },
-                    { "slamDamage", ModifierType::Percent, -0.10f }
+                    { "jumpCooldown", ModifierType::More, 0.80f }
                 },
                 HookType::None
             },
@@ -62,7 +60,7 @@ public:
                 L"",
                 CardRarity::Common,
                 false,
-                3, // maxStack = 3 (Common)
+                6, // maxStack (Endless), trần MAX_MOVE_SPEED
                 {
                     { "moveSpeed", ModifierType::Percent, 0.15f }
                 },
@@ -73,13 +71,12 @@ public:
                 "daday",
                 L"Thick Scales",
                 L"+ Max HP +30%",
-                L"- Swim Speed -8%",
+                L"",
                 CardRarity::Common,
                 false,
-                3, // maxStack = 3 (Common)
+                6, // maxStack (Endless), trần MAX_PLAYER_HP
                 {
-                    { "maxHp", ModifierType::Percent, 0.30f },
-                    { "moveSpeed", ModifierType::Percent, -0.08f }
+                    { "maxHp", ModifierType::Percent, 0.30f }
                 },
                 HookType::None
             },
@@ -88,14 +85,13 @@ public:
                 "songdoi",
                 L"Echo Wave",
                 L"+ Slam Radius +35%, Push +30%",
-                L"- Slam Damage -10%",
+                L"",
                 CardRarity::Rare,
                 false,
-                2, // maxStack = 2 (Rare)
+                4, // maxStack (Endless), trần MAX_SLAM_RADIUS / MAX_SLAM_KNOCKBACK
                 {
                     { "slamRadius", ModifierType::Percent, 0.35f },
-                    { "slamKnockback", ModifierType::Percent, 0.30f },
-                    { "slamDamage", ModifierType::Percent, -0.10f }
+                    { "slamKnockback", ModifierType::Percent, 0.30f }
                 },
                 HookType::None
             },
@@ -104,12 +100,11 @@ public:
                 "canoc",
                 L"Puffer Needles",
                 L"+ Counter 8 Spikes on Hit",
-                L"- Max HP -15%",
+                L"",
                 CardRarity::Rare,
                 false,
                 1, // maxStack = 1 (Hook bool chỉ 1 lần)
                 {
-                    { "maxHp", ModifierType::Percent, -0.15f }
                 },
                 HookType::OnHitTaken
             },
@@ -118,14 +113,13 @@ public:
                 "cudapnang",
                 L"Crushing Impact",
                 L"+ Knockback +100%, DMG +30%",
-                L"- Jump Cooldown +20%",
+                L"",
                 CardRarity::Epic,
                 false,
-                1, // maxStack = 1 (Epic chỉ 1 lần)
+                3, // maxStack (Endless), trần MAX_SLAM_DAMAGE / MAX_SLAM_KNOCKBACK
                 {
                     { "slamKnockback", ModifierType::Percent, 1.00f },
-                    { "slamDamage", ModifierType::Percent, 0.30f },
-                    { "jumpCooldown", ModifierType::Percent, 0.20f }
+                    { "slamDamage", ModifierType::Percent, 0.30f }
                 },
                 HookType::None
             }

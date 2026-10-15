@@ -128,8 +128,8 @@ void ResultScreen::Draw(const ResultStats& s) const
     swprintf_s(rows[0], L"%02d:%02d", min, sec);
     swprintf_s(rows[1], L"%d", static_cast<int>(s.kills * countT + 0.5f));
     swprintf_s(rows[2], L"Lv.%d", s.level);
-    if (s.endless) swprintf_s(rows[3], L"Wave %d", s.wave);
-    else swprintf_s(rows[3], s.victory ? L"5 / 5  + BOSS" : L"%d / 5", s.wave);
+    if (s.endless) swprintf_s(rows[3], s.victory ? L"%d / %d  CLEAR" : L"Stage %d", s.wave, GameConsts::ENDLESS_MAX_STAGE);
+    else swprintf_s(rows[3], L"Tutorial %d / %d", s.wave, GameConsts::TUTORIAL_WAVES);
     swprintf_s(rows[4], L"%d", static_cast<int>(score * countT + 0.5f));
     const wchar_t* labels[5] = { L"TIME", L"KILLS", L"LEVEL", L"WAVE", L"SCORE" };
     for (int i = 0; i < 5; ++i)

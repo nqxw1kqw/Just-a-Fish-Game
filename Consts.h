@@ -38,7 +38,7 @@ namespace GameConsts
     // Súng & Đạn (Tắt súng tự bắn cho bản Nhảy để tấn công - J8)
     constexpr bool ENABLE_AUTO_GUN = false; // kEnableAutoGun = false
     constexpr float WEAPON_RANGE = 480.0f;
-    constexpr float WEAPON_FIRE_COOLDOWN = 0.16f;
+    constexpr float WEAPON_FIRE_COOLDOWN = 0.13f; // Balance pass: 0.16 -> 0.13
     constexpr float BULLET_SPEED = 850.0f;
     constexpr float BULLET_DAMAGE = 22.0f;
     constexpr float BULLET_LIFETIME = 1.2f;
@@ -46,7 +46,7 @@ namespace GameConsts
     // Lõi nhảy & Tấn công tiếp đất (Jump & Slam Mechanics - J1 -> J9)
     constexpr float JUMP_DURATION = 0.6f;      // kJumpDuration (0.6 giây)
     constexpr float JUMP_HEIGHT = 85.0f;       // kJumpHeight (80 - 90)
-    constexpr float JUMP_COOLDOWN = 1.2f;      // kJumpCooldown (1.2 giây tính từ khi tiếp đất)
+    constexpr float JUMP_COOLDOWN = 0.85f;     // Balance pass: 1.2 -> 0.85 (tính từ khi tiếp đất)
     constexpr float LAND_RECOVERY = 0.2f;      // kLandRecovery (khựng 0.2 giây khi vừa chạm đất)
     constexpr float AIR_SPEED_MUL = 1.25f;     // kAirSpeedMul (nhân tốc độ ngang trên không)
     constexpr float SLAM_RADIUS = 120.0f;      // slamRadius (110 - 130)
@@ -54,7 +54,7 @@ namespace GameConsts
     constexpr float SLAM_KNOCKBACK = 320.0f;   // slamKnockback đẩy lùi quái
 
     // Giới hạn an toàn chỉ số (Phần C3)
-    constexpr float MIN_JUMP_COOLDOWN = 0.4f;  // Giới hạn dưới hồi chiêu nhảy >= 0.4s
+    constexpr float MIN_JUMP_COOLDOWN = 0.35f; // Balance pass: 0.4 -> 0.35 (sàn khi cộng dồn thẻ)
     constexpr float MAX_SLAM_RADIUS = 240.0f;  // Mức tối đa bán kính dậm đất
     constexpr float MAX_MOVE_SPEED = 340.0f;   // Mức tối đa tốc độ bơi
 
@@ -246,7 +246,21 @@ namespace GameConsts
     constexpr int BOSS_MINION_ALIVE_CAP = 12;
 
     // Chế độ Vô tận (Endless Mode - Task 10 T4)
-    constexpr float ENDLESS_WAVE_DURATION = 35.0f; // Thời lượng mỗi wave Endless cố định 35s (4b)
+    constexpr float ENDLESS_WAVE_DURATION = 20.0f; // Balance pass: 35 -> 20s mỗi stage Endless
+
+    // ===== Balance pass: luồng Tutorial -> Endless =====
+    constexpr int   TUTORIAL_WAVES = 3;              // Tutorial (Cá Voi): 5 -> 3 wave, rồi Boss Cá Voi, rồi tự vào Endless
+    constexpr int   ENDLESS_BOSS_EVERY = 5;          // Stage 5, 10, 15... là stage Boss (ngẫu nhiên Cá Voi / Cá Mập)
+    constexpr int   ENDLESS_MAX_STAGE = 30;          // Endless tối đa 30 stage -> màn CLEAR
+    constexpr float TUTORIAL_BOSS_CLEAR_HEAL = 0.50f;// Hồi máu khi hạ Cá Voi tutorial trước khi vào Endless
+    // Sát thương của cá chính lên quái thường (không áp dụng cho Boss)
+    constexpr float PLAYER_DMG_MUL_VS_ENEMY = 1.35f;
+    // HP quái Endless: mul = min(MAX, 1 + LIN*(s-1) + QUAD*(s-1)^2)
+    constexpr float ENDLESS_ENEMY_HP_LIN = 0.07f;
+    constexpr float ENDLESS_ENEMY_HP_QUAD = 0.0015f;
+    constexpr float ENDLESS_ENEMY_HP_MAX = 4.5f;
+    // HP Boss Endless: mul = 1 + PER_STAGE*(s-5)  (stage 5 = x1.0, stage 30 = x2.25)
+    constexpr float ENDLESS_BOSS_HP_PER_STAGE = 0.05f;
     constexpr float ENDLESS_COST_CAP_MAX = 48.0f;  // Trần chi phí quái sống tối đa trong Endless (4b)
     constexpr float ENDLESS_EMPTY_POOL_HEAL = 0.20f;// Tỉ lệ hồi máu khi hết sạch pool thẻ trong Endless (4d)
 
