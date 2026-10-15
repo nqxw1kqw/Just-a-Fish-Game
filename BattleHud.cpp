@@ -1,4 +1,5 @@
 ﻿#include "BattleHud.h"
+#include "SharkBoss.h"
 #include "PlayerFish.h"
 #include "Boss.h"
 #include "FontManager.h"
@@ -161,16 +162,27 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
 
 void BattleHud::DrawBossBar(const WhaleBoss& boss) const
 {
-    if (!boss.IsActive()) { lastBossHp_ = trailBossHp_ = -1.0f; return; }
+    const bool p2 = boss.GetPhase() == BossPhase::Phase2;
+    DrawBossBarCore(boss.IsActive(), boss.GetHp(), boss.GetMaxHp(), p2, L"GIANT WHALE", p2 ? L"PHASE 2 - ENRAGED" : L"PHASE 1", 0.5f);
+}
 
-    float hp = boss.GetHp(), maxHp = (std::max)(1.0f, boss.GetMaxHp());
+void BattleHud::DrawBossBar(const SharkBoss& shark) const
+{
+    const bool fr = shark.IsFrenzy();
+    DrawBossBarCore(shark.IsActive(), shark.GetHp(), shark.GetMaxHp(), fr, L"GREAT SHARK", fr ? L"FRENZY" : L"HUNTING", GameConsts::SHARK_FRENZY_HP_RATIO);
+}
+
+void BattleHud::DrawBossBarCore(bool active, float hp, float maxHp, bool p2, const wchar_t* name, const wchar_t* phaseLabel, float markRatio) const
+{
+    if (!active) { lastBossHp_ = trailBossHp_ = -1.0f; return; }
+
+    maxHp = (std::max)(1.0f, maxHp);
     if (lastBossHp_ < 0.0f || trailBossHp_ < hp) trailBossHp_ = hp;
     if (lastBossHp_ >= 0.0f && hp < lastBossHp_ - 0.01f) bossShake_ = 0.15f;
     lastBossHp_ = hp;
     trailBossHp_ += (hp - trailBossHp_) * (std::min)(1.0f, dt_ * 2.5f);
     if (bossShake_ > 0.0f) bossShake_ -= dt_;
 
-    const bool p2 = boss.GetPhase() == BossPhase::Phase2;
     int sw = GameConsts::SCREEN_WIDTH;
     int w = 640, h = 22;
     int x = (sw - w) / 2, y = 40;
@@ -183,8 +195,8 @@ void BattleHud::DrawBossBar(const WhaleBoss& boss) const
     DrawRoundRect(x - 16, y - 30, x + w + 16, y + h + 14, 12, 12, p2 ? GetColor(255, 90, 60) : GetColor(255, 200, 80), FALSE);
 
     // Tên + pha (2 chấm pha)
-    FontManager::Draw(x, y - 25, L"GIANT WHALE", GetColor(255, 230, 120), FontSize::Body);
-    FontManager::Draw(x + 120, y - 25, p2 ? L"PHASE 2 - ENRAGED" : L"PHASE 1", p2 ? GetColor(255, 110, 80) : GetColor(220, 220, 230), FontSize::Body);
+    FontManager::Draw(x, y - 25, name, GetColor(255, 230, 120), FontSize::Body);
+    FontManager::Draw(x + 120, y - 25, phaseLabel, p2 ? GetColor(255, 110, 80) : GetColor(220, 220, 230), FontSize::Body);
     for (int i = 0; i < 2; ++i)
     {
         bool on = (i == 0) || p2;
@@ -202,7 +214,8 @@ void BattleHud::DrawBossBar(const WhaleBoss& boss) const
         DrawBox(x, y, x + fw, y + 7, p2 ? GetColor(255, 160, 100) : GetColor(255, 120, 120), TRUE);
     }
     // Mốc 50% (chuyển pha)
-    DrawLine(x + w / 2, y - 3, x + w / 2, y + h + 3, GetColor(255, 255, 255), 2);
+    int mx = x + static_cast<int>(w * markRatio);
+    DrawLine(mx, y - 3, mx, y + h + 3, GetColor(255, 255, 255), 2);
     FontManager::DrawFormat(x + w - 109, y + 4, GetColor(0, 0, 0), FontSize::Body, L"%.0f / %.0f", hp, maxHp);   // bóng chữ
     FontManager::DrawFormat(x + w - 110, y + 3, GetColor(255, 255, 255), FontSize::Body, L"%.0f / %.0f", hp, maxHp);
 }

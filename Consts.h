@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector3.h"
 
 namespace GameConsts
@@ -309,4 +309,98 @@ namespace GameConsts
     constexpr int CARD_HEIGHT = 410;                // Chiều cao khung thẻ (~340-410)
     constexpr int CARD_IMAGE_SIZE = 220;            // Kích thước ô ảnh vuông 220 x 220
     constexpr int CARD_SPACING = 60;                // Khoảng cách ngang giữa các thẻ
+
+    // ================= BOSS CÁ MẬP (Endless) =================
+    constexpr float SHARK_MAX_HP = 800.0f;               // x (1 + 0.5 * (tier - 1)) như cá voi
+    constexpr float SHARK_HITBOX_RADIUS = 45.0f;
+    constexpr float SHARK_SWIM_SPEED = 115.0f;           // Lượn khi Idle (~68% bản đầu 170; người chơi bơi 280)
+    constexpr float SHARK_TURN_RATE = 4.0f;              // rad/s
+    constexpr float SHARK_PREFERRED_DIST = 300.0f;
+    constexpr float SHARK_MOUTH_FWD = 95.0f;             // Mõm cách tâm (dọc thân)
+    constexpr float SHARK_TAIL_PIVOT_Y = 30.5f;          // Khớp đuôi (khớp với Tools/LowPolyModels/build_shark_boss.py)
+    constexpr float SHARK_TAIL_PIVOT_Z = -74.8f;
+    constexpr float SHARK_TAIL_SWAY = 0.25f;             // rad, biên độ vẫy đuôi (giảm để khớp đuôi không hở)
+    constexpr float SHARK_BODY_COUNTER_SWAY = 0.04f;     // Thân lắc ngược nhẹ theo đuôi
+    constexpr float SHARK_TAIL_FREQ = 2.2f;              // Hz khi bơi thường
+    constexpr int   SHARK_ENDLESS_BOSS_PARITY = 1;       // Endless: bossIdx lẻ (wave 5, 15, 25...) = cá mập, chẵn = cá voi
+    // 1. Bite Lunge: khựng + vệt đỏ chỉ hướng -> lao ngắn rất nhanh (nhanh hơn Dive 700 u/s, ngắn hơn)
+    constexpr float SHARK_BITE_TELEGRAPH = 0.6f;
+    constexpr float SHARK_BITE_TELEGRAPH_FRENZY = 0.45f;
+    constexpr float SHARK_BITE_LOCK_TIME = 0.2f;         // Ngừng bám mục tiêu 0.2s trước khi lao
+    constexpr float SHARK_BITE_SPEED = 720.0f;           // ~65% bản đầu 1100 (vẫn nhanh hơn Dive 700 một chút)
+    constexpr float SHARK_BITE_RANGE = 360.0f;
+    constexpr float SHARK_BITE_HIT_RADIUS = 45.0f;
+    constexpr float SHARK_BITE_DAMAGE = 20.0f;
+    constexpr float SHARK_BITE_RECOVER = 0.55f;
+    constexpr float SHARK_WALL_STUN = 1.2f;              // Đâm thành đấu trường -> choáng
+    constexpr float SHARK_STUN_DAMAGE_MUL = 1.5f;
+    // 2. Circle Strafe: vây lưng nhô lên, lượn vòng quanh người chơi rồi ngoặt vào cắn
+    constexpr float SHARK_STRAFE_RADIUS = 260.0f;
+    constexpr float SHARK_STRAFE_ANG_SPEED = 1.25f;      // rad/s -> 325 u/s trên vòng r=260 (< tốc độ nhảy lướt 350 của người chơi)
+    constexpr float SHARK_STRAFE_ANG_SPEED_FRENZY = 1.35f; // 351 u/s
+    constexpr float SHARK_STRAFE_LAPS = 1.0f;            // chậm hơn -> 1 vòng (~5s) cho đỡ dài
+    constexpr float SHARK_STRAFE_BITE_TELEGRAPH = 0.4f;  // Ngoặt vào: telegraph ngắn hơn
+    constexpr float SHARK_FIN_DAMAGE = 10.0f;            // Chạm thân khi đang lượn
+    constexpr float SHARK_FIN_HIT_COOLDOWN = 0.8f;
+    // 3. Tail Vortex: xoáy nước kéo nhẹ người chơi về tâm (AddExternalPull)
+    constexpr float SHARK_VORTEX_CAST_TIME = 0.7f;
+    constexpr float SHARK_VORTEX_RADIUS = 240.0f;
+    constexpr float SHARK_VORTEX_DURATION = 3.5f;
+    constexpr float SHARK_VORTEX_PULL = 130.0f;          // u/s ở tâm, giảm dần ra mép (nhảy = không bị kéo)
+    constexpr float SHARK_VORTEX_CORE_RADIUS = 55.0f;
+    constexpr float SHARK_VORTEX_CORE_DAMAGE = 8.0f;
+    constexpr float SHARK_VORTEX_TICK = 0.6f;
+    constexpr float SHARK_VORTEX_COOLDOWN = 7.0f;
+    constexpr float SHARK_VORTEX_BACK = 120.0f;          // Tâm xoáy sau đuôi
+    // 4. Frenzy < 30% HP: chuỗi 2–3 cú cắn
+    constexpr float SHARK_FRENZY_HP_RATIO = 0.3f;
+    constexpr int   SHARK_FRENZY_BITES_MIN = 2;
+    constexpr int   SHARK_FRENZY_BITES_MAX = 3;
+    constexpr float SHARK_FRENZY_CHAIN_TELEGRAPH = 0.3f;
+    // Nhịp đòn (dùng chung ý tưởng burst/rest của cá voi)
+    constexpr int   SHARK_BURST_SIZE = 2;
+    constexpr int   SHARK_BURST_SIZE_FRENZY = 3;
+    constexpr float SHARK_BURST_GAP = 0.6f;
+    constexpr float SHARK_BURST_GAP_FRENZY = 0.35f;
+    constexpr float SHARK_REST_TIME = 1.8f;
+    constexpr float SHARK_REST_TIME_FRENZY = 1.0f;
+    constexpr float SHARK_REST_DRIFT_SPEED = 60.0f;
+    constexpr float SHARK_WEIGHT_BITE = 1.0f;
+    constexpr float SHARK_WEIGHT_STRAFE = 0.8f;
+    constexpr float SHARK_WEIGHT_VORTEX = 0.6f;
+    constexpr float SHARK_WEIGHT_BITE_FRENZY = 1.5f;
+    constexpr float SHARK_WEIGHT_HUNT = 0.5f;
+    // 5. Hunt (săn mồi): nhảy lên -> lặn vào cát (chỉ thấy vây) -> bám theo -> khoá vị trí -> phóng lên cắn, ngoạm & kéo -> ném
+    constexpr float SHARK_HUNT_COOLDOWN = 14.0f;
+    constexpr float SHARK_HUNT_FIRST_DELAY = 8.0f;       // Không dùng ngay đầu trận
+    constexpr float SHARK_HUNT_LEAP_TIME = 0.6f;
+    constexpr float SHARK_HUNT_LEAP_HEIGHT = 140.0f;
+    constexpr float SHARK_HUNT_LEAP_FWD_SPEED = 160.0f;
+    constexpr float SHARK_HUNT_BURROW_DEPTH = 72.0f;     // Thân chìm dưới cát, chỉ vây lưng (~27u) nhô lên
+    constexpr float SHARK_HUNT_TRACK_TIME = 1.1f;        // Bám ngắn rồi khoá vị trí người chơi từ xa
+    constexpr float SHARK_HUNT_LOCK_MIN_DIST = 160.0f;   // Vòng đỏ không sinh sát thân: lùi vây ra ít nhất mức này
+    constexpr float SHARK_HUNT_DASH_TIME = 0.35f;        // Vây lao ngầm tới vòng trong thời gian cố định
+    constexpr float SHARK_HUNT_DASH_MIN_SPEED = 1400.0f; // ...nhưng không chậm hơn mức này
+    constexpr float SHARK_HUNT_TRACK_SPEED = 190.0f;     // < người chơi 280 -> chạy thoát được
+    constexpr float SHARK_HUNT_TRACK_TURN = 2.5f;
+    constexpr float SHARK_HUNT_LOCK_TIME = 0.5f;         // Vòng đỏ hiện ngay + vây khựng lại
+    constexpr float SHARK_HUNT_BURST_TIME = 0.08f;       // Phóng thẳng lên gần như tức thì
+    constexpr float SHARK_HUNT_BITE_RADIUS = 75.0f;
+    constexpr float SHARK_HUNT_BITE_DAMAGE = 25.0f;
+    constexpr float SHARK_HUNT_SWING_RADIUS = 300.0f;    // Kéo người chơi quay vòng nhanh quanh tâm sân
+    constexpr float SHARK_HUNT_SWING_ANG_SPEED = 5.0f;   // rad/s (~1500 u/s trên vòng)
+    constexpr float SHARK_HUNT_SWING_LAPS = 1.25f;       // -> ~1.57s
+    constexpr float SHARK_HUNT_SWING_RADIUS_LERP = 6.0f; // Hội tụ bán kính vòng quay (1/s)
+    constexpr float SHARK_HUNT_JAW_Y = 26.0f;            // Ổ hàm (local thân cá mập)
+    constexpr float SHARK_HUNT_JAW_Z = 92.0f;
+    constexpr float SHARK_HUNT_HELD_Y_OFFSET = -12.0f;   // Hạ cá người chơi để nằm giữa hai hàm
+    constexpr float SHARK_HUNT_FAILSAFE_TIME = 12.0f;    // Hunt quá lâu -> tự kết thúc (thả người chơi)
+    constexpr float SHARK_HUNT_THROW_SPEED = 2400.0f;    // Knockback ban đầu (giảm 8.5/s -> trượt ~280u)
+    constexpr float SHARK_HUNT_THROW_IFRAMES = 2.2f;     // Bất tử sau khi ném (bao cả lúc trượt + ~1.5s)
+    constexpr float SHARK_HUNT_MISS_RECOVER = 1.5f;      // Cắn hụt -> đứng phơi, nhận x1.5 sát thương
+    constexpr float SHARK_HUNT_BURST_POSE_TIME = 0.35f;  // Ngóc đầu khi phóng lên
+    // Camera cận cảnh khi bị ngoạm
+    constexpr float CAM_CINE_DISTANCE = 300.0f;
+    constexpr float CAM_CINE_PITCH_DEG = 34.0f;
+    constexpr float CAM_CINE_BLEND_SPEED = 4.0f;         // 1 - exp(-k dt)
 }

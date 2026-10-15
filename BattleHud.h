@@ -2,6 +2,7 @@
 
 class PlayerFish;
 class WhaleBoss;
+class SharkBoss;
 
 // =======================================================================
 // BattleHud.h
@@ -16,6 +17,8 @@ public:
     void Reset() const;
     void DrawPlayerPanel(const PlayerFish& player) const;
     void DrawBossBar(const WhaleBoss& boss) const;
+    void DrawBossBar(const SharkBoss& shark) const;
+    void DrawBossBarCore(bool active, float hp, float maxHp, bool p2, const wchar_t* name, const wchar_t* phaseLabel, float markRatio) const;
     void DrawDamageFlash() const;
     // Y (pixel) ngay dưới khung người chơi, để UI khác xếp phía dưới
     static int PanelBottomY();

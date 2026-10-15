@@ -9,6 +9,7 @@
 #include "Enemy.h"
 #include "PlayerFish.h"
 #include "Boss.h"
+#include "SharkBoss.h"
 #include "SoundManager.h"
 #include "Effects.h"
 #include "Render3DUtil.h"
@@ -122,7 +123,7 @@ void WeaponSystem::ShootRadial(const Vec3& center, int count, float damage, floa
     }
 }
 
-void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss)
+void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss, SharkBoss* shark)
 {
     const Vec3 playerPos = player.GetPosition();
     const Vec3 turretPos = playerPos + Vec3{ 0.0f, GameConsts::FISH_SIZE_Y + 4.0f, 0.0f };
@@ -143,6 +144,16 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
                 {
                     hasTarget_ = true;
                     currentTargetPos_ = boss->GetPosition() + Vec3{ 0.0f, 25.0f, 0.0f };
+                    aimYaw_ = std::atan2(toBoss.x, toBoss.z);
+                }
+            }
+            if (!hasTarget_ && shark && shark->IsAlive())
+            {
+                Vec3 toBoss = shark->GetPosition() - turretPos;
+                if (toBoss.Length() <= GameConsts::WEAPON_RANGE + 120.0f)
+                {
+                    hasTarget_ = true;
+                    currentTargetPos_ = shark->GetPosition() + Vec3{ 0.0f, 25.0f, 0.0f };
                     aimYaw_ = std::atan2(toBoss.x, toBoss.z);
                 }
             }
@@ -211,6 +222,15 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
             if (Collision::DistXZ(boss->GetPosition(), b.pos) <= (b.radius + boss->GetHitboxRadius()))
             {
                 boss->TakeDamage(b.damage, effects);
+                b.active = false;
+                continue;
+            }
+        }
+        if (shark && shark->IsAlive())
+        {
+            if (Collision::DistXZ(shark->GetPosition(), b.pos) <= (b.radius + shark->GetHitboxRadius()))
+            {
+                shark->TakeDamage(b.damage, effects);
                 b.active = false;
                 continue;
             }

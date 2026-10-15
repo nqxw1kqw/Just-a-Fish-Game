@@ -5,6 +5,7 @@
 #include "Effects.h"
 #include "CardManager.h"
 #include "Boss.h"
+#include "SharkBoss.h"
 #include "DebugController.h"
 #include "GodRays.h"
 #include "ResultScreen.h"
@@ -81,6 +82,8 @@ private:
     void SkipToWave(int waveTarget);
     void SkipToEndlessWave(int waveTarget);
     void SkipToBoss();
+    void SkipToSharkBoss();   // Debug: nhảy thẳng tới Boss Cá Mập (Endless)
+    bool IsSharkFight() const { return sharkFight_; }
 
     void DrawArena() const;
 
@@ -105,6 +108,9 @@ private:
     EffectSystem effects_;
     CardManager cardManager_;
     WhaleBoss boss_;
+    SharkBoss shark_;          // Boss Cá Mập (chỉ Endless)
+    bool sharkFight_ = false;  // Trận boss hiện tại là cá mập?
+    void PrepareEndlessBoss(int bossIdx);
     PlayerStats playerStats_;
 
     // Camera 3D bám theo cá

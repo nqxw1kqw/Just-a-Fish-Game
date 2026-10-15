@@ -19,6 +19,8 @@ namespace
         { L"Data/Model/LowPoly/Float.x",     L"Float",     -1 },
         { L"Data/Model/LowPoly/Charge.x",    L"Charge",    -1 },
         { L"Data/Model/LowPoly/WhaleBoss.x", L"WhaleBoss", -1 },
+        { L"Data/Model/LowPoly/SharkBoss.x", L"SharkBoss", -1 },
+        { L"Data/Model/LowPoly/SharkBossTail.x", L"SharkBossTail", -1 },
     };
 
     bool s_loaded = false;
