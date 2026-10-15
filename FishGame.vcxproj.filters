@@ -1,251 +1,318 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Audio">
+      <UniqueIdentifier>{AEA765B2-6182-4C9B-ABE5-E7B63CA954D4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Boss">
+      <UniqueIdentifier>{5624C136-8BB8-45FA-99B0-AE9A63B538DB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Boss\Shark">
+      <UniqueIdentifier>{150B6F50-35B8-44CA-9E5A-C4961EADF42E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Boss\Whale">
+      <UniqueIdentifier>{8ACD62C3-C073-4857-A14C-E42B3402A861}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Cards">
+      <UniqueIdentifier>{43FC0A5A-DCB5-4F01-BB8B-6E8AA42DCB3B}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core">
-      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+      <UniqueIdentifier>{3D3659FC-8C1D-486A-94A7-19C9FCE6D6B0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Entity">
-      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
+    <Filter Include="Core\Debug">
+      <UniqueIdentifier>{3C06B414-762F-4233-83DA-A790F018E056}</UniqueIdentifier>
     </Filter>
-    <Filter Include="System">
-      <UniqueIdentifier>{c3d4e5f6-a7b8-9012-cdef-123456789012}</UniqueIdentifier>
+    <Filter Include="Effects">
+      <UniqueIdentifier>{A974A071-EF2B-4938-A1A4-229001BD36D8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects\EnemyHit">
+      <UniqueIdentifier>{6F9A84D5-40B0-4ED9-82A2-854F5CEFC545}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects\Environment">
+      <UniqueIdentifier>{B9468A55-C73C-426D-A0AC-FDDB67239464}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects\Hit">
+      <UniqueIdentifier>{F65AD0AF-881E-47CB-AF5F-DFDAFAFAE35F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects\PlayerHurt">
+      <UniqueIdentifier>{BBFFEE2A-3241-4040-A927-66FE6DE1CD9A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects\Shark">
+      <UniqueIdentifier>{C057BF19-822B-4F11-9E64-9B6E05CE89DA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects\Whale">
+      <UniqueIdentifier>{E2BF62AE-0A04-41AD-9CED-4B84D0E682F3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Enemy">
+      <UniqueIdentifier>{C14F57E2-90C0-4490-8074-A9B4B3E792A2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input">
+      <UniqueIdentifier>{8C6DEA86-3839-4E65-9863-C53FFA622073}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Player">
+      <UniqueIdentifier>{997205DD-5B11-4987-8CB8-1B1717EBB9B4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rendering">
+      <UniqueIdentifier>{B2FC9B5C-2605-48CF-9CDE-A32B1ACE2C0C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{A999DD10-94FA-417E-B592-D68F26A06DBC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{4694520B-B627-47FC-8C0C-161ED40224FB}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="SoundManager.h">
+      <Filter>Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="SharkBoss.h">
+      <Filter>Boss\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="Boss.h">
+      <Filter>Boss\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="TsunamiWaterEffect.h">
+      <Filter>Boss\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Card.h">
+      <Filter>Cards</Filter>
+    </ClInclude>
+    <ClInclude Include="CardDatabase.h">
+      <Filter>Cards</Filter>
+    </ClInclude>
+    <ClInclude Include="CardManager.h">
+      <Filter>Cards</Filter>
+    </ClInclude>
     <ClInclude Include="Consts.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Vector3.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="DxConv.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Render3DUtil.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="PlayerFish.h">
-      <Filter>Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="Enemy.h">
-      <Filter>Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="EnemyTypeConfig.h">
-      <Filter>Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="CollisionUtil.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Bullet.h">
-      <Filter>Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="Input.h">
-      <Filter>System</Filter>
-    </ClInclude>
     <ClInclude Include="GamePrototype.h">
-      <Filter>System</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Stats.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Card.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="CardFrame.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="CardDatabase.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="CardManager.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="SharkBoss.h">
-      <Filter>Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Shark\SharkFxCommon.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Shark\SharkBiteLungeFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Shark\SharkCircleFinFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Shark\SharkVortexFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Shark\SharkRageFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Shark\SharkFxSet.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Boss.h">
-      <Filter>Entity</Filter>
-    </ClInclude>
     <ClInclude Include="DebugController.h">
-      <Filter>System</Filter>
+      <Filter>Core\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="CameraController.h">
-      <Filter>System</Filter>
+    <ClInclude Include="BubbleSystem.h">
+      <Filter>Effects</Filter>
     </ClInclude>
-    <ClInclude Include="UIRenderer.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="SeabedFloor.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="SoundManager.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="GodRays.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="WaterSplash.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="ResultScreen.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="LowPolyModels.h">
-    <ClInclude Include="Effects\Whale\WhaleFxCommon.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleFxBase.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleBreachSlamFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleTailSlapFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleBubbleNetFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleInhaleFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleDiveChargeFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleCallPodFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleStatusFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\Whale\WhaleFxSet.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\\Hit\\HitFxCommon.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\\Hit\\HitSparkFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\\Hit\\HitBubblePuffFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\\Hit\\FishDeathFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\\Hit\\HitFeedback.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\\PlayerHurt\\PlayerHurtFxCommon.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\\PlayerHurt\\PlayerHurtFx.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="Effects\\EnemyHit\\EnemyHitFxCommon.h">
-      <Filter>System</Filter>
+    <ClInclude Include="Effects.h">
+      <Filter>Effects</Filter>
     </ClInclude>
     <ClInclude Include="Effects\\EnemyHit\\EnemyHitFx.h">
-      <Filter>System</Filter>
+      <Filter>Effects\EnemyHit</Filter>
     </ClInclude>
-    <ClInclude Include="TsunamiWaterEffect.h">
-      <Filter>System</Filter>
+    <ClInclude Include="Effects\\EnemyHit\\EnemyHitFxCommon.h">
+      <Filter>Effects\EnemyHit</Filter>
+    </ClInclude>
+    <ClInclude Include="GodRays.h">
+      <Filter>Effects\Environment</Filter>
+    </ClInclude>
+    <ClInclude Include="WaterSplash.h">
+      <Filter>Effects\Environment</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\FishDeathFx.h">
+      <Filter>Effects\Hit</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\HitBubblePuffFx.h">
+      <Filter>Effects\Hit</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\HitFeedback.h">
+      <Filter>Effects\Hit</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\HitFxCommon.h">
+      <Filter>Effects\Hit</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\Hit\\HitSparkFx.h">
+      <Filter>Effects\Hit</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\PlayerHurt\\PlayerHurtFx.h">
+      <Filter>Effects\PlayerHurt</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\\PlayerHurt\\PlayerHurtFxCommon.h">
+      <Filter>Effects\PlayerHurt</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkBiteLungeFx.h">
+      <Filter>Effects\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkCircleFinFx.h">
+      <Filter>Effects\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkFxCommon.h">
+      <Filter>Effects\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkFxSet.h">
+      <Filter>Effects\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkRageFx.h">
+      <Filter>Effects\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Shark\SharkVortexFx.h">
+      <Filter>Effects\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleBreachSlamFx.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleBubbleNetFx.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleCallPodFx.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleDiveChargeFx.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleFxBase.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleFxCommon.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleFxSet.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleInhaleFx.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleStatusFx.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Effects\Whale\WhaleTailSlapFx.h">
+      <Filter>Effects\Whale</Filter>
+    </ClInclude>
+    <ClInclude Include="Enemy.h">
+      <Filter>Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyTypeConfig.h">
+      <Filter>Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Bullet.h">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerFish.h">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraController.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DxConv.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="LowPolyModels.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Render3DUtil.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderInterp.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="SeabedFloor.h">
+      <Filter>Rendering</Filter>
     </ClInclude>
     <ClInclude Include="BattleHud.h">
-    <ClInclude Include="BubbleSystem.h">
-    <ClInclude Include="RenderInterp.h">
-      <Filter>System</Filter>
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="CardFrame.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="FontManager.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ResultScreen.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UIRenderer.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionUtil.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector3.h">
+      <Filter>Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="SoundManager.cpp">
+      <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="SharkBoss.cpp">
+      <Filter>Boss\Shark</Filter>
+    </ClCompile>
+    <ClCompile Include="Boss.cpp">
+      <Filter>Boss\Whale</Filter>
+    </ClCompile>
+    <ClCompile Include="BossSkills.cpp">
+      <Filter>Boss\Whale</Filter>
+    </ClCompile>
+    <ClCompile Include="TsunamiWaterEffect.cpp">
+      <Filter>Boss\Whale</Filter>
+    </ClCompile>
+    <ClCompile Include="CardManager.cpp">
+      <Filter>Cards</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePrototype.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Effects.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="PlayerFish.cpp">
-      <Filter>Entity</Filter>
-    </ClCompile>
-    <ClCompile Include="Enemy.cpp">
-      <Filter>Entity</Filter>
-    </ClCompile>
-    <ClCompile Include="Bullet.cpp">
-      <Filter>Entity</Filter>
-    </ClCompile>
-    <ClCompile Include="Input.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="GamePrototype.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="CardFrame.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="CardManager.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="BossSkills.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="SharkBoss.cpp">
-      <Filter>Entity</Filter>
-    </ClCompile>
-    <ClCompile Include="Boss.cpp">
-      <Filter>Entity</Filter>
-    </ClCompile>
     <ClCompile Include="DebugController.cpp">
-      <Filter>System</Filter>
+      <Filter>Core\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="CameraController.cpp">
-      <Filter>System</Filter>
+    <ClCompile Include="BubbleSystem.cpp">
+      <Filter>Effects</Filter>
     </ClCompile>
-    <ClCompile Include="UIRenderer.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="SeabedFloor.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
-    <ClCompile Include="SoundManager.cpp">
-      <Filter>System</Filter>
+    <ClCompile Include="Effects.cpp">
+      <Filter>Effects</Filter>
     </ClCompile>
     <ClCompile Include="GodRays.cpp">
-      <Filter>System</Filter>
+      <Filter>Effects\Environment</Filter>
     </ClCompile>
     <ClCompile Include="WaterSplash.cpp">
-      <Filter>System</Filter>
+      <Filter>Effects\Environment</Filter>
     </ClCompile>
-    <ClCompile Include="ResultScreen.cpp">
-      <Filter>System</Filter>
+    <ClCompile Include="Enemy.cpp">
+      <Filter>Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Bullet.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerFish.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraController.cpp">
+      <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="LowPolyModels.cpp">
-    <ClCompile Include="TsunamiWaterEffect.cpp">
-      <Filter>System</Filter>
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="SeabedFloor.cpp">
+      <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="BattleHud.cpp">
-    <ClCompile Include="BubbleSystem.cpp">
-      <Filter>System</Filter>
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="CardFrame.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="FontManager.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ResultScreen.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UIRenderer.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
