@@ -22,7 +22,12 @@ enum class SharkAction
     BiteRecover,
     Strafe,
     VortexCast,
-    Stunned
+    Stunned,
+    HuntLeap,       // Nhảy lên rồi lao xuống cát
+    HuntTrack,      // Dưới cát, chỉ thấy vây, bám theo người chơi
+    HuntLock,       // Vây dừng + vòng cảnh báo
+    HuntDrag,       // Ngoạm trúng: kéo người chơi (camera cận cảnh)
+    HuntRecover     // Cắn hụt: đứng phơi (cơ hội phản công)
 };
 
 enum class SharkSkill
@@ -30,7 +35,8 @@ enum class SharkSkill
     None,
     Bite,
     Strafe,
-    Vortex
+    Vortex,
+    Hunt
 };
 
 class SharkBoss
@@ -70,6 +76,10 @@ public:
     void ForceStrafe(PlayerFish& player);
     void ForceVortex(PlayerFish& player);
     void ForceFrenzy(EffectSystem& effects);
+    void ForceHunt(PlayerFish& player);
+    bool IsCinematic() const { return action_ == SharkAction::HuntDrag; }
+    bool IsBurrowed() const { return action_ == SharkAction::HuntTrack || action_ == SharkAction::HuntLock; }
+    float GetHuntCooldown() const { return huntCooldown_; }
     SharkAction GetAction() const { return action_; }
     SharkSkill GetLastSkill() const { return lastSkill_; }
     SharkSkill GetPrevSkill() const { return prevSkill_; }
@@ -85,6 +95,8 @@ private:
     void StartBite(PlayerFish& player, float telegraph);
     void StartStrafe(PlayerFish& player);
     void StartVortex();
+    void StartHunt();
+    void UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects);
     void Stun(float duration);
     void StartFrenzy(EffectSystem& effects);
     void UpdateVortex(float dt, PlayerFish& player, EffectSystem& effects);
@@ -132,6 +144,12 @@ private:
     float vortexCooldown_ = 0.0f;
 
     float stunTimer_ = 0.0f;
+
+    float huntCooldown_ = GameConsts::SHARK_HUNT_FIRST_DELAY;
+    Vec3 huntLockPos_{ 0.0f, 0.0f, 0.0f };
+    float huntPose_ = 0.0f;    // pitch: < 0 ngóc đầu, > 0 chúi xuống
+    float huntTurnSign_ = 1.0f;
+    PlayerFish* grabbedPlayer_ = nullptr;
 
     Vec3 playerVel_{ 0.0f, 0.0f, 0.0f };
     Vec3 lastPlayerPos_{ 0.0f, 0.0f, 0.0f };

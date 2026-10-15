@@ -11,6 +11,7 @@ public:
     void Update(float dt, const Vec3& targetPos, const EffectSystem& effects);
 
     // Render interpolation (#26): lưu eye/target tick trước; Apply đặt camera DxLib theo alpha
+    void SetCinematic(bool on) { cineOn_ = on; }
     void SavePrev() { prevEye_ = camEye_; prevTarget_ = camTarget_; }
     void ApplyInterpolated(float alpha, const EffectSystem& effects) const;
 
@@ -40,6 +41,8 @@ private:
     float camFollowSpeed_ = GameConsts::CAM_FOLLOW_SPEED;
     float camDeadZone_ = GameConsts::CAM_DEAD_ZONE;
     float camShakeScale_ = 1.0f;
+    bool cineOn_ = false;
+    float cineBlend_ = 0.0f;  // 0 = camera thường, 1 = cận cảnh
     Vec3 prevEye_{ 0.0f, 480.0f, -420.0f };
     Vec3 prevTarget_{ 0.0f, 0.0f, 0.0f };
 };

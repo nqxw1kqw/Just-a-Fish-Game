@@ -920,6 +920,8 @@ void GamePrototype::Update(float dt)
     }
 
     // --- CẬP NHẬT CAMERA 3D (C1, C2, C3) ---
+    // Shark Hunt: cận cảnh khi cá mập đang ngoạm người chơi
+    cameraController_.SetCinematic(state_ == GameState::Boss && sharkFight_ && shark_.IsCinematic());
     cameraController_.Update(dt, player_.GetPosition(), effects_);
 }
 

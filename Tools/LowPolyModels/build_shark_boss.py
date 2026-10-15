@@ -33,7 +33,9 @@ B.finish(ground=False)
 
 reset()
 T = Builder("SharkBossTail", MATS)
-tk = [(-17, 5, 4, 11), (-21, 2.5, 2.5, 11), (-23, 1.2, 1.2, 11)]
+# Tail section starts 2.5 units *inside* the body (z=-14.5, smaller than the body there) so swinging
+# the tail never opens a gap at the joint; the body keeps no end cap problem because the tail sleeve covers it.
+tk = [(-14.5, 5.1, 4.2, 11), (-17, 5, 4, 11), (-21, 2.5, 2.5, 11), (-23, 1.2, 1.2, 11)]
 T.loft([(z*SZ - PIVOT_Z, w*SX, h*SY, cy*SY - 3.6 - PIVOT_Y) for z, w, h, cy in tk], 16, mat)
 T.prism([((a*SZ) - PIVOT_Z, b*SY - 3.6 - PIVOT_Y) for a, b in
          [(-20, 11), (-28, 26), (-31, 25), (-25, 11), (-29, 1), (-27, 0.5)]], 0, 4, "Fin", plane="zy")
@@ -47,7 +49,14 @@ for n in ("SharkBoss", "SharkBossTail"):
     for o in dst.objects: bpy.context.scene.collection.objects.link(o)
 bpy.data.objects["SharkBossTail"].location = g(0, PIVOT_Y, PIVOT_Z)
 cam = setup_render(); sc = bpy.context.scene
-for name, loc in (("side", (420, -60, 60)), ("front34", (300, -330, 200))):
-    tgt = g(0, 40, 0); cam.location = Vector(loc); cam.data.ortho_scale = 300
+import math
+SWAY = 0.25
+for name, loc, sw in (("side", (420, -60, 60), 0.0), ("front34", (300, -330, 200), 0.0),
+                      ("top_swayL", (0, 0, 500), -SWAY), ("top_swayR", (0, 0, 500), SWAY), ("top_swayL_close", (0, 75, 260), -SWAY)):
+    # game RotY(a) about +Y == blender rotation about +Z by -a (blender -Y = game +Z)
+    bpy.data.objects["SharkBossTail"].rotation_euler = (0, 0, -sw)
+    tgt = g(0, 40, 0) if not name.startswith("top") else (g(0, 30, -75) if "close" in name else g(0, 0, -10))
+    cam.location = Vector(loc) if not name.startswith("top") else tgt + Vector((0, 0.01, 1)) * 400
+    cam.data.ortho_scale = 120 if "close" in name else 300
     cam.rotation_euler = (tgt - cam.location).to_track_quat('-Z', 'Y').to_euler()
     sc.render.filepath = f"{OUT}/preview_SharkBoss_{name}.png"; bpy.ops.render.render(write_still=True)

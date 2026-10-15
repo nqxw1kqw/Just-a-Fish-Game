@@ -266,6 +266,7 @@ void PlayerFish::Reset()
     yaw_ = 0.0f;
     swimTimer_ = 0.0f;
     knockback_ = Vec3{ 0.0f, 0.0f, 0.0f };
+    grabbed_ = false;
     invulnerableTimer_ = 0.0f;
     isGodMode_ = false;
     damageTakenThisWave_ = 0.0f;
@@ -380,6 +381,16 @@ void PlayerFish::OnLand(EffectSystem& effects)
 
 void PlayerFish::Update(float dt, EffectSystem& effects)
 {
+    // Shark Hunt: đang bị ngoạm -> bám theo miệng cá mập, không nhận input
+    if (grabbed_)
+    {
+        if (hitFlashTimer_ > 0.0f) hitFlashTimer_ -= dt;
+        pos_ = grabPos_;
+        externalPull_ = Vec3{ 0.0f, 0.0f, 0.0f };
+        knockback_ = Vec3{ 0.0f, 0.0f, 0.0f };
+        (void)effects;
+        return;
+    }
     // Boss rework PR C: lực kéo ngoài (Inhale) + làm chậm (Bubble Net)
     if (externalPull_.LengthSq() > 0.01f)
     {
@@ -602,7 +613,7 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
 bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects, const Vec3* sourcePos)
 {
     // J4: Bất tử suốt lúc ở trên không, đang trong thời gian I-Frame, hoặc bật God Mode (F9)
-    if (isGodMode_ || IsAirborne() || invulnerableTimer_ > 0.0f)
+    if (isGodMode_ || grabbed_ || IsAirborne() || invulnerableTimer_ > 0.0f)
     {
         return false;
     }
@@ -643,6 +654,35 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects, const Vec3* source
         hp_ = 0.0f;
     }
     return true;
+}
+
+bool PlayerFish::Grab(float dmg, EffectSystem& effects)
+{
+    if (isGodMode_ || grabbed_ || IsAirborne()) return false; // i-frame bị bỏ qua cho riêng đòn ngoạm
+    grabbed_ = true;
+    grabPos_ = pos_;
+    invulnerableTimer_ = 0.0f;
+    knockback_ = Vec3{ 0.0f, 0.0f, 0.0f };
+    hp_ -= dmg;
+    damageTakenThisWave_ += dmg;
+    if (hp_ < 0.0f) hp_ = 0.0f;
+    hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME;
+    effects.AddTrauma(0.45f);
+    float amount = std::clamp(dmg / GameConsts::PLAYER_HURT_FX_DMG_UNIT, GameConsts::PLAYER_HURT_FX_MIN, GameConsts::PLAYER_HURT_FX_MAX);
+    effects.SpawnPlayerHurt(pos_ + Vec3{ 0, GameConsts::HIT_FX_HEIGHT, 0 }, Vec3{ 0.0f, 1.0f, 0.0f }, amount);
+    SoundManager::Instance().PlaySFX(SfxId::PlayerHit);
+    SoundManager::Instance().PlaySFX(SfxId::PlayerHurt);
+    return true;
+}
+
+void PlayerFish::ReleaseThrow(const Vec3& vel, float iframes)
+{
+    if (!grabbed_) return;
+    grabbed_ = false;
+    pos_.y = 0.0f;
+    knockback_ = Vec3{ vel.x, 0.0f, vel.z };
+    invulnerableTimer_ = iframes;      // bất tử suốt lúc bay/trượt + sau khi tiếp đất
+    hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME * 2.0f;
 }
 
 void PlayerFish::AddExp(int amount)

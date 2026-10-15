@@ -291,12 +291,13 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 else if (input.IsPressed(KEY_INPUT_0)) forced = 10;
                 if (forced != 0 && game.sharkFight_ && game.state_ == GameState::Boss)
                 {
-                    // Trận Cá Mập: Shift+1 Bite | 2 Strafe | 3 Vortex | 4 Frenzy
+                    // Trận Cá Mập: Shift+1 Bite | 2 Strafe | 3 Vortex | 4 Frenzy | 5 Hunt
                     debugUsed_ = true;
                     if (forced == 1) game.shark_.ForceBite(game.player_);
                     else if (forced == 2) game.shark_.ForceStrafe(game.player_);
                     else if (forced == 3) game.shark_.ForceVortex(game.player_);
                     else if (forced == 4) game.shark_.ForceFrenzy(game.effects_);
+                    else if (forced == 5) game.shark_.ForceHunt(game.player_);
                 }
                 else if (forced != 0)
                 {
@@ -514,9 +515,9 @@ void DebugController::DrawHUD(const GamePrototype& game) const
             if (game.sharkFight_)
             {
                 FontManager::DrawFormat(textX, textY, GetColor(120, 220, 255), FontSize::Small,
-                    L"SHARK HP %.0f/%.0f %ls | Burst %d | Rest %.2fs | Vortex %.1fs | Last: %ls, %ls",
+                    L"SHARK HP %.0f/%.0f %ls | Burst %d | Rest %.2fs | Vortex %.1fs | Hunt CD %.1fs | Last: %ls, %ls",
                     game.shark_.GetHp(), game.shark_.GetMaxHp(), game.shark_.IsFrenzy() ? L"FRENZY" : L"",
-                    game.shark_.GetBurstCount(), game.shark_.GetRestTimer(), game.shark_.GetVortexTimer(),
+                    game.shark_.GetBurstCount(), game.shark_.GetRestTimer(), game.shark_.GetVortexTimer(), game.shark_.GetHuntCooldown(),
                     SharkBoss::SkillName(game.shark_.GetLastSkill()), SharkBoss::SkillName(game.shark_.GetPrevSkill()));
                 textY += 18;
             }
@@ -555,6 +556,6 @@ void DebugController::DrawHUD(const GamePrototype& game) const
         FontManager::Draw(textX, textY, game.IsRenderInterpEnabled() ? L"F10: Render Interp ON" : L"F10: Render Interp OFF", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"F4: Full HP + Reset CD  |  F7: Boss Tsunami", GetColor(255, 180, 120), FontSize::Small); textY += 16;
         FontManager::Draw(textX, textY, L"Boss: Shift+1 Breach|2 Tail|3 Stun|4 Triple|5 Wave x2|6 Net|7 Inhale|8 Pack|9 Dive|0 Phase/Rage", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"Ctrl+0: Shark Boss (Endless)  |  Shark: Shift+1 Bite|2 Strafe|3 Vortex|4 Frenzy", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"Ctrl+0: Shark Boss (Endless)  |  Shark: Shift+1 Bite|2 Strafe|3 Vortex|4 Frenzy|5 Hunt", GetColor(255, 180, 120), FontSize::Small); textY += 16;
     }
 }

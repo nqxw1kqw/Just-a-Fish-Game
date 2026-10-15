@@ -14,6 +14,8 @@ void CameraController::Reset(const Vec3& initialTargetPos)
     camFollowSpeed_ = GameConsts::CAM_FOLLOW_SPEED;
     camDeadZone_ = GameConsts::CAM_DEAD_ZONE;
     camShakeScale_ = 1.0f;
+    cineOn_ = false;
+    cineBlend_ = 0.0f;
 }
 
 void CameraController::Update(float dt, const Vec3& targetPos, const EffectSystem& effects)
@@ -36,11 +38,16 @@ void CameraController::Update(float dt, const Vec3& targetPos, const EffectSyste
     camTarget_.y = 0.0f;
 
     // C8: Góc nghiêng & Khoảng cách camera
-    float pitchRad = camPitchDeg_ * 3.14159265f / 180.0f;
+    // Cận cảnh (Shark Hunt): mượt vào/ra theo 1 - exp(-k dt)
+    float cineA = 1.0f - std::exp(-GameConsts::CAM_CINE_BLEND_SPEED * dt);
+    cineBlend_ += ((cineOn_ ? 1.0f : 0.0f) - cineBlend_) * cineA;
+    float dist = camDistance_ + (GameConsts::CAM_CINE_DISTANCE - camDistance_) * cineBlend_;
+    float pitchDeg = camPitchDeg_ + (GameConsts::CAM_CINE_PITCH_DEG - camPitchDeg_) * cineBlend_;
+    float pitchRad = pitchDeg * 3.14159265f / 180.0f;
     camEye_ = camTarget_ + Vec3{
         0.0f,
-        camDistance_ * std::sin(pitchRad),
-        -camDistance_ * std::cos(pitchRad)
+        dist * std::sin(pitchRad),
+        -dist * std::cos(pitchRad)
     };
 
     // C5 & C7: Rung 2 trục kết hợp tỷ lệ camShakeScale_
