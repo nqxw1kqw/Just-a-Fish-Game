@@ -367,10 +367,10 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             action_ = SharkAction::HuntBurst;
             actionTimer_ = 0.0f;
             // Ngoạm NGAY lúc phóng: ai trong vòng đỏ đều bị tóm (không còn miễn khi nhảy / i-frame / God Mode)
-            float d = Collision::DistXZ(pp, huntLockPos_);
-            if (d <= GameConsts::SHARK_HUNT_BITE_RADIUS + player.GetHitboxRadius() && player.Grab(GameConsts::SHARK_HUNT_BITE_DAMAGE, effects))
+            float dGrab = Collision::DistXZ(pp, huntLockPos_);
+            if (dGrab <= GameConsts::SHARK_HUNT_BITE_RADIUS + player.GetHitboxRadius() && player.Grab(GameConsts::SHARK_HUNT_BITE_DAMAGE, effects))
                 grabbedPlayer_ = &player;
-            AppLogAdd(L"[SHARK] Hunt burst: dist=%.1f radius=%.1f grabbed=%d\n", d, GameConsts::SHARK_HUNT_BITE_RADIUS, grabbedPlayer_ ? 1 : 0);
+            AppLogAdd(L"[SHARK] Hunt burst: dist=%.1f radius=%.1f grabbed=%d\n", dGrab, GameConsts::SHARK_HUNT_BITE_RADIUS, grabbedPlayer_ ? 1 : 0);
             // TODO(SharkFx/Fuyuu): SandEruptBurst tại huntLockPos_
             Fx().bite.Bite(DxConv::ToVECTOR(huntLockPos_ + Vec3{ 0.0f, 25.0f, 0.0f }));
             effects.SpawnShockwave(huntLockPos_, GameConsts::SHARK_HUNT_BITE_RADIUS * 1.6f);
