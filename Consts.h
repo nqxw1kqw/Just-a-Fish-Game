@@ -377,15 +377,22 @@ namespace GameConsts
     constexpr float SHARK_HUNT_LEAP_HEIGHT = 140.0f;
     constexpr float SHARK_HUNT_LEAP_FWD_SPEED = 160.0f;
     constexpr float SHARK_HUNT_BURROW_DEPTH = 72.0f;     // Thân chìm dưới cát, chỉ vây lưng (~27u) nhô lên
-    constexpr float SHARK_HUNT_TRACK_TIME = 3.0f;
+    constexpr float SHARK_HUNT_TRACK_TIME = 4.0f;        // Tối đa; thường khoá sớm khi đã tới gần
+    constexpr float SHARK_HUNT_LOCK_DIST = 90.0f;        // Vây tới gần người chơi <= mức này -> khoá vị trí
     constexpr float SHARK_HUNT_TRACK_SPEED = 190.0f;     // < người chơi 280 -> chạy thoát được
     constexpr float SHARK_HUNT_TRACK_TURN = 2.5f;
-    constexpr float SHARK_HUNT_LOCK_TIME = 0.7f;         // Vây đứng yên + vòng cảnh báo
+    constexpr float SHARK_HUNT_LOCK_TIME = 0.6f;         // Vây đứng yên + vòng cảnh báo đỏ
+    constexpr float SHARK_HUNT_BURST_TIME = 0.08f;       // Phóng thẳng lên gần như tức thì
     constexpr float SHARK_HUNT_BITE_RADIUS = 75.0f;
     constexpr float SHARK_HUNT_BITE_DAMAGE = 25.0f;
-    constexpr float SHARK_HUNT_DRAG_TIME = 1.5f;
-    constexpr float SHARK_HUNT_DRAG_SPEED = 170.0f;
-    constexpr float SHARK_HUNT_DRAG_TURN = 1.2f;         // rad/s, quẫy ngoặt khi kéo
+    constexpr float SHARK_HUNT_SWING_RADIUS = 300.0f;    // Kéo người chơi quay vòng nhanh quanh tâm sân
+    constexpr float SHARK_HUNT_SWING_ANG_SPEED = 5.0f;   // rad/s (~1500 u/s trên vòng)
+    constexpr float SHARK_HUNT_SWING_LAPS = 1.25f;       // -> ~1.57s
+    constexpr float SHARK_HUNT_SWING_RADIUS_LERP = 6.0f; // Hội tụ bán kính vòng quay (1/s)
+    constexpr float SHARK_HUNT_JAW_Y = 26.0f;            // Ổ hàm (local thân cá mập)
+    constexpr float SHARK_HUNT_JAW_Z = 92.0f;
+    constexpr float SHARK_HUNT_HELD_Y_OFFSET = -12.0f;   // Hạ cá người chơi để nằm giữa hai hàm
+    constexpr float SHARK_HUNT_FAILSAFE_TIME = 12.0f;    // Hunt quá lâu -> tự kết thúc (thả người chơi)
     constexpr float SHARK_HUNT_THROW_SPEED = 2400.0f;    // Knockback ban đầu (giảm 8.5/s -> trượt ~280u)
     constexpr float SHARK_HUNT_THROW_IFRAMES = 2.2f;     // Bất tử sau khi ném (bao cả lúc trượt + ~1.5s)
     constexpr float SHARK_HUNT_MISS_RECOVER = 1.5f;      // Cắn hụt -> đứng phơi, nhận x1.5 sát thương

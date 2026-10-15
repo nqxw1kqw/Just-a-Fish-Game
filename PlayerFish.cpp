@@ -386,6 +386,8 @@ void PlayerFish::Update(float dt, EffectSystem& effects)
     {
         if (hitFlashTimer_ > 0.0f) hitFlashTimer_ -= dt;
         pos_ = grabPos_;
+        yaw_ = grabYaw_;
+        isJumping_ = false;
         externalPull_ = Vec3{ 0.0f, 0.0f, 0.0f };
         knockback_ = Vec3{ 0.0f, 0.0f, 0.0f };
         (void)effects;
@@ -658,14 +660,20 @@ bool PlayerFish::TakeDamage(float dmg, EffectSystem& effects, const Vec3* source
 
 bool PlayerFish::Grab(float dmg, EffectSystem& effects)
 {
-    if (isGodMode_ || grabbed_ || IsAirborne()) return false; // i-frame bị bỏ qua cho riêng đòn ngoạm
+    // Ai đứng trong vòng đỏ lúc phóng lên đều bị ngoạm: bỏ qua i-frame, đang nhảy và cả God Mode
+    // (God Mode chỉ miễn sát thương). Trước đây IsAirborne()/God Mode làm Grab() luôn trả false.
+    if (grabbed_) return false;
     grabbed_ = true;
+    isJumping_ = false;
     grabPos_ = pos_;
     invulnerableTimer_ = 0.0f;
     knockback_ = Vec3{ 0.0f, 0.0f, 0.0f };
-    hp_ -= dmg;
-    damageTakenThisWave_ += dmg;
-    if (hp_ < 0.0f) hp_ = 0.0f;
+    if (!isGodMode_)
+    {
+        hp_ -= dmg;
+        damageTakenThisWave_ += dmg;
+        if (hp_ < 0.0f) hp_ = 0.0f;
+    }
     hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME;
     effects.AddTrauma(0.45f);
     float amount = std::clamp(dmg / GameConsts::PLAYER_HURT_FX_DMG_UNIT, GameConsts::PLAYER_HURT_FX_MIN, GameConsts::PLAYER_HURT_FX_MAX);

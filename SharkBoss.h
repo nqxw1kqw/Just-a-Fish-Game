@@ -2,6 +2,7 @@
 #include "Vector3.h"
 #include "Consts.h"
 #include <memory>
+#include "DxLib.h"
 
 // =======================================================================
 //  BOSS CÁ MẬP (chế độ Endless) - bộ chiêu gọn hơn cá voi:
@@ -26,7 +27,8 @@ enum class SharkAction
     HuntLeap,       // Nhảy lên rồi lao xuống cát
     HuntTrack,      // Dưới cát, chỉ thấy vây, bám theo người chơi
     HuntLock,       // Vây dừng + vòng cảnh báo
-    HuntDrag,       // Ngoạm trúng: kéo người chơi (camera cận cảnh)
+    HuntBurst,      // Phóng thẳng lên (gần như tức thì) -> ngoạm mọi người chơi trong vòng
+    HuntDrag,       // Ngoạm trúng: quay vòng kéo người chơi (camera cận cảnh)
     HuntRecover     // Cắn hụt: đứng phơi (cơ hội phản công)
 };
 
@@ -77,8 +79,8 @@ public:
     void ForceVortex(PlayerFish& player);
     void ForceFrenzy(EffectSystem& effects);
     void ForceHunt(PlayerFish& player);
-    bool IsCinematic() const { return action_ == SharkAction::HuntDrag; }
-    bool IsBurrowed() const { return action_ == SharkAction::HuntTrack || action_ == SharkAction::HuntLock; }
+    bool IsCinematic() const { return grabbedPlayer_ != nullptr; }
+    bool IsBurrowed() const { return action_ == SharkAction::HuntTrack || action_ == SharkAction::HuntLock || action_ == SharkAction::HuntBurst; }
     float GetHuntCooldown() const { return huntCooldown_; }
     SharkAction GetAction() const { return action_; }
     SharkSkill GetLastSkill() const { return lastSkill_; }
@@ -103,6 +105,9 @@ private:
     void TurnToward(float targetYaw, float rate, float dt);
     Vec3 PredictPlayerPos(const PlayerFish& player, float leadTime) const;
     Vec3 MouthPos() const;
+    MATRIX BodyMatrix(const Vec3& at) const;
+    Vec3 JawPos() const;
+    void EndHunt(PlayerFish* player);
     Vec3 Fwd() const;
     SharkFxSet& Fx() const { return *fx_; }
 
@@ -149,6 +154,10 @@ private:
     Vec3 huntLockPos_{ 0.0f, 0.0f, 0.0f };
     float huntPose_ = 0.0f;    // pitch: < 0 ngóc đầu, > 0 chúi xuống
     float huntTurnSign_ = 1.0f;
+    float huntElapsed_ = 0.0f;
+    float swingAngle_ = 0.0f;
+    float swingSwept_ = 0.0f;
+    float swingRadius_ = 0.0f;
     PlayerFish* grabbedPlayer_ = nullptr;
 
     Vec3 playerVel_{ 0.0f, 0.0f, 0.0f };

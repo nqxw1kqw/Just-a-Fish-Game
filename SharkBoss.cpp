@@ -218,14 +218,50 @@ void SharkBoss::StartHunt()
     NoteSkill(SharkSkill::Hunt);
     action_ = SharkAction::HuntLeap;
     actionTimer_ = 0.0f;
+    huntElapsed_ = 0.0f;
     huntCooldown_ = GameConsts::SHARK_HUNT_COOLDOWN;
     chainBitesLeft_ = 0;
     SoundManager::Instance().PlaySFX(SfxId::BossTailSlap); // quẫy nhảy lên
 }
 
+MATRIX SharkBoss::BodyMatrix(const Vec3& at) const
+{
+    float sway = std::sin(tailPhase_);
+    // lăn Z -> chúi X -> quay Y -> dịch (đuôi và ổ hàm đều là con của ma trận này)
+    return MMult(MMult(MMult(MGetRotZ(bank_), MGetRotX(huntPose_)),
+                       MGetRotY(yaw_ - sway * GameConsts::SHARK_BODY_COUNTER_SWAY)),
+                 MGetTranslate(DxConv::ToVECTOR(at)));
+}
+
+Vec3 SharkBoss::JawPos() const
+{
+    VECTOR j = VTransform(VGet(0.0f, GameConsts::SHARK_HUNT_JAW_Y, GameConsts::SHARK_HUNT_JAW_Z), BodyMatrix(pos_));
+    return Vec3{ j.x, j.y, j.z };
+}
+
+void SharkBoss::EndHunt(PlayerFish* player)
+{
+    if (grabbedPlayer_ && player)
+        player->ReleaseThrow(Vec3{ 0.0f, 0.0f, 0.0f }, GameConsts::SHARK_HUNT_THROW_IFRAMES);
+    grabbedPlayer_ = nullptr;
+    Fx().fin.Stop();
+    pos_.y = 0.0f;
+    huntPose_ = 0.0f;
+    EndSkill();
+}
+
 void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
 {
     const Vec3& pp = player.GetPosition();
+    huntElapsed_ += dt;
+    if (huntElapsed_ >= GameConsts::SHARK_HUNT_FAILSAFE_TIME)
+    {
+        // Failsafe: không bao giờ kẹt trong Hunt
+        if (grabbedPlayer_) player.ReleaseThrow(Fwd() * GameConsts::SHARK_HUNT_THROW_SPEED, GameConsts::SHARK_HUNT_THROW_IFRAMES);
+        grabbedPlayer_ = nullptr;
+        EndHunt(nullptr);
+        return;
+    }
     switch (action_)
     {
     case SharkAction::HuntLeap:
@@ -233,7 +269,6 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         actionTimer_ += dt;
         float t = std::clamp(actionTimer_ / GameConsts::SHARK_HUNT_LEAP_TIME, 0.0f, 1.0f);
         pos_ += Fwd() * (GameConsts::SHARK_HUNT_LEAP_FWD_SPEED * dt);
-        // Cung nhảy rồi cắm xuống dưới mặt cát
         pos_.y = GameConsts::SHARK_HUNT_LEAP_HEIGHT * std::sin(PI * t) - GameConsts::SHARK_HUNT_BURROW_DEPTH * t * t;
         huntPose_ = (t < 0.5f) ? -0.5f : 0.7f; // ngóc lên rồi chúi xuống
         tailSpeedMul_ = 2.5f;
@@ -266,9 +301,10 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         Vec3 vel = (pos_ - old) * (1.0f / (std::max)(dt, 0.0001f));
         // Vây nhô khỏi cát + vệt nước/bọt (TODO(SharkFx/Fuyuu): SandFinTrail)
         Fx().fin.SetFin(DxConv::ToVECTOR(Vec3{ pos_.x, 6.0f, pos_.z } - Fwd() * 20.0f), DxConv::ToVECTOR(vel));
-        if (actionTimer_ >= GameConsts::SHARK_HUNT_TRACK_TIME)
+        // Khoá khi đã áp sát (hoặc hết giờ bám)
+        if (Collision::DistXZ(pos_, pp) <= GameConsts::SHARK_HUNT_LOCK_DIST || actionTimer_ >= GameConsts::SHARK_HUNT_TRACK_TIME)
         {
-            huntLockPos_ = Vec3{ pp.x, 0.0f, pp.z }; // khoá vị trí hiện tại
+            huntLockPos_ = Vec3{ pp.x, 0.0f, pp.z };
             Fx().fin.Stop();
             action_ = SharkAction::HuntLock;
             actionTimer_ = 0.0f;
@@ -281,24 +317,44 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
         if (actionTimer_ >= GameConsts::SHARK_HUNT_LOCK_TIME)
         {
-            // Phóng lên ngay dưới điểm khoá, mõm chụp vào tâm vòng
+            // Đặt thân ngay dưới vòng đỏ (mõm ở tâm), rồi phóng thẳng lên
             Vec3 face = Collision::FlatDiff(huntLockPos_, pos_);
             if (face.LengthSq() > 1.0f) yaw_ = YawOf(face);
-            pos_ = huntLockPos_ - Fwd() * (GameConsts::SHARK_MOUTH_FWD * 0.8f);
-            pos_.y = 0.0f;
+            pos_ = huntLockPos_ - Fwd() * GameConsts::SHARK_HUNT_JAW_Z;
+            pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
             prevPos_ = pos_; prevYaw_ = yaw_; // không nội suy cú dịch chuyển dưới cát
             huntPose_ = -0.6f;
-            Vec3 mouth = MouthPos();
+            action_ = SharkAction::HuntBurst;
+            actionTimer_ = 0.0f;
+            // Ngoạm NGAY lúc phóng: ai trong vòng đỏ đều bị tóm (không còn miễn khi nhảy / i-frame / God Mode)
+            float d = Collision::DistXZ(pp, huntLockPos_);
+            if (d <= GameConsts::SHARK_HUNT_BITE_RADIUS + player.GetHitboxRadius() && player.Grab(GameConsts::SHARK_HUNT_BITE_DAMAGE, effects))
+                grabbedPlayer_ = &player;
+            AppLogAdd(L"[SHARK] Hunt burst: dist=%.1f radius=%.1f grabbed=%d\n", d, GameConsts::SHARK_HUNT_BITE_RADIUS, grabbedPlayer_ ? 1 : 0);
             // TODO(SharkFx/Fuyuu): SandEruptBurst tại huntLockPos_
-            Fx().bite.Bite(DxConv::ToVECTOR(mouth));
+            Fx().bite.Bite(DxConv::ToVECTOR(huntLockPos_ + Vec3{ 0.0f, 25.0f, 0.0f }));
             effects.SpawnShockwave(huntLockPos_, GameConsts::SHARK_HUNT_BITE_RADIUS * 1.6f);
             effects.SpawnWaterSplash(huntLockPos_, 120.0f, 1.6f);
-            effects.AddTrauma(0.5f);
+            effects.AddTrauma(0.55f);
             SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
-            bool inZone = Collision::DistXZ(pp, huntLockPos_) <= GameConsts::SHARK_HUNT_BITE_RADIUS + player.GetHitboxRadius();
-            if (inZone && player.Grab(GameConsts::SHARK_HUNT_BITE_DAMAGE, effects))
+        }
+        break;
+    case SharkAction::HuntBurst:
+    {
+        actionTimer_ += dt;
+        float t = std::clamp(actionTimer_ / GameConsts::SHARK_HUNT_BURST_TIME, 0.0f, 1.0f);
+        pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH * (1.0f - t);
+        if (grabbedPlayer_) player.SetGrabPose(JawPos() + Vec3{ 0.0f, GameConsts::SHARK_HUNT_HELD_Y_OFFSET, 0.0f }, yaw_ + PI * 0.5f);
+        if (t >= 1.0f)
+        {
+            pos_.y = 0.0f;
+            actionTimer_ = 0.0f;
+            if (grabbedPlayer_)
             {
-                grabbedPlayer_ = &player;
+                // Vòng quay quanh tâm sân, bắt đầu từ góc hiện tại
+                swingAngle_ = std::atan2(pos_.x, pos_.z);
+                swingRadius_ = Collision::DistXZ(pos_, Vec3{ 0.0f, 0.0f, 0.0f });
+                swingSwept_ = 0.0f;
                 huntTurnSign_ = (rand() % 2) ? 1.0f : -1.0f;
                 action_ = SharkAction::HuntDrag;
             }
@@ -306,20 +362,28 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             {
                 action_ = SharkAction::HuntRecover; // hụt -> cơ hội phản công
             }
-            actionTimer_ = 0.0f;
         }
         break;
+    }
     case SharkAction::HuntDrag:
     {
         actionTimer_ += dt;
-        yaw_ += huntTurnSign_ * GameConsts::SHARK_HUNT_DRAG_TURN * dt;
-        pos_ += Fwd() * (GameConsts::SHARK_HUNT_DRAG_SPEED * dt);
-        tailSpeedMul_ = 3.0f;
-        Vec3 mouth = MouthPos();
-        player.SetGrabPos(Vec3{ mouth.x, 0.0f, mouth.z });
-        if (actionTimer_ >= GameConsts::SHARK_HUNT_DRAG_TIME)
+        float w = GameConsts::SHARK_HUNT_SWING_ANG_SPEED;
+        swingAngle_ += huntTurnSign_ * w * dt;
+        swingSwept_ += w * dt;
+        swingRadius_ += (GameConsts::SHARK_HUNT_SWING_RADIUS - swingRadius_) * (std::min)(1.0f, GameConsts::SHARK_HUNT_SWING_RADIUS_LERP * dt);
+        Vec3 old = pos_;
+        pos_ = Vec3{ std::sin(swingAngle_) * swingRadius_, 0.0f, std::cos(swingAngle_) * swingRadius_ };
+        Vec3 vel = Collision::FlatDiff(pos_, old);
+        if (vel.LengthSq() > 0.01f) yaw_ = YawOf(vel);
+        bank_ = -0.35f * huntTurnSign_;
+        tailSpeedMul_ = 4.0f;
+        huntPose_ += (0.0f - huntPose_) * (std::min)(1.0f, dt * 5.0f);
+        Vec3 jaw = JawPos();
+        player.SetGrabPose(jaw + Vec3{ 0.0f, GameConsts::SHARK_HUNT_HELD_Y_OFFSET, 0.0f }, yaw_ + PI * 0.5f); // nằm ngang giữa hai hàm
+        if (swingSwept_ >= GameConsts::SHARK_HUNT_SWING_LAPS * 2.0f * PI)
         {
-            // Ném ra xa, ưu tiên hướng vào giữa sân để không đập tường ngay
+            // Ném theo hướng quay, nghiêng vào giữa sân để không đập tường ngay
             Vec3 dir = Fwd();
             Vec3 toC = Collision::FlatDiff(Vec3{ 0.0f, 0.0f, 0.0f }, pos_);
             float lc = toC.Length();
@@ -328,12 +392,11 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             player.ReleaseThrow(dir * GameConsts::SHARK_HUNT_THROW_SPEED, GameConsts::SHARK_HUNT_THROW_IFRAMES);
             grabbedPlayer_ = nullptr;
             effects.AddTrauma(0.6f);
-            effects.SpawnShockwave(mouth, 140.0f);
-            effects.SpawnBubbles(mouth, 25, 120.0f, 3.0f, 6.0f);
+            effects.SpawnShockwave(jaw, 140.0f);
+            effects.SpawnBubbles(jaw, 25, 120.0f, 3.0f, 6.0f);
             SoundManager::Instance().PlaySFX(SfxId::BossTailSlap);
-            // Sau Hunt luôn vào nghỉ để người chơi hoàn hồn
             burstCount_ = (frenzy_ ? GameConsts::SHARK_BURST_SIZE_FRENZY : GameConsts::SHARK_BURST_SIZE) - 1;
-            EndSkill();
+            EndHunt(nullptr); // luôn vào nghỉ sau Hunt
         }
         break;
     }
@@ -341,9 +404,10 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         actionTimer_ += dt;
         tailSpeedMul_ = 0.4f;
         huntPose_ = (std::min)(0.0f, huntPose_ + dt * 2.0f);
-        if (actionTimer_ >= GameConsts::SHARK_HUNT_MISS_RECOVER) EndSkill();
+        if (actionTimer_ >= GameConsts::SHARK_HUNT_MISS_RECOVER) EndHunt(nullptr);
         break;
     default:
+        EndHunt(&player);
         break;
     }
 }
@@ -582,6 +646,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     case SharkAction::HuntLeap:
     case SharkAction::HuntTrack:
     case SharkAction::HuntLock:
+    case SharkAction::HuntBurst:
     case SharkAction::HuntDrag:
     case SharkAction::HuntRecover:
         UpdateHunt(dt, player, effects);
@@ -691,9 +756,7 @@ void SharkBoss::Draw() const
 
         // Một ma trận thân duy nhất (lăn Z -> chúi X -> quay Y -> dịch); đuôi là con của thân
         // => khớp đuôi luôn bám đúng thân kể cả khi nghiêng (sửa lỗi đuôi lệch/hở khớp)
-        MATRIX bodyM = MMult(MMult(MMult(MGetRotZ(bank_), MGetRotX(huntPose_)),
-                                   MGetRotY(yaw_ - sway * GameConsts::SHARK_BODY_COUNTER_SWAY)),
-                             MGetTranslate(DxConv::ToVECTOR(drawPos)));
+        MATRIX bodyM = BodyMatrix(drawPos);
         int body = LowPolyModels::GetHandle(LowPolyId::SharkBoss);
         if (body >= 0)
         {

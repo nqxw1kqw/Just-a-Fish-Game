@@ -43,7 +43,7 @@ public:
     void AddExternalPull(const Vec3& velocity) { externalPull_ += velocity; }
     // Shark Hunt: bị ngoạm (bỏ qua i-frame chỉ cho đòn này; nhảy thì vẫn né được), khoá input, rồi bị ném
     bool Grab(float dmg, EffectSystem& effects);
-    void SetGrabPos(const Vec3& p) { grabPos_ = p; }
+    void SetGrabPose(const Vec3& p, float yaw) { grabPos_ = p; grabYaw_ = yaw; }
     void ReleaseThrow(const Vec3& vel, float iframes);
     bool IsGrabbed() const { return grabbed_; }
     bool IsInvulnerable() const { return invulnerableTimer_ > 0.0f; }
@@ -137,6 +137,7 @@ private:
     Vec3 knockback_{ 0.0f, 0.0f, 0.0f };
     bool grabbed_ = false;
     Vec3 grabPos_{ 0.0f, 0.0f, 0.0f };
+    float grabYaw_ = 0.0f;
     Vec3 predictedLandPos_{ 0.0f, 0.0f, 0.0f };
     float yaw_ = 0.0f;
     Vec3 prevPos_{ 0.0f, 0.0f, 0.0f };
