@@ -36,11 +36,11 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
         int waveSecLeft = (std::max)(0, static_cast<int>(game.waveDuration_ - game.waveTimer_));
         if (game.mode_ == GameMode::Endless)
         {
-            FontManager::DrawFormat(sw / 2 - 100, 24, GetColor(100, 220, 255), FontSize::Header, L"ENDLESS WAVE %d", game.currentWave_);
+            FontManager::DrawFormat(sw / 2 - 150, 24, GetColor(100, 220, 255), FontSize::Header, L"ENDLESS STAGE %d / %d", game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
         }
         else
         {
-            FontManager::DrawFormat(sw / 2 - 80, 24, GetColor(100, 220, 255), FontSize::Header, L"WAVE %d / 5", game.currentWave_);
+            FontManager::DrawFormat(sw / 2 - 120, 24, GetColor(100, 220, 255), FontSize::Header, L"TUTORIAL %d / %d", game.currentWave_, GameConsts::TUTORIAL_WAVES);
         }
         FontManager::DrawFormat(sw / 2 - 95, 52, GetColor(255, 220, 100), FontSize::Body, L"TIME LEFT: %02ds", waveSecLeft);
         FontManager::DrawFormat(sw / 2 - 110, 74, GetColor(255, 180, 80), FontSize::Body, L"ENEMIES: %d | KILLS: %d", game.enemies_.GetActiveCount(), game.enemies_.GetTotalKills());
@@ -113,9 +113,9 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
     int edgeCol1 = isClassicSelected ? GetColor(255, 220, 80) : GetColor(60, 90, 130);
     DrawBox(boxX + 50, mode1Y, boxX + boxW - 50, mode1Y + 48, bgCol1, TRUE);
     DrawBox(boxX + 50, mode1Y, boxX + boxW - 50, mode1Y + 48, edgeCol1, FALSE);
-    const wchar_t* pfx1 = isClassicSelected ? L"> [1] CLASSIC MODE :" : L"  [1] CLASSIC MODE :";
+    const wchar_t* pfx1 = isClassicSelected ? L"> [1] STORY MODE :" : L"  [1] STORY MODE :";
     FontManager::Draw(boxX + 65, mode1Y + 12, pfx1, isClassicSelected ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
-    FontManager::Draw(boxX + 270, mode1Y + 14, L"5 Waves + Giant Whale Final Boss", GetColor(200, 220, 255), FontSize::Body);
+    FontManager::Draw(boxX + 270, mode1Y + 14, L"3-Wave Tutorial + Whale, then Endless", GetColor(200, 220, 255), FontSize::Body);
 
     // Box Mode 2: Endless
     int bgCol2 = isEndlessSelected ? GetColor(25, 55, 95) : GetColor(15, 25, 40);
@@ -124,7 +124,7 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
     DrawBox(boxX + 50, mode2Y, boxX + boxW - 50, mode2Y + 48, edgeCol2, FALSE);
     const wchar_t* pfx2 = isEndlessSelected ? L"> [2] ENDLESS MODE :" : L"  [2] ENDLESS MODE :";
     FontManager::Draw(boxX + 65, mode2Y + 12, pfx2, isEndlessSelected ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
-    FontManager::Draw(boxX + 270, mode2Y + 14, L"Infinite Waves, Stacking Cards, Periodic Bosses", GetColor(255, 180, 120), FontSize::Body);
+    FontManager::Draw(boxX + 270, mode2Y + 14, L"30 Stages (20s), Stacking Cards, Boss every 5", GetColor(255, 180, 120), FontSize::Body);
 
     // Kỷ lục Endless Highscore (Task 10 T4e)
     const auto& hs = game.GetHighscore();

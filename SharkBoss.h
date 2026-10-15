@@ -68,6 +68,7 @@ public:
     bool IsFrenzy() const { return frenzy_; }
     float GetHp() const { return hp_; }
     float GetMaxHp() const { return maxHp_; }
+    void SetHpMultiplier(float mul) { maxHp_ = GameConsts::SHARK_MAX_HP * mul; hp_ = maxHp_; }
     const Vec3& GetPosition() const { return pos_; }
     float GetHitboxRadius() const { return GameConsts::SHARK_HITBOX_RADIUS; }
     float GetBossFightTimer() const { return fightTimer_; }

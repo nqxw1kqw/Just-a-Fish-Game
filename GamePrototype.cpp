@@ -240,7 +240,7 @@ void GamePrototype::StartWave(int wave)
 
     if (mode_ == GameMode::Classic)
     {
-        // G2: 5 wave, mỗi wave khoảng 30s - 40s
+        // Tutorial: TUTORIAL_WAVES wave, mỗi wave 30s - 35s
         if (wave <= 2) waveDuration_ = 30.0f;
         else if (wave <= 4) waveDuration_ = 35.0f;
         else waveDuration_ = 40.0f;
@@ -269,12 +269,89 @@ void GamePrototype::StartBossFight()
     SoundManager::Instance().PlayBGM(BgmId::Boss, true);
 }
 
-// Endless: boss lẻ (wave 5, 15, 25...) là Cá Mập, boss chẵn (wave 10, 20...) là Cá Voi. Classic luôn là Cá Voi.
-void GamePrototype::PrepareEndlessBoss(int bossIdx)
+// Endless: tham số là số stage Boss (5, 10, ... 30). Boss ngẫu nhiên Cá Voi / Cá Mập.
+// HP Boss: mul = 1 + ENDLESS_BOSS_HP_PER_STAGE * (stage - 5)  (stage 5 = x1.0, stage 30 = x2.25)
+void GamePrototype::PrepareEndlessBoss(int stage)
 {
-    sharkFight_ = (bossIdx % 2) == GameConsts::SHARK_ENDLESS_BOSS_PARITY;
-    if (sharkFight_) shark_.SetBossDifficulty((bossIdx + 1) / 2);
-    else boss_.SetBossDifficulty(bossIdx);
+    sharkFight_ = (rand() % 2) == 1;
+    const int tier = (std::max)(1, stage / GameConsts::ENDLESS_BOSS_EVERY);
+    const float hpMul = 1.0f + GameConsts::ENDLESS_BOSS_HP_PER_STAGE
+        * static_cast<float>((std::max)(0, stage - GameConsts::ENDLESS_BOSS_EVERY));
+    if (sharkFight_) { shark_.SetBossDifficulty(tier); shark_.SetHpMultiplier(hpMul); }
+    else { boss_.SetBossDifficulty(tier); boss_.SetHpMultiplier(hpMul); }
+    AppLogAdd(L"[ENDLESS] Stage %d boss: %s tier=%d hpMul=%.2f\n", stage, sharkFight_ ? L"Shark" : L"Whale", tier, hpMul);
+}
+
+void GamePrototype::BeginBossIntro()
+{
+    state_ = GameState::BossIntro;
+    bossIntroTimer_ = 2.0f;
+    enemies_.KillAll(effects_);
+    SoundManager::Instance().PlayBGM(BgmId::Boss, true);
+    SoundManager::Instance().PlaySFX(SfxId::WhaleGroan);
+}
+
+void GamePrototype::StartStage(int stage)
+{
+    if (mode_ == GameMode::Endless && stage % GameConsts::ENDLESS_BOSS_EVERY == 0)
+    {
+        currentWave_ = stage;
+        waveTimer_ = 0.0f;
+        player_.ResetDamageTakenThisWave();
+        enemies_.SetWave(stage, true);
+        PrepareEndlessBoss(stage);
+        BeginBossIntro();
+        return;
+    }
+    StartWave(stage);
+}
+
+void GamePrototype::AdvanceAfterCardPick()
+{
+    if (mode_ == GameMode::Classic)
+    {
+        if (currentWave_ >= GameConsts::TUTORIAL_WAVES)
+        {
+            sharkFight_ = false; // Tutorial: luôn là Cá Voi
+            BeginBossIntro();
+        }
+        else
+        {
+            StartWave(currentWave_ + 1);
+        }
+        return;
+    }
+    if (currentWave_ >= GameConsts::ENDLESS_MAX_STAGE)
+    {
+        EnterEndlessClear();
+        return;
+    }
+    StartStage(currentWave_ + 1);
+}
+
+void GamePrototype::EnterEndlessFromTutorial()
+{
+    AppLogAdd(L"[ENDLESS] Tutorial cleared -> Endless stage 1\n");
+    mode_ = GameMode::Endless;
+    titleSelectedMode_ = 1;
+    enemies_.SetEndless(true);
+    cardManager_.SetEndless(true);
+    boss_.Reset();
+    shark_.Reset();
+    sharkFight_ = false;
+    player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
+    StartStage(1);
+}
+
+void GamePrototype::EnterEndlessClear()
+{
+    AppLogAdd(L"[ENDLESS] All %d stages cleared!\n", GameConsts::ENDLESS_MAX_STAGE);
+    state_ = GameState::Victory;
+    resultScreen_.Enter(true, false);
+    effects_.AddTrauma(0.7f);
+    enemies_.KillAll(effects_);
+    SoundManager::Instance().PlayBGM(BgmId::Victory, true);
+    SaveHighscore();
 }
 
 void GamePrototype::OnWaveComplete()
@@ -308,18 +385,7 @@ void GamePrototype::OnWaveComplete()
         player_.Heal(player_.GetMaxHp() * GameConsts::ENDLESS_EMPTY_POOL_HEAL);
         effects_.SpawnHitParticles(player_.GetPosition() + Vec3{ 0, 20, 0 }, 30, GetColor(255, 215, 60));
 
-        if (currentWave_ % 5 == 0)
-        {
-            state_ = GameState::BossIntro;
-            bossIntroTimer_ = 2.0f;
-            PrepareEndlessBoss(currentWave_ / 5);
-            SoundManager::Instance().PlayBGM(BgmId::Boss, true);
-            SoundManager::Instance().PlaySFX(SfxId::WhaleGroan);
-        }
-        else
-        {
-            StartWave(currentWave_ + 1);
-        }
+        AdvanceAfterCardPick();
         return;
     }
 
@@ -342,7 +408,7 @@ void GamePrototype::SkipCurrentWave()
 
 void GamePrototype::SkipToWave(int waveTarget)
 {
-    if (waveTarget < 1 || waveTarget > 5) return;
+    if (waveTarget < 1 || waveTarget > GameConsts::TUTORIAL_WAVES) return;
     debugController_.MarkDebugUsed();
 
     // Reset thẻ và cấp ngẫu nhiên (waveTarget - 1) thẻ
@@ -364,6 +430,7 @@ void GamePrototype::SkipToWave(int waveTarget)
 void GamePrototype::SkipToEndlessWave(int waveTarget)
 {
     if (waveTarget < 1) return;
+    waveTarget = (std::min)(waveTarget, GameConsts::ENDLESS_MAX_STAGE);
     debugController_.MarkDebugUsed();
     mode_ = GameMode::Endless;
     cardManager_.SetEndless(true);
@@ -381,7 +448,7 @@ void GamePrototype::SkipToEndlessWave(int waveTarget)
     sharkFight_ = false;
 
     ReapplyAllStats();
-    StartWave(waveTarget);
+    StartStage(waveTarget);
 }
 
 void GamePrototype::SkipToBoss()
@@ -420,8 +487,11 @@ void GamePrototype::SkipToSharkBoss()
     shark_.Reset();
 
     ReapplyAllStats();
-    currentWave_ = 5;
-    PrepareEndlessBoss(1); // boss Endless đầu tiên = Cá Mập
+    currentWave_ = GameConsts::ENDLESS_BOSS_EVERY;
+    PrepareEndlessBoss(currentWave_);
+    sharkFight_ = true; // Debug: luôn Cá Mập
+    shark_.SetBossDifficulty(1);
+    shark_.SetHpMultiplier(1.0f);
     StartBossFight();
 }
 
@@ -760,40 +830,7 @@ void GamePrototype::Update(float dt)
         {
             ReapplyAllStats();
 
-            if (mode_ == GameMode::Classic)
-            {
-                // Kiểm tra tiến sang Boss hoặc Wave tiếp theo (G1, G2)
-                if (currentWave_ >= 5)
-                {
-                    state_ = GameState::BossIntro;
-                    bossIntroTimer_ = 2.0f; // 2 giây giới thiệu Boss (G1, B4)
-                    sharkFight_ = false;    // Story/Classic: luôn là Cá Voi
-                    enemies_.KillAll(effects_);
-                    SoundManager::Instance().PlayBGM(BgmId::Boss, true);
-                    SoundManager::Instance().PlaySFX(SfxId::WhaleGroan);
-                }
-                else
-                {
-                    StartWave(currentWave_ + 1);
-                }
-            }
-            else
-            {
-                // Chế độ Endless: Boss xuất hiện định kỳ mỗi 5 wave (Task 10 T4c)
-                if (currentWave_ % 5 == 0)
-                {
-                    state_ = GameState::BossIntro;
-                    bossIntroTimer_ = 2.0f;
-                    enemies_.KillAll(effects_);
-                    PrepareEndlessBoss(currentWave_ / 5);
-                    SoundManager::Instance().PlayBGM(BgmId::Boss, true);
-                    SoundManager::Instance().PlaySFX(SfxId::WhaleGroan);
-                }
-                else
-                {
-                    StartWave(currentWave_ + 1);
-                }
-            }
+            AdvanceAfterCardPick();
         }
     }
     else if (state_ == GameState::BossIntro)
@@ -890,13 +927,12 @@ void GamePrototype::Update(float dt)
             {
                 if (mode_ == GameMode::Classic)
                 {
-                    state_ = GameState::Victory;
-                    resultScreen_.Enter(true, false);
+                    // Balance pass: hạ Cá Voi tutorial -> tự vào Endless (không qua menu)
                     effects_.AddTrauma(0.7f);
                     enemies_.KillAll(effects_);
-                    SoundManager::Instance().PlayBGM(BgmId::Victory, true);
                     swprintf_s(lastSummaryBuffer_, L"Boss: %.1f giây", bossTime);
                     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
+                    EnterEndlessFromTutorial();
                 }
                 else
                 {
@@ -910,10 +946,17 @@ void GamePrototype::Update(float dt)
                     player_.Heal(player_.GetMaxHp() * 0.50f);
                     effects_.SpawnHitParticles(player_.GetPosition() + Vec3{ 0, 20, 0 }, 30, GetColor(255, 230, 80));
 
-                    // Tiến sang wave kế tiếp qua CardPick
-                    currentWave_++;
-                    state_ = GameState::CardPick;
-                    cardManager_.Roll3Cards(currentWave_);
+                    // Stage cuối -> CLEAR; ngược lại chọn thẻ rồi sang stage kế tiếp
+                    if (currentWave_ >= GameConsts::ENDLESS_MAX_STAGE)
+                    {
+                        EnterEndlessClear();
+                    }
+                    else
+                    {
+                        state_ = GameState::CardPick;
+                        SoundManager::Instance().PlaySFX(SfxId::CardFlip);
+                        cardManager_.Roll3Cards(currentWave_);
+                    }
                 }
             }
         }

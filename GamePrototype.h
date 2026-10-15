@@ -70,6 +70,12 @@ private:
     bool renderInterpActive_ = false;
     void StartWave(int wave);
     void StartBossFight();
+    // Balance pass: luồng Tutorial (3 wave + Cá Voi) -> Endless (30 stage, Boss mỗi 5 stage)
+    void StartStage(int stage);          // Endless: stage chia hết cho ENDLESS_BOSS_EVERY -> Boss
+    void BeginBossIntro();
+    void AdvanceAfterCardPick();         // Sau khi chọn thẻ: sang wave/stage kế tiếp hoặc Boss
+    void EnterEndlessFromTutorial();     // Hạ Cá Voi tutorial -> tự vào Endless stage 1 (giữ thẻ)
+    void EnterEndlessClear();            // Qua stage ENDLESS_MAX_STAGE -> màn CLEAR
     void OnWaveComplete();
     void ReapplyAllStats();
 

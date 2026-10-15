@@ -303,7 +303,9 @@ void EnemyManager::SetWave(int wave, bool isEndless)
     if (isEndless_)
     {
         // Công thức scaling quái Endless có trần (Task 10 T4b)
-        hpMultiplier_ = (std::min)(2.5f, 1.0f + 0.06f * (wave - 1));
+        const float s1 = static_cast<float>(wave - 1);
+        hpMultiplier_ = (std::min)(GameConsts::ENDLESS_ENEMY_HP_MAX,
+            1.0f + GameConsts::ENDLESS_ENEMY_HP_LIN * s1 + GameConsts::ENDLESS_ENEMY_HP_QUAD * s1 * s1);
         dmgMultiplier_ = (std::min)(1.6f, 1.0f + 0.03f * (wave - 1));
         spdMultiplier_ = (std::min)(1.15f, 1.0f + 0.005f * (wave - 1));
     }
@@ -760,6 +762,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
 int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage, float knockbackStrength, EffectSystem& effects)
 {
     int hitCount = 0;
+    damage *= GameConsts::PLAYER_DMG_MUL_VS_ENEMY; // quái thường nhận thêm sát thương (Boss không)
     float radSq = radius * radius;
     for (auto& e : enemies_)
     {
@@ -836,6 +839,7 @@ Enemy* EnemyManager::FindClosestEnemy(const Vec3& fromPos, float maxRange)
 bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, float damage, Vec3 bulletDir, EffectSystem& effects, int& outExp)
 {
     outExp = 0;
+    damage *= GameConsts::PLAYER_DMG_MUL_VS_ENEMY; // quái thường nhận thêm sát thương (Boss không)
     for (auto& e : enemies_)
     {
         if (!e.active) continue;
