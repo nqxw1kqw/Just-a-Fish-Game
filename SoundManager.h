@@ -27,8 +27,16 @@ enum class SfxId
 
     // Quái vật & Vũ khí
     EnemySquish,        // sfx_enemy_squish: quái bị sóng chấn động nghiền nát
-    SharkTelegraph,     // sfx_shark_telegraph: cá mập khóa mục tiêu laser đỏ
-    SharkDash,          // sfx_shark_dash: cá mập phóng lao
+    SharkTelegraph,     // sfx_shark_telegraph: khóa vòng đỏ / telegraph cắn
+    SharkDash,          // sfx_shark_dash: lao ngầm / lunge whoosh
+    SharkDive,          // sfx_shark_dive: nhảy lao xuống cát (Hunt leap)
+    SharkErupt,         // sfx_shark_erupt: phun cát / cắn trúng / slam
+    SharkGrab,          // sfx_shark_grab: ngoạm người chơi
+    SharkThrow,         // sfx_shark_throw: quăng người chơi
+    SharkStrafe,        // sfx_shark_strafe: vẫy vây vòng tròn
+    SharkVortexLoop,    // sfx_shark_vortex_loop: xoáy hút (lặp)
+    SharkFrenzy,        // sfx_shark_frenzy: gầm cuồng nộ
+    SharkStun,          // sfx_shark_stun: choáng
     PufferSpikes,       // sfx_puffer_spikes: cá nóc bắn 8 gai phản đòn
     ExpPickup,          // sfx_exp_pickup: nhặt ngọc kinh nghiệm / hồi phục
 

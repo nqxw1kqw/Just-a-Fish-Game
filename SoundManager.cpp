@@ -22,8 +22,16 @@ static const SfxInitConfig kSfxConfigs[] = {
     { SfxId::SlamImpact,     "sfx_slam_impact",     L"sfx_slam_impact",     6, 100, L"Data/Sound/SE/player-splash-se.mp3" },
     { SfxId::PlayerHit,      "sfx_player_hit",      L"sfx_player_hit",      4, 95,  L"Data/Sound/SE/player-hit-se.mp3" },
     { SfxId::EnemySquish,    "sfx_enemy_squish",    L"sfx_enemy_squish",    4, 85,  nullptr },
-    { SfxId::SharkTelegraph, "sfx_shark_telegraph", L"sfx_shark_telegraph", 4, 85,  nullptr },
-    { SfxId::SharkDash,      "sfx_shark_dash",      L"sfx_shark_dash",      4, 90,  nullptr },
+    { SfxId::SharkTelegraph, "sfx_shark_telegraph", L"sfx_shark_telegraph", 2, 88,  nullptr },
+    { SfxId::SharkDash,      "sfx_shark_dash",      L"sfx_shark_dash",      3, 92,  nullptr },
+    { SfxId::SharkDive,      "sfx_shark_dive",      L"sfx_shark_dive",      2, 95,  nullptr },
+    { SfxId::SharkErupt,     "sfx_shark_erupt",     L"sfx_shark_erupt",     3, 100, nullptr },
+    { SfxId::SharkGrab,      "sfx_shark_grab",      L"sfx_shark_grab",      2, 95,  nullptr },
+    { SfxId::SharkThrow,     "sfx_shark_throw",     L"sfx_shark_throw",     2, 92,  nullptr },
+    { SfxId::SharkStrafe,    "sfx_shark_strafe",    L"sfx_shark_strafe",    2, 80,  nullptr },
+    { SfxId::SharkVortexLoop,"sfx_shark_vortex_loop",L"sfx_shark_vortex_loop",1, 82, nullptr },
+    { SfxId::SharkFrenzy,    "sfx_shark_frenzy",    L"sfx_shark_frenzy",    2, 100, nullptr },
+    { SfxId::SharkStun,      "sfx_shark_stun",      L"sfx_shark_stun",      2, 88,  nullptr },
     { SfxId::PufferSpikes,   "sfx_puffer_spikes",   L"sfx_puffer_spikes",   4, 90,  nullptr },
     { SfxId::ExpPickup,      "sfx_exp_pickup",      L"sfx_exp_pickup",      4, 75,  nullptr },
     { SfxId::WhaleGroan,     "sfx_whale_groan",     L"sfx_whale_groan",     4, 100, nullptr },
@@ -142,6 +150,8 @@ void SoundManager::Init()
         // Chống chồng tiếng cho SFX trúng đòn / chết khi hạ hàng loạt
         if (cfg.id == SfxId::EnemyHit || cfg.id == SfxId::EnemyHitCrit) entry.minIntervalMs = GameConsts::SFX_HIT_MIN_INTERVAL_MS;
         else if (cfg.id == SfxId::EnemyDeathPop || cfg.id == SfxId::EnemySquish) entry.minIntervalMs = GameConsts::SFX_DEATH_MIN_INTERVAL_MS;
+        else if (cfg.id == SfxId::SharkStrafe) entry.minIntervalMs = GameConsts::SFX_SHARK_STRAFE_MIN_INTERVAL_MS;
+        else if (cfg.id == SfxId::SharkErupt || cfg.id == SfxId::SharkDash) entry.minIntervalMs = GameConsts::SFX_SHARK_IMPACT_MIN_INTERVAL_MS;
 
         int baseHandle = TryLoadSoundFile(cfg.name, false, cfg.customFallback);
         if (baseHandle != -1)

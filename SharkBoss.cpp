@@ -45,7 +45,7 @@ void SharkBoss::Reset()
     vortexTimer_ = 0.0f;
     frenzy_ = false;
     if (fx_) fx_->ClearAll();
-    SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
+    SoundManager::Instance().StopSFX(SfxId::SharkVortexLoop);
 }
 
 void SharkBoss::Spawn(const Vec3& arenaCenter)
@@ -190,7 +190,7 @@ void SharkBoss::StartBite(PlayerFish& player, float telegraph)
     Vec3 to = Collision::FlatDiff(PredictPlayerPos(player, telegraph + travel), pos_);
     if (to.LengthSq() > 1.0f) lungeDir_ = to * (1.0f / to.Length());
     Fx().bite.Start(DxConv::ToVECTOR(pos_), DxConv::ToVECTOR(lungeDir_), telegraph, GameConsts::SHARK_BITE_RANGE);
-    SoundManager::Instance().PlaySFX(SfxId::BossDiveCharge);
+    SoundManager::Instance().PlaySFX(SfxId::SharkTelegraph);
 }
 
 void SharkBoss::StartStrafe(PlayerFish& player)
@@ -203,7 +203,7 @@ void SharkBoss::StartStrafe(PlayerFish& player)
     strafeSign_ = (rand() % 2) ? 1.0f : -1.0f;
     finHitCd_ = 0.0f;
     Fx().fin.Start();
-    SoundManager::Instance().PlaySFX(SfxId::BossTailSlap); // vẫy đuôi tăng tốc
+    SoundManager::Instance().PlaySFX(SfxId::SharkStrafe); // vẫy vây tăng tốc
 }
 
 void SharkBoss::StartVortex()
@@ -221,7 +221,7 @@ void SharkBoss::StartHunt()
     huntElapsed_ = 0.0f;
     huntCooldown_ = GameConsts::SHARK_HUNT_COOLDOWN;
     chainBitesLeft_ = 0;
-    SoundManager::Instance().PlaySFX(SfxId::BossTailSlap); // quẫy nhảy lên
+    SoundManager::Instance().PlaySFX(SfxId::SharkDive); // quẫy nhảy lao xuống cát
 }
 
 MATRIX SharkBoss::BodyMatrix(const Vec3& at) const
@@ -281,7 +281,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             effects.SpawnWaterSplash(g, 110.0f, 1.4f);
             effects.SpawnBubbles(g, 30, 90.0f, 3.0f, 6.0f);
             effects.AddTrauma(0.3f);
-            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
+            SoundManager::Instance().PlaySFX(SfxId::SharkErupt); // chui xuống cát
             Fx().fin.Start();
             action_ = SharkAction::HuntTrack;
             actionTimer_ = 0.0f;
@@ -323,7 +323,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             Fx().fin.Stop();
             action_ = SharkAction::HuntLock;
             actionTimer_ = 0.0f;
-            SoundManager::Instance().PlaySFX(SfxId::BossDiveCharge);
+            SoundManager::Instance().PlaySFX(SfxId::SharkTelegraph); // vòng đỏ khóa mục tiêu
         }
         break;
     }
@@ -340,7 +340,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             Fx().fin.Start();
             action_ = SharkAction::HuntDash;
             actionTimer_ = 0.0f;
-            SoundManager::Instance().PlaySFX(SfxId::BossTailSlap); // whoosh
+            SoundManager::Instance().PlaySFX(SfxId::SharkDash); // lao ngầm
         }
         break;
     case SharkAction::HuntDash:
@@ -376,7 +376,9 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             effects.SpawnShockwave(huntLockPos_, GameConsts::SHARK_HUNT_BITE_RADIUS * 1.6f);
             effects.SpawnWaterSplash(huntLockPos_, 120.0f, 1.6f);
             effects.AddTrauma(0.55f);
-            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
+            // Phun cát + (nếu ngoạm được) tiếng cắn
+            SoundManager::Instance().PlaySFX(SfxId::SharkErupt);
+            if (grabbedPlayer_) SoundManager::Instance().PlaySFX(SfxId::SharkGrab);
         }
         break;
     }
@@ -435,7 +437,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             effects.AddTrauma(0.6f);
             effects.SpawnShockwave(jaw, 140.0f);
             effects.SpawnBubbles(jaw, 25, 120.0f, 3.0f, 6.0f);
-            SoundManager::Instance().PlaySFX(SfxId::BossTailSlap);
+            SoundManager::Instance().PlaySFX(SfxId::SharkThrow);
             burstCount_ = (frenzy_ ? GameConsts::SHARK_BURST_SIZE_FRENZY : GameConsts::SHARK_BURST_SIZE) - 1;
             EndHunt(nullptr); // luôn vào nghỉ sau Hunt
         }
@@ -458,7 +460,7 @@ void SharkBoss::Stun(float duration)
     action_ = SharkAction::Stunned;
     stunTimer_ = duration;
     chainBitesLeft_ = 0;
-    SoundManager::Instance().PlaySFX(SfxId::BossStun);
+    SoundManager::Instance().PlaySFX(SfxId::SharkStun);
 }
 
 void SharkBoss::StartFrenzy(EffectSystem& effects)
@@ -468,7 +470,7 @@ void SharkBoss::StartFrenzy(EffectSystem& effects)
     effects.AddTrauma(0.7f);
     effects.SpawnShockwave(pos_, 240.0f);
     Fx().rage.Start(GameConsts::SHARK_HITBOX_RADIUS);
-    SoundManager::Instance().PlaySFX(SfxId::BossRoar);
+    SoundManager::Instance().PlaySFX(SfxId::SharkFrenzy);
 }
 
 void SharkBoss::UpdateVortex(float dt, PlayerFish& player, EffectSystem& effects)
@@ -493,7 +495,7 @@ void SharkBoss::UpdateVortex(float dt, PlayerFish& player, EffectSystem& effects
     if (vortexTimer_ <= 0.0f)
     {
         vortexTimer_ = 0.0f;
-        SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
+        SoundManager::Instance().StopSFX(SfxId::SharkVortexLoop);
     }
 }
 
@@ -576,7 +578,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         {
             action_ = SharkAction::BiteLunge;
             yaw_ = YawOf(lungeDir_);
-            SoundManager::Instance().PlaySFX(SfxId::BossTailSlap); // whoosh
+            SoundManager::Instance().PlaySFX(SfxId::SharkDash); // whoosh lunge
         }
         break;
     }
@@ -591,6 +593,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         if (!biteHit_ && Collision::DistXZ(mouth, pp) <= GameConsts::SHARK_BITE_HIT_RADIUS + player.GetHitboxRadius())
         {
             biteHit_ = true;
+            SoundManager::Instance().PlaySFX(SfxId::SharkErupt);
             if (player.TakeDamage(GameConsts::SHARK_BITE_DAMAGE, effects, &pos_))
             {
                 Fx().bite.Bite(DxConv::ToVECTOR(mouth));
@@ -604,7 +607,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             pos_.z = std::clamp(pos_.z, -lim, lim);
             effects.AddTrauma(0.4f);
             effects.SpawnShockwave(mouth, 90.0f);
-            SoundManager::Instance().PlaySFX(SfxId::BossHeavySlam);
+            SoundManager::Instance().PlaySFX(SfxId::SharkErupt); // đâm tường
             Stun(GameConsts::SHARK_WALL_STUN); // đâm tường -> choáng (kết thúc chuỗi)
             break;
         }
@@ -678,7 +681,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             vortexTickCd_ = 0.0f;
             vortexCooldown_ = GameConsts::SHARK_VORTEX_COOLDOWN;
             Fx().vortex.Start(DxConv::ToVECTOR(c), GameConsts::SHARK_VORTEX_RADIUS, GameConsts::SHARK_VORTEX_DURATION);
-            SoundManager::Instance().PlaySFXLoop(SfxId::BossInhaleLoop); // tiếng nước xoáy
+            SoundManager::Instance().PlaySFXLoop(SfxId::SharkVortexLoop); // tiếng nước xoáy
             effects.SpawnWaterSplash(c, GameConsts::SHARK_VORTEX_RADIUS * 0.5f, 1.2f);
             EndSkill();
         }
@@ -725,7 +728,7 @@ bool SharkBoss::TakeDamage(float dmg, EffectSystem& effects)
         effects.SpawnFishDeath(pos_ + Vec3{ 0.0f, 30.0f, 0.0f }, 120.0f);
         if (fx_) { fx_->rage.Stop(); fx_->fin.Stop(); }
         vortexTimer_ = 0.0f;
-        SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
+        SoundManager::Instance().StopSFX(SfxId::SharkVortexLoop);
         if (grabbedPlayer_)
         {
             grabbedPlayer_->ReleaseThrow(Fwd() * (GameConsts::SHARK_HUNT_THROW_SPEED * 0.3f), GameConsts::SHARK_HUNT_THROW_IFRAMES);

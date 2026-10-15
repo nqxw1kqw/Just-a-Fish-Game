@@ -89,6 +89,8 @@ namespace GameConsts
     constexpr int SFX_HIT_MIN_INTERVAL_MS = 45;
     constexpr int SFX_DEATH_MIN_INTERVAL_MS = 70;
     constexpr int SFX_PLAYER_HURT_BASE_VOL = 80;        // Lớp tiếng mới (synth) chồng lên sfx_player_hit cũ
+    constexpr int SFX_SHARK_STRAFE_MIN_INTERVAL_MS = 280; // Vòng tròn: chống chồng whoosh
+    constexpr int SFX_SHARK_IMPACT_MIN_INTERVAL_MS = 90;  // Erupt / dash: chống chồng khi Frenzy chain
 
     // Người chơi trúng đòn
     constexpr float PLAYER_HURT_KNOCKBACK = 760.0f;     // Vận tốc đẩy lùi khỏi nguồn sát thương (giảm 8.5/s -> trượt ~90 đơn vị)
