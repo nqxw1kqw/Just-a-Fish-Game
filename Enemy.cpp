@@ -763,7 +763,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
 int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage, float knockbackStrength, EffectSystem& effects)
 {
     int hitCount = 0;
-    damage *= GameConsts::PLAYER_DMG_MUL_VS_ENEMY; // quái thường nhận thêm sát thương (Boss không)
+    damage *= GameConsts::PLAYER_DMG_MUL_VS_ENEMY * playerDmgMul_; // quái thường nhận thêm sát thương (Boss không)
     float radSq = radius * radius;
     for (auto& e : enemies_)
     {
@@ -840,7 +840,7 @@ Enemy* EnemyManager::FindClosestEnemy(const Vec3& fromPos, float maxRange)
 bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, float damage, Vec3 bulletDir, EffectSystem& effects, int& outExp)
 {
     outExp = 0;
-    damage *= GameConsts::PLAYER_DMG_MUL_VS_ENEMY; // quái thường nhận thêm sát thương (Boss không)
+    damage *= GameConsts::PLAYER_DMG_MUL_VS_ENEMY * playerDmgMul_; // quái thường nhận thêm sát thương (Boss không)
     for (auto& e : enemies_)
     {
         if (!e.active) continue;

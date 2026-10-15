@@ -267,6 +267,11 @@ namespace GameConsts
     constexpr float TIP_BOSS_SHOW_TIME = 4.0f;       // Gợi ý Boss hiện trong thời gian này
     constexpr float TIP_MOVE_DISTANCE = 120.0f;      // Bơi đủ quãng này = hoàn thành gợi ý di chuyển
     constexpr float TIP_START_DELAY = 0.4f;          // Trễ trước gợi ý đầu tiên của stage 1
+    // Tutorial dễ hơn (chỉ áp dụng trong Tutorial, Normal/Hell không đổi)
+    constexpr float TUTORIAL_PLAYER_HP_BONUS = 0.50f;        // +50% HP tối đa (modifier Percent)
+    constexpr float TUTORIAL_DMG_MUL_VS_ENEMY = 1.50f;       // x1.5 sát thương lên quái thường (nhân thêm vào PLAYER_DMG_MUL_VS_ENEMY)
+    constexpr float TUTORIAL_DAMAGE_TAKEN_MUL = 0.75f;       // Stage tutorial: nhận x0.75 sát thương
+    constexpr float TUTORIAL_BOSS_DAMAGE_TAKEN_MUL = 0.40f;  // Trận Cá Voi tutorial: nhận x0.40 sát thương
     constexpr float TUTORIAL_BOSS_CLEAR_HEAL = 0.50f;// Hồi máu khi hạ Cá Voi tutorial trước khi vào Endless
     // Sát thương của cá chính lên quái thường (không áp dụng cho Boss)
     constexpr float PLAYER_DMG_MUL_VS_ENEMY = 1.35f;

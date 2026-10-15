@@ -292,6 +292,8 @@ void GamePrototype::ReapplyAllStats()
 {
     playerStats_ = PlayerStats{};
     cardManager_.ApplyToStats(playerStats_);
+    if (mode_ == GameMode::Classic) // Tutorial: thêm HP tối đa
+        playerStats_.maxHp.AddModifier("tutorial", ModifierType::Percent, GameConsts::TUTORIAL_PLAYER_HP_BONUS);
 
     player_.ApplyStats(playerStats_);
     player_.SetHooks(
@@ -352,6 +354,7 @@ void GamePrototype::StartBossFight()
     state_ = GameState::Boss;
     player_.ResetDamageTakenThisWave();
     enemies_.KillAll(effects_); // Dọn quái nhỏ chuẩn bị sàn đấu
+    if (mode_ == GameMode::Classic) player_.SetDamageTakenMul(GameConsts::TUTORIAL_BOSS_DAMAGE_TAKEN_MUL);
     enemies_.SetAutoSpawn(false); // Trong trận Boss, quái chỉ xuất hiện theo đòn của Boss
     if (sharkFight_) shark_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
     else boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
@@ -427,6 +430,7 @@ void GamePrototype::EnterEndlessFromTutorial(GameMode mode)
     enemies_.SetEndless(true);
     cardManager_.SetEndless(true);
     ApplyModeRules();
+    ReapplyAllStats(); // bỏ buff HP tutorial
     boss_.Reset();
     shark_.Reset();
     sharkFight_ = false;
@@ -438,7 +442,10 @@ void GamePrototype::EnterEndlessFromTutorial(GameMode mode)
 void GamePrototype::ApplyModeRules()
 {
     const bool hell = (mode_ == GameMode::Hell);
-    player_.SetDamageTakenMul(hell ? GameConsts::HELL_DAMAGE_TAKEN_MUL : 1.0f);
+    const bool tutorial = (mode_ == GameMode::Classic);
+    player_.SetDamageTakenMul(hell ? GameConsts::HELL_DAMAGE_TAKEN_MUL
+                            : tutorial ? GameConsts::TUTORIAL_DAMAGE_TAKEN_MUL : 1.0f);
+    enemies_.SetPlayerDmgMul(tutorial ? GameConsts::TUTORIAL_DMG_MUL_VS_ENEMY : 1.0f);
     enemies_.SetMaxAlive(hell ? GameConsts::HELL_MAX_ALIVE : 0);
 }
 
