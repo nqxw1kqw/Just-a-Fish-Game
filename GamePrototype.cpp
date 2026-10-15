@@ -273,6 +273,7 @@ void GamePrototype::Reset()
     cardManager_.SetEndless(IsEndlessLike());
     hellCardToastTimer_ = 0.0f;
     rouletteActive_ = false;
+    for (int& v : hellStatLv_) v = 0;
     activeTip_ = -1;
     ApplyModeRules();
 
@@ -295,6 +296,16 @@ void GamePrototype::ReapplyAllStats()
     cardManager_.ApplyToStats(playerStats_);
     if (mode_ == GameMode::Classic) // Tutorial: thêm HP tối đa
         playerStats_.maxHp.AddModifier("tutorial", ModifierType::Percent, GameConsts::TUTORIAL_PLAYER_HP_BONUS);
+    if (mode_ == GameMode::Hell) // Hell: bậc chỉ số nhận từ lên cấp
+    {
+        auto lv = [&](int i) { return static_cast<float>(hellStatLv_[i]); };
+        if (hellStatLv_[HS_Hp])        playerStats_.maxHp.AddModifier("hellLv", ModifierType::Add, GameConsts::HELL_LV_HP_ADD * lv(HS_Hp));
+        if (hellStatLv_[HS_Speed])     playerStats_.moveSpeed.AddModifier("hellLv", ModifierType::Percent, GameConsts::HELL_LV_SPEED_PCT * lv(HS_Speed));
+        if (hellStatLv_[HS_SlamDmg])   playerStats_.slamDamage.AddModifier("hellLv", ModifierType::Percent, GameConsts::HELL_LV_SLAM_DMG_PCT * lv(HS_SlamDmg));
+        if (hellStatLv_[HS_SlamRadius])playerStats_.slamRadius.AddModifier("hellLv", ModifierType::Percent, GameConsts::HELL_LV_SLAM_RADIUS_PCT * lv(HS_SlamRadius));
+        if (hellStatLv_[HS_JumpCd])    playerStats_.jumpCooldown.AddModifier("hellLv", ModifierType::Percent, GameConsts::HELL_LV_JUMP_CD_PCT * lv(HS_JumpCd));
+        if (hellStatLv_[HS_BulletDmg]) playerStats_.bulletDamage.AddModifier("hellLv", ModifierType::Percent, GameConsts::HELL_LV_BULLET_DMG_PCT * lv(HS_BulletDmg));
+    }
 
     player_.ApplyStats(playerStats_);
     player_.SetHooks(
@@ -358,7 +369,9 @@ void GamePrototype::StartBossFight()
     if (mode_ == GameMode::Classic) player_.SetDamageTakenMul(GameConsts::TUTORIAL_BOSS_DAMAGE_TAKEN_MUL);
     enemies_.SetAutoSpawn(false); // Trong trận Boss, quái chỉ xuất hiện theo đòn của Boss
     if (sharkFight_) shark_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
-    boss_.SetDamageTakenMul(mode_ == GameMode::Classic ? GameConsts::TUTORIAL_DMG_MUL_VS_BOSS : 1.0f);
+    boss_.SetDamageTakenMul(mode_ == GameMode::Classic ? GameConsts::TUTORIAL_DMG_MUL_VS_BOSS
+                          : mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
+    shark_.SetDamageTakenMul(mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
     if (!sharkFight_) boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
     boss_.SetHellMode(mode_ == GameMode::Hell);
     shark_.SetHellMode(mode_ == GameMode::Hell);
@@ -449,7 +462,8 @@ void GamePrototype::ApplyModeRules()
     const bool tutorial = (mode_ == GameMode::Classic);
     player_.SetDamageTakenMul(hell ? GameConsts::HELL_DAMAGE_TAKEN_MUL
                             : tutorial ? GameConsts::TUTORIAL_DAMAGE_TAKEN_MUL : 1.0f);
-    enemies_.SetPlayerDmgMul(tutorial ? GameConsts::TUTORIAL_DMG_MUL_VS_ENEMY : 1.0f);
+    enemies_.SetPlayerDmgMul(tutorial ? GameConsts::TUTORIAL_DMG_MUL_VS_ENEMY : hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
+    if (!hell) effects_.SetParticleScale(1.0f);
     enemies_.SetMaxAlive(hell ? GameConsts::HELL_MAX_ALIVE : 0);
     enemies_.SetHell(hell);
 }
@@ -475,6 +489,18 @@ void GamePrototype::HellAutoPickCard()
         SoundManager::Instance().PlaySFX(SfxId::CardFlip);
     }
     AdvanceAfterCardPick();
+}
+
+// Hell: "level" = cấp EXP sẵn có của người chơi (PlayerFish::AddExp). Mỗi lần lên cấp -> +1 bậc ngẫu nhiên.
+void GamePrototype::GrantHellLevelStat()
+{
+    static const wchar_t* kNames[HS_Count] = { L"+HP", L"+SPEED", L"+SLAM DMG", L"+SLAM RADIUS", L"-JUMP CD", L"+BULLET DMG" };
+    int s = rand() % HS_Count;
+    hellStatLv_[s]++;
+    ReapplyAllStats();
+    swprintf_s(hellCardToast_, L"LEVEL UP: %s (Lv %d)", kNames[s], player_.GetLevel());
+    hellCardToastTimer_ = GameConsts::HELL_CARD_TOAST_TIME;
+    AppLogAdd(L"[HELL] Level up stat: %s\n", kNames[s]);
 }
 
 void GamePrototype::FinishHellRoulette()
@@ -1000,6 +1026,12 @@ void GamePrototype::Update(float dt)
         return;
     }
 
+    if (mode_ == GameMode::Hell)
+    {
+        for (int n = player_.ConsumeLevelUps(); n > 0; --n) GrantHellLevelStat();
+        effects_.SetParticleScale(enemies_.GetActiveCount() >= GameConsts::HELL_FX_LIGHT_THRESHOLD ? GameConsts::HELL_FX_LIGHT_SCALE : 1.0f);
+    }
+    else player_.ConsumeLevelUps();
     UpdateHellRoulette(dt); // Phase 2: vòng quay thẻ Hell (game vẫn chạy)
     // Gợi ý tutorial: làm chậm nhẹ khi gợi ý vừa hiện
     dt *= UpdateTutorialTips(dt);

@@ -258,13 +258,24 @@ namespace GameConsts
     constexpr float TUTORIAL_WAVE_DURATION = 15.0f;  // Mỗi stage tutorial 15 giây
     constexpr float HELL_WAVE_DURATION = 20.0f;      // Hell: 20 giây mỗi stage
     constexpr float HELL_DAMAGE_TAKEN_MUL = 1.5f;    // Hell: sát thương nhận vào x1.5
-    constexpr int   HELL_MAX_ALIVE = 18;             // Hell: trần cứng số quái sống (dễ đọc, không dọn quái giữa stage)
+    constexpr int   HELL_MAX_ALIVE = 13;             // Hell: trần cứng số quái sống (dễ đọc, không dọn quái giữa stage)
     // Phase 2 - Hell: sinh quái riêng
     constexpr float HELL_SPAWN_INTERVAL_MUL = 0.75f; // Khoảng nghỉ sinh quái x0.75 (sinh nhanh hơn)
     constexpr float HELL_COST_CAP_MUL = 1.25f;       // Trần ngân sách quái sống x1.25 (vẫn bị HELL_MAX_ALIVE chặn)
     constexpr float HELL_ENEMY_HP_MUL = 1.20f;       // HP quái x1.2 so với Normal
     constexpr int   HELL_TIER_OFFSET = 1;            // Bảng tỉ lệ quái: dịch sớm 1 bậc (Tanker/Charge sớm hơn)
-    constexpr float HELL_WAVE_HEAL_PERCENT = 0.20f;  // Hồi máu cuối stage 20% (Normal 30%)
+    constexpr float HELL_WAVE_HEAL_PERCENT = 0.20f;
+    constexpr float HELL_PLAYER_DMG_MUL = 1.5f;      // Hell: quái + Boss nhận x1.5 sát thương từ người chơi
+    // Hell: hạt hiệu ứng nhẹ hơn khi đông quái (giảm lag)
+    constexpr int   HELL_FX_LIGHT_THRESHOLD = 8;     // Từ 8 quái sống trở lên
+    constexpr float HELL_FX_LIGHT_SCALE = 0.4f;      // Số hạt x0.4
+    // Hell: mỗi lần lên cấp (hệ EXP sẵn có) -> +1 bậc ngẫu nhiên vào 1 chỉ số
+    constexpr float HELL_LV_HP_ADD = 10.0f;          // +10 HP tối đa
+    constexpr float HELL_LV_SPEED_PCT = 0.04f;       // +4% tốc độ bơi
+    constexpr float HELL_LV_SLAM_DMG_PCT = 0.06f;    // +6% sát thương Slam
+    constexpr float HELL_LV_SLAM_RADIUS_PCT = 0.04f; // +4% bán kính Slam
+    constexpr float HELL_LV_JUMP_CD_PCT = -0.04f;    // -4% hồi nhảy
+    constexpr float HELL_LV_BULLET_DMG_PCT = 0.06f;  // +6% sát thương đạn  // Hồi máu cuối stage 20% (Normal 30%)
     // Phase 2 - Hell: vòng quay thẻ (không dừng game)
     constexpr float HELL_ROULETTE_SPIN_TIME = 1.6f;  // Thời gian quay
     constexpr float HELL_ROULETTE_HOLD_TIME = 1.2f;  // Hiện thẻ trúng sau khi dừng

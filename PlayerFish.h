@@ -65,6 +65,7 @@ public:
 
     // Thu thập EXP
     void AddExp(int amount);
+    int ConsumeLevelUps() { int n = pendingLevelUps_; pendingLevelUps_ = 0; return n; }
 
     // Getters & Trạng thái Lõi nhảy
     const Vec3& GetPosition() const { return pos_; }
@@ -186,6 +187,7 @@ private:
     int exp_ = 0;
     int expNext_ = 30; // 20 + 10 * 1
     int level_ = 1;
+    int pendingLevelUps_ = 0;
 
     // Hiệu ứng
     float hitFlashTimer_ = 0.0f;

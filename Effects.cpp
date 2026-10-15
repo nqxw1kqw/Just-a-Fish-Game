@@ -165,6 +165,7 @@ void EffectSystem::SpawnShockwave(const Vec3& pos, float maxRadius)
 
 void EffectSystem::SpawnHitParticles(const Vec3& pos, int count, int color)
 {
+    if (particleScale_ < 1.0f) count = (std::max)(1, static_cast<int>(count * particleScale_));
     int spawned = 0;
     for (auto& p : particles_)
     {

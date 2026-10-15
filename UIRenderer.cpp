@@ -52,6 +52,21 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
 
     // 4. Danh sách các Thẻ đã sở hữu ở góc trái dưới
     int cardListY = jumpY + 28;
+
+    // Hell: bảng chỉ số nhỏ (góc trái, dưới bảng HP)
+    if (game.mode_ == GameMode::Hell)
+    {
+        const PlayerStats& st = game.playerStats_;
+        const auto& lv = game.hellStatLv_;
+        int y = cardListY;
+        DrawBox(hpX - 4, y - 2, hpX + 250, y + 5 * 16 + 4, GetColor(20, 10, 14), TRUE);
+        FontManager::DrawFormat(hpX, y, GetColor(255, 140, 110), FontSize::Small, L"[HELL STATS]  Lv %d  Cards %d", game.player_.GetLevel(), (int)game.cardManager_.GetActiveCards().size()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"HP %.0f (+%d)   SPD %.0f (+%d)", st.maxHp.GetValue(), lv[0], st.moveSpeed.GetValue(), lv[1]); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"SLAM %.0f (+%d)  R %.0f (+%d)", st.slamDamage.GetValue(), lv[2], st.slamRadius.GetValue(), lv[3]); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"JUMP CD %.2fs (+%d)", st.jumpCooldown.GetValue(), lv[4]); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"BULLET %.0f (+%d)  DMG x%.1f", st.bulletDamage.GetValue(), lv[5], GameConsts::HELL_PLAYER_DMG_MUL); y += 16;
+        cardListY = y + 8;
+    }
     const auto& cards = game.cardManager_.GetActiveCards();
     if (!cards.empty())
     {

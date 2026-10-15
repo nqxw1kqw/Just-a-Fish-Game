@@ -716,6 +716,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
 bool SharkBoss::TakeDamage(float dmg, EffectSystem& effects)
 {
     if (!active_ || hp_ <= 0.0f) return false;
+    dmg *= damageTakenMul_;
     if (action_ == SharkAction::Stunned || action_ == SharkAction::HuntRecover) dmg *= GameConsts::SHARK_STUN_DAMAGE_MUL;
     hp_ -= dmg;
     hitFlashTimer_ = GameConsts::HIT_FLASH_TIME;

@@ -155,6 +155,10 @@ private:
 
     float huntCooldown_ = GameConsts::SHARK_HUNT_FIRST_DELAY;
     bool hell_ = false;
+public:
+    void SetDamageTakenMul(float m) { damageTakenMul_ = m; }
+private:
+    float damageTakenMul_ = 1.0f;
     Vec3 huntLockPos_{ 0.0f, 0.0f, 0.0f };
     float huntPose_ = 0.0f;    // pitch: < 0 ngóc đầu, > 0 chúi xuống
     float huntTurnSign_ = 1.0f;
