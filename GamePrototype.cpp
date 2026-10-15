@@ -272,6 +272,7 @@ void GamePrototype::Reset()
     enemies_.SetEndless(IsEndlessLike());
     cardManager_.SetEndless(IsEndlessLike());
     hellCardToastTimer_ = 0.0f;
+    rouletteActive_ = false;
     activeTip_ = -1;
     ApplyModeRules();
 
@@ -359,6 +360,8 @@ void GamePrototype::StartBossFight()
     if (sharkFight_) shark_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
     boss_.SetDamageTakenMul(mode_ == GameMode::Classic ? GameConsts::TUTORIAL_DMG_MUL_VS_BOSS : 1.0f);
     if (!sharkFight_) boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
+    boss_.SetHellMode(mode_ == GameMode::Hell);
+    shark_.SetHellMode(mode_ == GameMode::Hell);
     effects_.AddTrauma(0.5f);
     SoundManager::Instance().PlayBGM(BgmId::Boss, true);
 }
@@ -448,21 +451,65 @@ void GamePrototype::ApplyModeRules()
                             : tutorial ? GameConsts::TUTORIAL_DAMAGE_TAKEN_MUL : 1.0f);
     enemies_.SetPlayerDmgMul(tutorial ? GameConsts::TUTORIAL_DMG_MUL_VS_ENEMY : 1.0f);
     enemies_.SetMaxAlive(hell ? GameConsts::HELL_MAX_ALIVE : 0);
+    enemies_.SetHell(hell);
 }
 
 void GamePrototype::HellAutoPickCard()
 {
+    // Phase 2: vòng quay thẻ chạy song song với trận đấu (không dừng game), thẻ áp dụng khi dừng quay
+    if (rouletteActive_) FinishHellRoulette(); // vòng cũ chưa xong -> áp dụng ngay
     cardManager_.Roll3Cards(currentWave_);
-    const Card* c = cardManager_.AutoPickRandom();
-    if (c)
+    const int n = cardManager_.GetOfferedCardCount();
+    if (n > 0)
     {
-        ReapplyAllStats();
-        swprintf_s(hellCardToast_, L"HELL CARD: %s", c->name.c_str());
-        hellCardToastTimer_ = GameConsts::HELL_CARD_TOAST_TIME;
-        SoundManager::Instance().PlaySFX(SfxId::CardSelect);
-        AppLogAdd(L"[HELL] Auto card: %s\n", c->name.c_str());
+        const auto& offer = cardManager_.GetCurrentOffer();
+        rouletteCount_ = n;
+        for (int i = 0; i < n; ++i) rouletteCards_[i] = offer[i];
+        rouletteTarget_ = rand() % n;
+        rouletteIdx_ = rand() % n;
+        rouletteTimer_ = 0.0f;
+        rouletteStepTimer_ = 0.0f;
+        rouletteLanded_ = false;
+        rouletteActive_ = true;
+        cardManager_.ClearOffer();
+        SoundManager::Instance().PlaySFX(SfxId::CardFlip);
     }
     AdvanceAfterCardPick();
+}
+
+void GamePrototype::FinishHellRoulette()
+{
+    if (!rouletteActive_ || rouletteLanded_) return;
+    rouletteLanded_ = true;
+    rouletteIdx_ = rouletteTarget_;
+    const Card& c = rouletteCards_[rouletteTarget_];
+    cardManager_.AddActiveCard(c);
+    ReapplyAllStats();
+    SoundManager::Instance().PlaySFX(SfxId::CardSelect);
+    AppLogAdd(L"[HELL] Roulette card: %s\n", c.name.c_str());
+}
+
+void GamePrototype::UpdateHellRoulette(float dt)
+{
+    if (!rouletteActive_) return;
+    rouletteTimer_ += dt;
+    if (!rouletteLanded_)
+    {
+        float k = (std::min)(1.0f, rouletteTimer_ / GameConsts::HELL_ROULETTE_SPIN_TIME);
+        float step = GameConsts::HELL_ROULETTE_STEP_START + (GameConsts::HELL_ROULETTE_STEP_END - GameConsts::HELL_ROULETTE_STEP_START) * k * k;
+        rouletteStepTimer_ += dt;
+        if (rouletteStepTimer_ >= step && rouletteCount_ > 1)
+        {
+            rouletteStepTimer_ = 0.0f;
+            rouletteIdx_ = (rouletteIdx_ + 1) % rouletteCount_;
+            SoundManager::Instance().PlaySFX(SfxId::UiHover);
+        }
+        if (k >= 1.0f) { FinishHellRoulette(); rouletteTimer_ = 0.0f; }
+    }
+    else if (rouletteTimer_ >= GameConsts::HELL_ROULETTE_HOLD_TIME)
+    {
+        rouletteActive_ = false;
+    }
 }
 
 float GamePrototype::UpdateTutorialTips(float dt)
@@ -549,7 +596,7 @@ void GamePrototype::OnWaveComplete()
     if (mode_ != GameMode::Hell) enemies_.KillAll(effects_);
 
     // G3: Cuối mỗi wave hồi 30% máu tối đa
-    player_.Heal(player_.GetMaxHp() * GameConsts::WAVE_HEAL_PERCENT);
+    player_.Heal(player_.GetMaxHp() * (mode_ == GameMode::Hell ? GameConsts::HELL_WAVE_HEAL_PERCENT : GameConsts::WAVE_HEAL_PERCENT));
     effects_.SpawnHitParticles(player_.GetPosition() + Vec3{ 0, 15, 0 }, 25, GetColor(80, 255, 120));
 
     // Hook 11: Vảy hồi phục (Heal thêm 15% max HP - Phần C boost)
@@ -953,6 +1000,7 @@ void GamePrototype::Update(float dt)
         return;
     }
 
+    UpdateHellRoulette(dt); // Phase 2: vòng quay thẻ Hell (game vẫn chạy)
     // Gợi ý tutorial: làm chậm nhẹ khi gợi ý vừa hiện
     dt *= UpdateTutorialTips(dt);
 

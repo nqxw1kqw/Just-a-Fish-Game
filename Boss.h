@@ -132,6 +132,7 @@ public:
     void SetHpMultiplier(float mul) { hpMultiplier_ = mul; maxHp_ = GameConsts::BOSS_MAX_HP * mul; hp_ = maxHp_; }
     float GetHpMultiplier() const { return hpMultiplier_; }
     void SetDamageTakenMul(float m) { damageTakenMul_ = m; }
+    void SetHellMode(bool h) { hell_ = h; }
     void SetBossDifficulty(int bossIndex)
     {
         bossTier_ = (std::max)(1, bossIndex);
@@ -176,7 +177,8 @@ private:
     float savedYaw_ = 0.0f;
     int bossTier_ = 1;
     float hpMultiplier_ = 1.0f;
-    float damageTakenMul_ = 1.0f; // Tutorial: x3 (đặt mỗi lần StartBossFight)
+    float damageTakenMul_ = 1.0f;
+    bool hell_ = false; // Tutorial: x3 (đặt mỗi lần StartBossFight)
     float hp_ = GameConsts::BOSS_MAX_HP;
     float maxHp_ = GameConsts::BOSS_MAX_HP;
     BossPhase phase_ = BossPhase::Phase1;

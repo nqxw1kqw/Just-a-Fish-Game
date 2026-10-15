@@ -84,6 +84,7 @@ public:
     bool IsCinematic() const { return grabbedPlayer_ != nullptr; }
     bool IsBurrowed() const { return action_ == SharkAction::HuntTrack || action_ == SharkAction::HuntLock || action_ == SharkAction::HuntDash || action_ == SharkAction::HuntBurst; }
     float GetHuntCooldown() const { return huntCooldown_; }
+    void SetHellMode(bool h) { hell_ = h; huntCooldown_ = h ? GameConsts::HELL_SHARK_HUNT_FIRST_DELAY : GameConsts::SHARK_HUNT_FIRST_DELAY; }
     SharkAction GetAction() const { return action_; }
     SharkSkill GetLastSkill() const { return lastSkill_; }
     SharkSkill GetPrevSkill() const { return prevSkill_; }
@@ -153,6 +154,7 @@ private:
     float stunTimer_ = 0.0f;
 
     float huntCooldown_ = GameConsts::SHARK_HUNT_FIRST_DELAY;
+    bool hell_ = false;
     Vec3 huntLockPos_{ 0.0f, 0.0f, 0.0f };
     float huntPose_ = 0.0f;    // pitch: < 0 ngóc đầu, > 0 chúi xuống
     float huntTurnSign_ = 1.0f;

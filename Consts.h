@@ -258,7 +258,28 @@ namespace GameConsts
     constexpr float TUTORIAL_WAVE_DURATION = 15.0f;  // Mỗi stage tutorial 15 giây
     constexpr float HELL_WAVE_DURATION = 20.0f;      // Hell: 20 giây mỗi stage
     constexpr float HELL_DAMAGE_TAKEN_MUL = 1.5f;    // Hell: sát thương nhận vào x1.5
-    constexpr int   HELL_MAX_ALIVE = 40;             // Hell: trần số quái sống (không dọn quái giữa stage)
+    constexpr int   HELL_MAX_ALIVE = 18;             // Hell: trần cứng số quái sống (dễ đọc, không dọn quái giữa stage)
+    // Phase 2 - Hell: sinh quái riêng
+    constexpr float HELL_SPAWN_INTERVAL_MUL = 0.75f; // Khoảng nghỉ sinh quái x0.75 (sinh nhanh hơn)
+    constexpr float HELL_COST_CAP_MUL = 1.25f;       // Trần ngân sách quái sống x1.25 (vẫn bị HELL_MAX_ALIVE chặn)
+    constexpr float HELL_ENEMY_HP_MUL = 1.20f;       // HP quái x1.2 so với Normal
+    constexpr int   HELL_TIER_OFFSET = 1;            // Bảng tỉ lệ quái: dịch sớm 1 bậc (Tanker/Charge sớm hơn)
+    constexpr float HELL_WAVE_HEAL_PERCENT = 0.20f;  // Hồi máu cuối stage 20% (Normal 30%)
+    // Phase 2 - Hell: vòng quay thẻ (không dừng game)
+    constexpr float HELL_ROULETTE_SPIN_TIME = 1.6f;  // Thời gian quay
+    constexpr float HELL_ROULETTE_HOLD_TIME = 1.2f;  // Hiện thẻ trúng sau khi dừng
+    constexpr float HELL_ROULETTE_STEP_START = 0.05f;// Khoảng đổi ô lúc đầu (giây)
+    constexpr float HELL_ROULETTE_STEP_END = 0.28f;  // Khoảng đổi ô lúc cuối (chậm dần)
+    // Phase 2 - Hell: Boss thông minh hơn (AI giữ nguyên, chỉ đổi nhịp/trọng số)
+    constexpr float HELL_BOSS_COOLDOWN_SPEED = 1.4f; // Hồi chiêu nhanh x1.4
+    constexpr float HELL_BOSS_REST_MUL = 0.6f;       // Thời gian nghỉ giữa chuỗi chiêu x0.6
+    constexpr float HELL_WHALE_STRONG_WEIGHT_MUL = 1.5f; // Cá Voi: DoubleSlam/Tsunami/BubbleNet/Dive x1.5
+    constexpr float HELL_WHALE_MINION_WEIGHT_MUL = 0.5f; // Cá Voi: ít triệu hồi hơn (sàn đã đông)
+    constexpr float HELL_WHALE_P1_DOUBLESLAM_WEIGHT = 1.5f; // Cá Voi: DoubleSlam có từ Phase 1
+    constexpr float HELL_SHARK_HUNT_FIRST_DELAY = 3.0f;  // Cá Mập: Hunt lần đầu sau 3s (Normal 8s)
+    constexpr float HELL_SHARK_HUNT_COOLDOWN = 8.0f;     // Cá Mập: hồi Hunt 8s (Normal 14s)
+    constexpr float HELL_SHARK_HUNT_WEIGHT_MUL = 2.0f;   // Cá Mập: trọng số Hunt x2
+    constexpr float HELL_SHARK_VORTEX_WEIGHT_MUL = 1.5f; // Cá Mập: trọng số Vortex x1.5
     constexpr float HELL_CARD_TOAST_TIME = 2.5f;     // Hell: thời gian hiện tên thẻ tự chọn
     // Gợi ý tutorial (mỗi gợi ý hiện 1 lần / phiên, [TAB] bỏ qua)
     constexpr float TIP_SOFT_PAUSE_TIME = 0.8f;      // Thời gian làm chậm khi gợi ý vừa hiện

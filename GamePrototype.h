@@ -93,6 +93,17 @@ private:
     Vec3 tipMoveStart_{};
     int modeSelectIdx_ = 0;              // 0 = Normal, 1 = Hell
     float hellCardToastTimer_ = 0.0f;
+    // Phase 2: vòng quay thẻ Hell
+    void UpdateHellRoulette(float dt);
+    void FinishHellRoulette();
+    bool rouletteActive_ = false;
+    bool rouletteLanded_ = false;
+    int rouletteCount_ = 0;
+    int rouletteIdx_ = 0;
+    int rouletteTarget_ = 0;
+    float rouletteTimer_ = 0.0f;
+    float rouletteStepTimer_ = 0.0f;
+    std::array<Card, 3> rouletteCards_{};
     wchar_t hellCardToast_[96] = L"";
     void EnterEndlessClear();            // Qua stage ENDLESS_MAX_STAGE -> màn CLEAR
     void OnWaveComplete();

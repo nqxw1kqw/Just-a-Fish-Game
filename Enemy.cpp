@@ -370,7 +370,7 @@ bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
 
             // Thông số cơ bản lấy từ bảng EnemyTypeConfig (Task #25)
             const EnemyTypeConfig& tc = *GetEnemyTypeConfig(type);
-            e.hp = e.maxHp = tc.baseHp * hpMultiplier_;
+            e.hp = e.maxHp = tc.baseHp * hpMultiplier_ * (isHell_ ? GameConsts::HELL_ENEMY_HP_MUL : 1.0f);
             e.speed = tc.baseSpeed * spdMultiplier_;
             e.radius = tc.radius;
             e.damage = tc.baseDamage * dmgMultiplier_;
@@ -448,6 +448,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
         float baseInterval = 1.25f - (currentWave_ - 1) * 0.16f;
         float minInterval = 0.40f - (currentWave_ - 1) * 0.02f;
         float spawnInterval = (std::max)(minInterval, baseInterval - waveTimer_ * 0.010f);
+        if (isHell_) spawnInterval *= GameConsts::HELL_SPAWN_INTERVAL_MUL;
         if (spawnTimer_ >= spawnInterval)
         {
             // Sinh theo nhóm nhỏ: W1-2 tối đa 2 con, W3+ tối đa 3 con
@@ -466,7 +467,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                 if (isEndless_)
                 {
                     // Endless Mode: Dịch dần sang quái Tanker/Charge theo bậc 5 wave (Task 10 T4b)
-                    int tier = (currentWave_ - 1) / 5;
+                    int tier = (currentWave_ - 1) / 5 + (isHell_ ? GameConsts::HELL_TIER_OFFSET : 0);
                     int idx = (tier == 0 || tier == 1 || tier == 2) ? tier : 3;
                     typeToSpawn = PickEnemyTypeByRoll(kEndlessSpawnWeights[idx], roll);
                 }
@@ -483,7 +484,8 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                 // Kiểm tra trần chi phí quái sống của wave: chỉ sinh nếu không vượt trần
                 float cost = GetEnemyCost(typeToSpawn);
                 if (maxAlive_ > 0 && GetActiveCount() >= maxAlive_) break; // Hell: trần số quái sống
-                if (GetAliveCost() + cost <= GetWaveCostCap(currentWave_))
+                const float capMul = isHell_ ? GameConsts::HELL_COST_CAP_MUL : 1.0f;
+                if (GetAliveCost() + cost <= GetWaveCostCap(currentWave_) * capMul)
                 {
                     SpawnRandomEdge(typeToSpawn, player.GetPosition());
                 }

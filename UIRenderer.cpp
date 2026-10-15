@@ -198,7 +198,30 @@ void UIRenderer::DrawModeSelectScreen(const GamePrototype& game) const
 void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const
 {
     int sw = GameConsts::SCREEN_WIDTH;
-    if (game.hellCardToastTimer_ > 0.0f && game.mode_ == GameMode::Hell)
+    if (game.rouletteActive_ && game.mode_ == GameMode::Hell)
+    {
+        // Phase 2: vòng quay thẻ Hell (3 ô, ô sáng chạy rồi dừng ở thẻ trúng)
+        const int n = game.rouletteCount_;
+        const int cw = 200, ch = 54, gap = 12;
+        int total = n * cw + (n - 1) * gap;
+        int x0 = sw / 2 - total / 2, y0 = 100;
+        DrawBox(x0 - 10, y0 - 26, x0 + total + 10, y0 + ch + 8, GetColor(30, 8, 8), TRUE);
+        DrawBox(x0 - 10, y0 - 26, x0 + total + 10, y0 + ch + 8, GetColor(255, 90, 70), FALSE);
+        FontManager::Draw(x0, y0 - 22, game.rouletteLanded_ ? L"HELL CARD GET!" : L"HELL ROULETTE...", GetColor(255, 140, 110), FontSize::Body);
+        for (int i = 0; i < n; ++i)
+        {
+            int x = x0 + i * (cw + gap);
+            bool on = (i == game.rouletteIdx_);
+            bool win = on && game.rouletteLanded_;
+            int bg = win ? GetColor(120, 40, 20) : on ? GetColor(80, 30, 30) : GetColor(25, 15, 20);
+            int edge = win ? GetColor(255, 220, 80) : on ? GetColor(255, 120, 90) : GetColor(90, 60, 70);
+            DrawBox(x, y0, x + cw, y0 + ch, bg, TRUE);
+            DrawBox(x, y0, x + cw, y0 + ch, edge, FALSE);
+            if (win) DrawBox(x - 2, y0 - 2, x + cw + 2, y0 + ch + 2, edge, FALSE);
+            FontManager::Draw(x + 8, y0 + 18, game.rouletteCards_[i].name.c_str(), on ? GetColor(255, 235, 150) : GetColor(170, 160, 170), FontSize::Small);
+        }
+    }
+    else if (game.hellCardToastTimer_ > 0.0f && game.mode_ == GameMode::Hell)
     {
         DrawBox(sw / 2 - 220, 104, sw / 2 + 220, 136, GetColor(60, 15, 15), TRUE);
         DrawBox(sw / 2 - 220, 104, sw / 2 + 220, 136, GetColor(255, 90, 70), FALSE);

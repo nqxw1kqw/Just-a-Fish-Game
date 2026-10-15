@@ -107,7 +107,8 @@ public:
     bool IsEndless() const { return isEndless_; }
     void SetAutoSpawn(bool enable) { autoSpawn_ = enable; }
     void SetPlayerDmgMul(float m) { playerDmgMul_ = m; } // Tutorial: người chơi gây thêm sát thương
-    void SetMaxAlive(int n) { maxAlive_ = n; } // 0 = không giới hạn (Hell: trần quái sống)
+    void SetMaxAlive(int n) { maxAlive_ = n; }
+    void SetHell(bool h) { isHell_ = h; } // Phase 2: tỉ lệ/scaling riêng Hell // 0 = không giới hạn (Hell: trần quái sống)
 
     // Quản lý mô hình 3D (Đa quái: Minion, Hopper, Tanker, Float, Charge)
     void Release();
@@ -137,6 +138,7 @@ private:
     int currentWave_ = 1;
     bool autoSpawn_ = true;
     int maxAlive_ = 0;
+    bool isHell_ = false;
     float playerDmgMul_ = 1.0f;
     bool isEndless_ = false;
     float hpMultiplier_ = 1.0f;
