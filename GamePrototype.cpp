@@ -357,7 +357,8 @@ void GamePrototype::StartBossFight()
     if (mode_ == GameMode::Classic) player_.SetDamageTakenMul(GameConsts::TUTORIAL_BOSS_DAMAGE_TAKEN_MUL);
     enemies_.SetAutoSpawn(false); // Trong trận Boss, quái chỉ xuất hiện theo đòn của Boss
     if (sharkFight_) shark_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
-    else boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
+    boss_.SetDamageTakenMul(mode_ == GameMode::Classic ? GameConsts::TUTORIAL_DMG_MUL_VS_BOSS : 1.0f);
+    if (!sharkFight_) boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
     effects_.AddTrauma(0.5f);
     SoundManager::Instance().PlayBGM(BgmId::Boss, true);
 }

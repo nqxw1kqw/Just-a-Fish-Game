@@ -272,6 +272,7 @@ namespace GameConsts
     constexpr float TUTORIAL_DMG_MUL_VS_ENEMY = 1.50f;       // x1.5 sát thương lên quái thường (nhân thêm vào PLAYER_DMG_MUL_VS_ENEMY)
     constexpr float TUTORIAL_DAMAGE_TAKEN_MUL = 0.75f;       // Stage tutorial: nhận x0.75 sát thương
     constexpr float TUTORIAL_BOSS_DAMAGE_TAKEN_MUL = 0.40f;  // Trận Cá Voi tutorial: nhận x0.40 sát thương
+    constexpr float TUTORIAL_DMG_MUL_VS_BOSS = 3.0f;         // Trận Cá Voi tutorial: người chơi gây x3 sát thương lên Boss
     constexpr float TUTORIAL_BOSS_CLEAR_HEAL = 0.50f;// Hồi máu khi hạ Cá Voi tutorial trước khi vào Endless
     // Sát thương của cá chính lên quái thường (không áp dụng cho Boss)
     constexpr float PLAYER_DMG_MUL_VS_ENEMY = 1.35f;

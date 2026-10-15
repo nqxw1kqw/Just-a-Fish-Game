@@ -155,6 +155,7 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
 bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
 {
     if (!active_ || hp_ <= 0.0f) return false;
+    dmg *= damageTakenMul_;
 
     // Boss rework: đang choáng thì nhận thêm sát thương
     if (action_ == BossAction::Stunned) dmg *= stunDamageMul_;
