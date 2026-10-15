@@ -133,8 +133,8 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
         int hsMin = static_cast<int>(hs.maxSurvivalTime) / 60;
         int hsSec = static_cast<int>(hs.maxSurvivalTime) % 60;
         FontManager::DrawFormat(boxX + 55, boxY + 348, GetColor(255, 215, 80), FontSize::Body,
-            L"[ENDLESS RECORD]: Max Wave %d  |  Kills: %d  |  Time: %02d:%02d",
-            hs.maxWave, hs.maxKills, hsMin, hsSec);
+            L"[ENDLESS RECORD]: Max Stage %d  |  Kills: %d  |  Time: %02d:%02d  |  Score: %d",
+            hs.maxWave, hs.maxKills, hsMin, hsSec, hs.maxScore);
     }
 
     // Nút Bắt đầu

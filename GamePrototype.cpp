@@ -23,25 +23,47 @@ namespace
     // Định dạng file kỷ lục v2: có số phiên bản + checksum.
     // File cũ (v1) chỉ là HighscoreData thô (16 byte) - vẫn đọc được để tương thích ngược.
     constexpr unsigned int HIGHSCORE_MAGIC = 0x4F444F52; // 'ODOR'
-    constexpr unsigned int HIGHSCORE_VERSION = 2;
-    const wchar_t* const HIGHSCORE_PATH = L"Data/highscore.dat";
-    const wchar_t* const HIGHSCORE_TMP_PATH = L"Data/highscore.tmp";
+    constexpr unsigned int HIGHSCORE_VERSION_V2 = 2;
+    constexpr unsigned int HIGHSCORE_VERSION = 3;
+    // Đường dẫn cũ (tương đối theo thư mục làm việc) - chỉ dùng để đọc/migrate
+    const wchar_t* const HIGHSCORE_LEGACY_PATH = L"Data/highscore.dat";
+
+    struct HighscoreFileV1 // struct thô cũ, 16 byte
+    {
+        unsigned int magic;
+        int maxWave;
+        int maxKills;
+        float maxSurvivalTime;
+    };
 
     struct HighscoreFileV2
+    {
+        unsigned int magic = HIGHSCORE_MAGIC;
+        unsigned int version = HIGHSCORE_VERSION_V2;
+        int maxWave = 0;
+        int maxKills = 0;
+        float maxSurvivalTime = 0.0f;
+        unsigned int checksum = 0; // FNV-1a của toàn bộ các byte phía trước
+    };
+
+    struct HighscoreFileV3
     {
         unsigned int magic = HIGHSCORE_MAGIC;
         unsigned int version = HIGHSCORE_VERSION;
         int maxWave = 0;
         int maxKills = 0;
         float maxSurvivalTime = 0.0f;
+        int maxScore = 0;
         unsigned int checksum = 0; // FNV-1a của toàn bộ các byte phía trước
     };
-    static_assert(sizeof(HighscoreFileV2) != sizeof(HighscoreData), "V1/V2 phải khác kích thước để phân biệt");
+    static_assert(sizeof(HighscoreFileV1) != sizeof(HighscoreFileV2) && sizeof(HighscoreFileV2) != sizeof(HighscoreFileV3),
+        "Các phiên bản file kỷ lục phải khác kích thước để phân biệt");
 
-    unsigned int ComputeHighscoreChecksum(const HighscoreFileV2& f)
+    template <typename T>
+    unsigned int ComputeHighscoreChecksum(const T& f)
     {
         const unsigned char* p = reinterpret_cast<const unsigned char*>(&f);
-        const size_t len = offsetof(HighscoreFileV2, checksum);
+        const size_t len = offsetof(T, checksum);
         unsigned int h = 2166136261u;
         for (size_t i = 0; i < len; ++i)
         {
@@ -50,46 +72,80 @@ namespace
         }
         return h;
     }
+
+    // <thư mục chứa exe>\Data\<name> : không phụ thuộc thư mục làm việc (VS / double-click / shortcut)
+    void BuildExeDataPath(wchar_t* out, size_t outCount, const wchar_t* name)
+    {
+        wchar_t exe[MAX_PATH] = {};
+        DWORD n = GetModuleFileNameW(nullptr, exe, MAX_PATH);
+        if (n == 0 || n >= MAX_PATH)
+        {
+            swprintf_s(out, outCount, L"Data\\%s", name);
+            return;
+        }
+        wchar_t* slash = wcsrchr(exe, L'\\');
+        if (slash) *(slash + 1) = L'\0';
+        swprintf_s(out, outCount, L"%sData\\%s", exe, name);
+    }
+
+    // Đọc file kỷ lục (v1/v2/v3). Trả về false nếu không có file / không hợp lệ.
+    bool ReadHighscoreFile(const wchar_t* path, HighscoreData& out)
+    {
+        FILE* fp = nullptr;
+        if (_wfopen_s(&fp, path, L"rb") != 0 || !fp) return false;
+        unsigned char buf[sizeof(HighscoreFileV3) + 1] = {};
+        size_t size = fread(buf, 1, sizeof(buf), fp);
+        fclose(fp);
+
+        if (size == sizeof(HighscoreFileV3))
+        {
+            HighscoreFileV3 f{};
+            memcpy(&f, buf, sizeof(f));
+            if (f.magic != HIGHSCORE_MAGIC || f.version != HIGHSCORE_VERSION || f.checksum != ComputeHighscoreChecksum(f)) return false;
+            out.maxWave = f.maxWave; out.maxKills = f.maxKills; out.maxSurvivalTime = f.maxSurvivalTime; out.maxScore = f.maxScore;
+            return true;
+        }
+        if (size == sizeof(HighscoreFileV2))
+        {
+            HighscoreFileV2 f{};
+            memcpy(&f, buf, sizeof(f));
+            if (f.magic != HIGHSCORE_MAGIC || f.version != HIGHSCORE_VERSION_V2 || f.checksum != ComputeHighscoreChecksum(f)) return false;
+            out.maxWave = f.maxWave; out.maxKills = f.maxKills; out.maxSurvivalTime = f.maxSurvivalTime; out.maxScore = 0;
+            return true;
+        }
+        if (size == sizeof(HighscoreFileV1))
+        {
+            HighscoreFileV1 f{};
+            memcpy(&f, buf, sizeof(f));
+            if (f.magic != HIGHSCORE_MAGIC) return false;
+            out.maxWave = f.maxWave; out.maxKills = f.maxKills; out.maxSurvivalTime = f.maxSurvivalTime; out.maxScore = 0;
+            return true;
+        }
+        return false;
+    }
 }
 
 void GamePrototype::LoadHighscore()
 {
     highscore_ = HighscoreData{};
-    FILE* fp = nullptr;
-    if (_wfopen_s(&fp, HIGHSCORE_PATH, L"rb") != 0 || !fp) return;
-
-    // Đọc tối đa sizeof(V2) + 1 byte để biết chính xác kích thước file
-    unsigned char buf[sizeof(HighscoreFileV2) + 1] = {};
-    size_t size = fread(buf, 1, sizeof(buf), fp);
-    fclose(fp);
-
-    if (size == sizeof(HighscoreFileV2))
+    wchar_t path[MAX_PATH] = {};
+    BuildExeDataPath(path, MAX_PATH, L"highscore.dat");
+    if (ReadHighscoreFile(path, highscore_))
     {
-        HighscoreFileV2 f{};
-        memcpy(&f, buf, sizeof(f));
-        if (f.magic == HIGHSCORE_MAGIC && f.version == HIGHSCORE_VERSION &&
-            f.checksum == ComputeHighscoreChecksum(f))
-        {
-            highscore_.maxWave = f.maxWave;
-            highscore_.maxKills = f.maxKills;
-            highscore_.maxSurvivalTime = f.maxSurvivalTime;
-        }
-        else
-        {
-            AppLogAdd(L"[HIGHSCORE] File kỷ lục không hợp lệ (sai phiên bản/checksum), bỏ qua\n");
-        }
+        AppLogAdd(L"[HIGHSCORE] Loaded %s: Wave=%d Kills=%d Time=%.1fs Score=%d\n",
+            path, highscore_.maxWave, highscore_.maxKills, highscore_.maxSurvivalTime, highscore_.maxScore);
+        return;
     }
-    else if (size == sizeof(HighscoreData))
+    // Migrate: file cũ theo thư mục làm việc (nếu exe được chạy từ chỗ khác)
+    HighscoreData legacy{};
+    if (ReadHighscoreFile(HIGHSCORE_LEGACY_PATH, legacy))
     {
-        // Tương thích ngược: file v1 cũ (struct thô, không checksum)
-        HighscoreData temp{};
-        memcpy(&temp, buf, sizeof(temp));
-        if (temp.magic == HIGHSCORE_MAGIC)
-        {
-            highscore_ = temp;
-            AppLogAdd(L"[HIGHSCORE] Đã đọc file kỷ lục định dạng cũ (v1)\n");
-        }
+        highscore_ = legacy;
+        AppLogAdd(L"[HIGHSCORE] Loaded legacy file %s\n", HIGHSCORE_LEGACY_PATH);
+        return;
     }
+    highscore_ = HighscoreData{}; // không có file / hỏng: bắt đầu từ 0, không crash
+    AppLogAdd(L"[HIGHSCORE] No valid highscore file (%s), starting fresh\n", path);
 }
 
 void GamePrototype::SaveHighscore()
@@ -114,38 +170,47 @@ void GamePrototype::SaveHighscore()
         highscore_.maxSurvivalTime = gameTime_;
         updated = true;
     }
-
-    if (updated)
+    int score = ResultScreen::ComputeScore(BuildResultStats());
+    if (score > highscore_.maxScore)
     {
-        CreateDirectory(L"Data", NULL);
+        highscore_.maxScore = score;
+        updated = true;
+    }
+    if (!updated) return;
 
-        HighscoreFileV2 f{};
-        f.maxWave = highscore_.maxWave;
-        f.maxKills = highscore_.maxKills;
-        f.maxSurvivalTime = highscore_.maxSurvivalTime;
-        f.checksum = ComputeHighscoreChecksum(f);
+    wchar_t dir[MAX_PATH] = {}, path[MAX_PATH] = {}, tmpPath[MAX_PATH] = {};
+    BuildExeDataPath(dir, MAX_PATH, L"");
+    BuildExeDataPath(path, MAX_PATH, L"highscore.dat");
+    BuildExeDataPath(tmpPath, MAX_PATH, L"highscore.tmp");
+    CreateDirectoryW(dir, NULL); // đã tồn tại thì bỏ qua
 
-        // Ghi an toàn: ghi ra file tạm, kiểm tra lỗi, rồi mới thay thế file thật
-        FILE* fp = nullptr;
-        if (_wfopen_s(&fp, HIGHSCORE_TMP_PATH, L"wb") != 0 || !fp)
-        {
-            AppLogAdd(L"[HIGHSCORE] Không mở được file tạm để ghi\n");
-            return;
-        }
-        bool ok = (fwrite(&f, sizeof(f), 1, fp) == 1);
-        ok = (fflush(fp) == 0) && ok;
-        ok = (fclose(fp) == 0) && ok;
+    HighscoreFileV3 f{};
+    f.maxWave = highscore_.maxWave;
+    f.maxKills = highscore_.maxKills;
+    f.maxSurvivalTime = highscore_.maxSurvivalTime;
+    f.maxScore = highscore_.maxScore;
+    f.checksum = ComputeHighscoreChecksum(f);
 
-        if (ok && MoveFileExW(HIGHSCORE_TMP_PATH, HIGHSCORE_PATH, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
-        {
-            AppLogAdd(L"[HIGHSCORE] Saved: Wave=%d, Kills=%d, Time=%.1fs\n",
-                highscore_.maxWave, highscore_.maxKills, highscore_.maxSurvivalTime);
-        }
-        else
-        {
-            DeleteFileW(HIGHSCORE_TMP_PATH);
-            AppLogAdd(L"[HIGHSCORE] Lưu kỷ lục thất bại, giữ nguyên file cũ\n");
-        }
+    // Ghi an toàn: ghi ra file tạm, kiểm tra lỗi, rồi mới thay thế file thật
+    FILE* fp = nullptr;
+    if (_wfopen_s(&fp, tmpPath, L"wb") != 0 || !fp)
+    {
+        AppLogAdd(L"[HIGHSCORE] Không mở được file tạm để ghi: %s\n", tmpPath);
+        return;
+    }
+    bool ok = (fwrite(&f, sizeof(f), 1, fp) == 1);
+    ok = (fflush(fp) == 0) && ok;
+    ok = (fclose(fp) == 0) && ok;
+
+    if (ok && MoveFileExW(tmpPath, path, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+    {
+        AppLogAdd(L"[HIGHSCORE] Saved %s: Wave=%d, Kills=%d, Time=%.1fs, Score=%d\n",
+            path, highscore_.maxWave, highscore_.maxKills, highscore_.maxSurvivalTime, highscore_.maxScore);
+    }
+    else
+    {
+        DeleteFileW(tmpPath);
+        AppLogAdd(L"[HIGHSCORE] Lưu kỷ lục thất bại, giữ nguyên file cũ\n");
     }
 }
 
@@ -230,6 +295,18 @@ void GamePrototype::ReapplyAllStats()
         cardManager_.HasHook(HookType::OnApex),     // Cá chép vượt thác
         cardManager_.HasHook(HookType::OnKill)      // Cá mập đói
     );
+}
+
+// Điểm vào duy nhất cho mọi lần bắt đầu / chơi lại: Reset() đúng một lần rồi StartStage(1) đúng một lần.
+void GamePrototype::StartRun(GameMode mode)
+{
+    mode_ = mode;
+    runStartMode_ = mode;
+    titleSelectedMode_ = (mode == GameMode::Endless) ? 1 : 0;
+    paused_ = false;
+    Reset();
+    StartStage(1);
+    Input::Instance().Flush(); // phím vừa nhấn (R / Enter / 1 / 2) không lọt sang tick sau
 }
 
 void GamePrototype::StartWave(int wave)
@@ -588,6 +665,7 @@ bool GamePrototype::UpdatePauseInput()
         {
             paused_ = false;
             Input::Instance().Flush();
+            SaveHighscoreIfEndlessRun(); // Pause -> Title giữa ván Endless: không mất kỷ lục
             Reset();
             state_ = GameState::Title;
             sound.PlayBGM(BgmId::Title, true);
@@ -670,25 +748,17 @@ void GamePrototype::Update(float dt)
 
         if (k1Pressed)
         {
-            mode_ = GameMode::Classic;
-            titleSelectedMode_ = 0;
-            Reset();
-            StartWave(1);
+            StartRun(GameMode::Classic);
             return;
         }
         if (k2Pressed)
         {
-            mode_ = GameMode::Endless;
-            titleSelectedMode_ = 1;
-            Reset();
-            StartWave(1);
+            StartRun(GameMode::Endless);
             return;
         }
         if (input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
         {
-            mode_ = (titleSelectedMode_ == 1) ? GameMode::Endless : GameMode::Classic;
-            Reset();
-            StartWave(1);
+            StartRun((titleSelectedMode_ == 1) ? GameMode::Endless : GameMode::Classic);
             return;
         }
 
@@ -718,8 +788,7 @@ void GamePrototype::Update(float dt)
         ResultScreen::Action action = resultScreen_.Update(dt, input);
         if (action == ResultScreen::Action::Retry)
         {
-            Reset();
-            StartWave(1);
+            StartRun(runStartMode_); // chơi lại đúng chế độ lúc bắt đầu (tutorial -> Endless không làm đổi Retry)
             return;
         }
         if (action == ResultScreen::Action::Title)
@@ -737,11 +806,11 @@ void GamePrototype::Update(float dt)
 
     // Phím R: chơi lại từ wave 1 (cùng chế độ) - chỉ trong các trạng thái đang chơi,
     // chỉ khi vừa nhấn (giữ phím không reset liên tục). Lưu kỷ lục Endless trước khi reset.
-    if (input.IsPressed(KEY_INPUT_R))
+    // Chỉ khi đang chiến đấu (Wave / Boss): không reset khi đang chọn thẻ hoặc Boss Intro.
+    if (input.IsPressed(KEY_INPUT_R) && (state_ == GameState::Wave || state_ == GameState::Boss))
     {
         SaveHighscoreIfEndlessRun();
-        Reset();
-        StartWave(1);
+        StartRun(runStartMode_);
         return;
     }
 
@@ -1123,5 +1192,6 @@ ResultStats GamePrototype::BuildResultStats() const
     s.bestWave = highscore_.maxWave;
     s.bestKills = highscore_.maxKills;
     s.bestTime = highscore_.maxSurvivalTime;
+    s.bestScore = highscore_.maxScore;
     return s;
 }

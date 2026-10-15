@@ -150,7 +150,7 @@ void ResultScreen::Draw(const ResultStats& s) const
     {
         int bm = static_cast<int>(s.bestTime) / 60, bs = static_cast<int>(s.bestTime) % 60;
         wchar_t best[96];
-        swprintf_s(best, L"Best: Wave %d  |  Kills %d  |  %02d:%02d", s.bestWave, s.bestKills, bm, bs);
+        swprintf_s(best, L"Best: Wave %d  |  Kills %d  |  %02d:%02d  |  Score %d", s.bestWave, s.bestKills, bm, bs, s.bestScore);
         DrawCentered(cx, extraY, best, GetColor(255, 215, 80), FontSize::Body);
         extraY += 22;
     }
