@@ -41,7 +41,9 @@ public:
     int GetOfferedCardCount() const { return offeredCount_; }
     const Card* AutoPickRandom();
     void AddActiveCard(const Card& c) { activeCards_.push_back(c); }
-    void ClearOffer() { offeredCount_ = 0; } // Hell: chọn ngẫu nhiên 1 thẻ trong lượt vừa roll (nullptr nếu không có)
+    void ClearOffer() { offeredCount_ = 0; }
+    void SetLuck(int luck) { luck_ = luck; }          // Luck: dịch roll độ hiếm lên
+    void SetBonusScale(float s) { bonusScale_ = s; }  // Hell: thẻ chỉ còn ~1/10 hiệu lực // Hell: chọn ngẫu nhiên 1 thẻ trong lượt vừa roll (nullptr nếu không có)
 
     const std::vector<Card>& GetActiveCards() const { return activeCards_; }
     const std::array<Card, 3>& GetCurrentOffer() const { return currentOffer_; }
@@ -53,6 +55,8 @@ private:
     std::vector<Card> activeCards_;
     std::array<Card, 3> currentOffer_{};
     int offeredCount_ = 3;
+    int luck_ = 0;
+    float bonusScale_ = 1.0f;
     int selectedIndex_ = 0; // 0, 1, 2
     float inputDelay_ = 0.0f;
 };

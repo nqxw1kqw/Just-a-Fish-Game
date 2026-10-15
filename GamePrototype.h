@@ -105,9 +105,12 @@ private:
     float rouletteStepTimer_ = 0.0f;
     std::array<Card, 3> rouletteCards_{};
     // Hell: lên cấp -> +1 bậc chỉ số ngẫu nhiên
-    enum HellStat { HS_Hp, HS_Speed, HS_SlamDmg, HS_SlamRadius, HS_JumpCd, HS_BulletDmg, HS_Count };
-    int hellStatLv_[HS_Count] = {};
-    void GrantHellLevelStat();
+    enum LvStat { LS_Atk, LS_Def, LS_Spd, LS_Cd, LS_Luck, LS_Count };
+    int lvStat_[LS_Count] = {};          // Normal/Hell: điểm chỉ số từ lên cấp
+    int levelUpStat_ = 0;
+    float levelUpBannerTimer_ = 0.0f;
+    void GrantLevelStat();
+    void RefreshDamageTakenMul();        // modeMul x (1 - Def)
     wchar_t hellCardToast_[96] = L"";
     void EnterEndlessClear();            // Qua stage ENDLESS_MAX_STAGE -> màn CLEAR
     void OnWaveComplete();

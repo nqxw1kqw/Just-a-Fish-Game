@@ -1,10 +1,11 @@
-#include "UIRenderer.h"
+﻿#include "UIRenderer.h"
 #include "GamePrototype.h"
 #include "Boss.h"
 #include "FontManager.h"
 #include "Consts.h"
 #include "SoundManager.h"
 #include "DxLib.h"
+#include "CardFrame.h"
 #include <algorithm>
 
 void UIRenderer::DrawBossHealthBar(const WhaleBoss& boss) const
@@ -53,18 +54,21 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
     // 4. Danh sách các Thẻ đã sở hữu ở góc trái dưới
     int cardListY = jumpY + 28;
 
-    // Hell: bảng chỉ số nhỏ (góc trái, dưới bảng HP)
-    if (game.mode_ == GameMode::Hell)
+    // Normal/Hell: bảng chỉ số nhỏ (góc trái, dưới bảng HP) - điểm từ lên cấp
+    if (game.IsEndlessLike())
     {
+        const bool hell = (game.mode_ == GameMode::Hell);
         const PlayerStats& st = game.playerStats_;
-        const auto& lv = game.hellStatLv_;
+        const int* lv = game.lvStat_;
+        const float def = (std::min)(GameConsts::LV_DEF_MAX, GameConsts::LV_DEF_PCT * lv[GamePrototype::LS_Def]);
         int y = cardListY;
-        DrawBox(hpX - 4, y - 2, hpX + 250, y + 5 * 16 + 4, GetColor(20, 10, 14), TRUE);
-        FontManager::DrawFormat(hpX, y, GetColor(255, 140, 110), FontSize::Small, L"[HELL STATS]  Lv %d  Cards %d", game.player_.GetLevel(), (int)game.cardManager_.GetActiveCards().size()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"HP %.0f (+%d)   SPD %.0f (+%d)", st.maxHp.GetValue(), lv[0], st.moveSpeed.GetValue(), lv[1]); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"SLAM %.0f (+%d)  R %.0f (+%d)", st.slamDamage.GetValue(), lv[2], st.slamRadius.GetValue(), lv[3]); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"JUMP CD %.2fs (+%d)", st.jumpCooldown.GetValue(), lv[4]); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"BULLET %.0f (+%d)  DMG x%.1f", st.bulletDamage.GetValue(), lv[5], GameConsts::HELL_PLAYER_DMG_MUL); y += 16;
+        DrawBox(hpX - 4, y - 2, hpX + 270, y + 6 * 16 + 4, hell ? GetColor(20, 10, 14) : GetColor(10, 18, 30), TRUE);
+        FontManager::DrawFormat(hpX, y, hell ? GetColor(255, 140, 110) : GetColor(120, 210, 255), FontSize::Small, L"[STATS]  Lv %d  EXP %d/%d", game.player_.GetLevel(), game.player_.GetExp(), game.player_.GetExpNext()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"ATK +%d   SLAM %.0f  BULLET %.0f", lv[0], st.slamDamage.GetValue(), st.bulletDamage.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"DEF +%d   -%d%% dmg taken   HP %.0f", lv[1], (int)(def * 100.0f + 0.5f), st.maxHp.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"SPD +%d   %.0f", lv[2], st.moveSpeed.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"CD  +%d   jump %.2fs", lv[3], st.jumpCooldown.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"LUCK +%d  rarity +%d", lv[4], lv[4] * GameConsts::LV_LUCK_RARITY_SHIFT); y += 16;
         cardListY = y + 8;
     }
     const auto& cards = game.cardManager_.GetActiveCards();
@@ -72,6 +76,22 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
     {
         FontManager::Draw(hpX, cardListY, L"[ACTIVE CARDS]:", GetColor(220, 230, 245), FontSize::Body);
         cardListY += 18;
+        if (game.mode_ == GameMode::Hell)
+        {
+            // Hell: gộp thẻ trùng, hiện số stack như "Lv" sau tên thẻ (hiệu lực thẻ x0.1)
+            int shown = 0;
+            for (size_t i = 0; i < cards.size() && shown < 8; ++i)
+            {
+                bool dup = false;
+                for (size_t j = 0; j < i; ++j) if (cards[j].id == cards[i].id) { dup = true; break; }
+                if (dup) continue;
+                int col = static_cast<int>(CardFrame::GetStyle(cards[i].rarity).edge);
+                FontManager::DrawFormat(hpX + 6, cardListY, col, FontSize::Small, L"- %s  Lv %d", cards[i].name.c_str(), game.cardManager_.GetCardCount(cards[i].id));
+                cardListY += 17;
+                ++shown;
+            }
+        }
+        else
         for (size_t i = 0; i < cards.size() && i < 6; ++i)
         {
             int col = GetColor(200, 220, 255);
@@ -213,27 +233,68 @@ void UIRenderer::DrawModeSelectScreen(const GamePrototype& game) const
 void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const
 {
     int sw = GameConsts::SCREEN_WIDTH;
+    if (game.levelUpBannerTimer_ > 0.0f && game.IsEndlessLike())
+    {
+        static const wchar_t* kStat[GamePrototype::LS_Count] = { L"+1 ATTACK", L"+1 DEFENSE", L"+1 SPEED", L"+1 COOLDOWN", L"+1 LUCK" };
+        float k = (std::min)(1.0f, game.levelUpBannerTimer_ / 0.4f); // mờ dần 0.4s cuối
+        int by = GameConsts::SCREEN_HEIGHT / 2 - 150;
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(200 * k));
+        DrawBox(sw / 2 - 170, by, sw / 2 + 170, by + 70, GetColor(10, 30, 50), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * k));
+        DrawBox(sw / 2 - 170, by, sw / 2 + 170, by + 70, GetColor(120, 230, 255), FALSE);
+        FontManager::DrawFormat(sw / 2 - 120, by + 8, GetColor(255, 255, 255), FontSize::Header, L"LEVEL UP!  Lv %d", game.player_.GetLevel());
+        FontManager::Draw(sw / 2 - 70, by + 44, kStat[game.levelUpStat_], GetColor(120, 255, 180), FontSize::Medium);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+    }
     if (game.rouletteActive_ && game.mode_ == GameMode::Hell)
     {
-        // Phase 2: vòng quay thẻ Hell (3 ô, ô sáng chạy rồi dừng ở thẻ trúng)
+        // Vòng quay thẻ Hell: 3 thẻ dùng khung CardFrame theo độ hiếm, ô sáng chạy -> dừng ở thẻ trúng -> mờ dần
         const int n = game.rouletteCount_;
-        const int cw = 200, ch = 54, gap = 12;
+        const int cw = 150, ch = 96, gap = 14;
         int total = n * cw + (n - 1) * gap;
-        int x0 = sw / 2 - total / 2, y0 = 100;
-        DrawBox(x0 - 10, y0 - 26, x0 + total + 10, y0 + ch + 8, GetColor(30, 8, 8), TRUE);
-        DrawBox(x0 - 10, y0 - 26, x0 + total + 10, y0 + ch + 8, GetColor(255, 90, 70), FALSE);
-        FontManager::Draw(x0, y0 - 22, game.rouletteLanded_ ? L"HELL CARD GET!" : L"HELL ROULETTE...", GetColor(255, 140, 110), FontSize::Body);
-        for (int i = 0; i < n; ++i)
+        int x0 = sw / 2 - total / 2, y0 = 104;
+        const float ft = game.rouletteTimer_;
+        const bool fading = game.rouletteLanded_ && ft > GameConsts::HELL_ROULETTE_HOLD_TIME;
+        if (!fading)
         {
-            int x = x0 + i * (cw + gap);
-            bool on = (i == game.rouletteIdx_);
-            bool win = on && game.rouletteLanded_;
-            int bg = win ? GetColor(120, 40, 20) : on ? GetColor(80, 30, 30) : GetColor(25, 15, 20);
-            int edge = win ? GetColor(255, 220, 80) : on ? GetColor(255, 120, 90) : GetColor(90, 60, 70);
-            DrawBox(x, y0, x + cw, y0 + ch, bg, TRUE);
-            DrawBox(x, y0, x + cw, y0 + ch, edge, FALSE);
-            if (win) DrawBox(x - 2, y0 - 2, x + cw + 2, y0 + ch + 2, edge, FALSE);
-            FontManager::Draw(x + 8, y0 + 18, game.rouletteCards_[i].name.c_str(), on ? GetColor(255, 235, 150) : GetColor(170, 160, 170), FontSize::Small);
+            FontManager::Draw(x0, y0 - 22, game.rouletteLanded_ ? L"HELL CARD GET!" : L"HELL ROULETTE...", GetColor(255, 140, 110), FontSize::Body);
+            for (int i = 0; i < n; ++i)
+            {
+                const Card& c = game.rouletteCards_[i];
+                int x = x0 + i * (cw + gap);
+                bool on = (i == game.rouletteIdx_);
+                bool win = on && game.rouletteLanded_;
+                int lift = on ? -8 : 0;
+                CardFrame::DrawBack(x, y0 + lift, cw, ch, c.rarity, on, ft + i * 0.7f);
+                FontManager::Draw(x + 10, y0 + lift + 30, c.name.c_str(), on ? GetColor(255, 240, 160) : GetColor(190, 190, 205), FontSize::Small);
+                FontManager::Draw(x + 10, y0 + lift + 52, CardFrame::GetStyle(c.rarity).label, GetColor(170, 180, 200), FontSize::Small);
+                CardFrame::DrawFront(x, y0 + lift, cw, ch, c.rarity, on, ft + i * 0.7f);
+                if (!on)
+                {
+                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120); // làm tối thẻ không được chọn
+                    DrawBox(x, y0, x + cw, y0 + ch, GetColor(0, 0, 0), TRUE);
+                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+                }
+                if (win)
+                {
+                    DrawBox(x - 4, y0 + lift - 4, x + cw + 4, y0 + lift + ch + 4, GetColor(255, 230, 90), FALSE);
+                    DrawBox(x - 5, y0 + lift - 5, x + cw + 5, y0 + lift + ch + 5, GetColor(255, 230, 90), FALSE);
+                }
+            }
+        }
+        else
+        {
+            // Mờ dần: chỉ còn thẻ trúng (vẽ đơn giản để alpha hoạt động)
+            float k = 1.0f - (ft - GameConsts::HELL_ROULETTE_HOLD_TIME) / GameConsts::HELL_ROULETTE_FADE_TIME;
+            int alpha = (std::max)(0, (std::min)(255, static_cast<int>(255.0f * k)));
+            const Card& c = game.rouletteCards_[game.rouletteTarget_];
+            const CardFrame::Style& s = CardFrame::GetStyle(c.rarity);
+            int x = x0 + game.rouletteTarget_ * (cw + gap);
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+            DrawBox(x, y0 - 8, x + cw, y0 - 8 + ch, GetColor(s.bgTop[0], s.bgTop[1], s.bgTop[2]), TRUE);
+            DrawBox(x, y0 - 8, x + cw, y0 - 8 + ch, s.edge, FALSE);
+            FontManager::Draw(x + 10, y0 + 22, c.name.c_str(), GetColor(255, 240, 160), FontSize::Small);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
         }
     }
     else if (game.hellCardToastTimer_ > 0.0f && game.mode_ == GameMode::Hell)

@@ -811,7 +811,8 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
                 totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
                 SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
                 // G3: Bỏ EXP, quái chết có tỉ lệ 10% rơi vật hồi máu nhỏ (+10 HP)
-                if ((rand() % 100) < 10)
+                if (isEndless_) effects.SpawnExpOrb(e.pos, GameConsts::EXP_ORB_VALUE); // Normal/Hell: luôn rơi EXP
+                else if ((rand() % 100) < 10)
                 {
                     effects.SpawnExpOrb(e.pos, 10.0f);
                 }
@@ -865,7 +866,8 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
                     killedThisWave_++;
                     totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
                     SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
-                    if ((rand() % 100) < 10)
+                    if (isEndless_) effects.SpawnExpOrb(e.pos, GameConsts::EXP_ORB_VALUE); // Normal/Hell: luôn rơi EXP
+                    else if ((rand() % 100) < 10)
                     {
                         effects.SpawnExpOrb(e.pos, 10.0f);
                     }
