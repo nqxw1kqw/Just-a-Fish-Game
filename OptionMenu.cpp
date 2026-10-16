@@ -100,6 +100,8 @@ void OptionMenu::Draw()
 		s.Draw();
 	}
 
+	DxLib::DrawString(450, 200, L"BGM : %d", GetColor(255, 255, 255));
+	DxLib::DrawString(450, 400, L"SE : %d", GetColor(255, 255, 255));
 
 }
 

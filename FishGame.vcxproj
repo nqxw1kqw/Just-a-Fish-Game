@@ -125,6 +125,7 @@
     <ClInclude Include="Slider.h" />
     <ClInclude Include="SoundManager.h" />
     <ClInclude Include="Title.h" />
+    <ClInclude Include="TitleFishMove.h" />
     <ClInclude Include="Tutorial.h" />
     <ClInclude Include="Vector3.h" />
     <ClInclude Include="Stats.h" />
@@ -166,6 +167,7 @@
     <ClCompile Include="Slider.cpp" />
     <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="Title.cpp" />
+    <ClCompile Include="TitleFishMove.cpp" />
     <ClCompile Include="Tutorial.cpp" />
     <ClCompile Include="UIRenderer.cpp" />
   </ItemGroup>

@@ -1,6 +1,7 @@
 #pragma once
 #include "Vector3.h"
 #include "Scene.h"
+#include "TitleFishMove.h"
 
 enum TitleMenu
 {
@@ -33,6 +34,8 @@ public:
 private:
 	TitleMenu currentMenu = TitleMenu::GamePlay;
 
+	TitleFishMove titleFishMove;
+
 
 	bool finished{ false };
 
@@ -62,6 +65,9 @@ private:
 
 	//Count
 	int selectCount = 0;
+
+	int titleBackModelHandle = -1;
+	int titlePlayerModelHandle = -1;
 
 };
 

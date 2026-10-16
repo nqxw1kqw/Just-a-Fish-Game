@@ -130,7 +130,13 @@
     <ClInclude Include="CreditMenu.h">
       <Filter>Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Slider.h" />
+    <ClInclude Include="SoundManager.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Slider.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleFishMove.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -215,6 +221,12 @@
     <ClCompile Include="CreditMenu.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Slider.cpp" />
+    <ClCompile Include="SoundManager.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="Slider.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleFishMove.cpp" />
   </ItemGroup>
 </Project>
