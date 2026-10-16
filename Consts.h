@@ -287,9 +287,27 @@ namespace GameConsts
     constexpr float LEVEL_UP_BANNER_TIME = 2.0f;     // Thời gian hiện bảng LEVEL UP
     // EXP orb (Normal + Hell): mọi quái chết đều rơi 1 viên trắng
     constexpr float EXP_ORB_VALUE = 5.0f;            // EXP / viên (lên cấp đầu cần 30, x1.4 mỗi cấp)
-    constexpr float EXP_ORB_SIZE = 9.0f;             // Kích thước khối 3D
-    constexpr float EXP_MAGNET_RADIUS = 260.0f;      // Bán kính nam châm
-    constexpr float EXP_MAGNET_SPEED = 520.0f;       // Tốc độ hút
+    constexpr float EXP_ORB_SIZE = 9.0f;             // Bán kính ngọc (bát diện) - chiều cao = 2x
+    constexpr float EXP_ORB_HOVER_Y = 9.0f;          // Độ cao lơ lửng khi nằm yên
+    constexpr float EXP_ORB_BOB_AMP = 2.5f;          // Biên độ nhấp nhô
+    constexpr float EXP_ORB_BOB_SPEED = 4.0f;        // Tốc độ nhấp nhô (rad/s)
+    constexpr float EXP_ORB_SPIN_SPEED = 2.2f;       // Tốc độ xoay (rad/s), x3 khi bị hút
+    constexpr float EXP_ORB_POP_SPEED_MIN = 60.0f;   // Văng ra khi rơi (ngang)
+    constexpr float EXP_ORB_POP_SPEED_MAX = 130.0f;
+    constexpr float EXP_ORB_POP_UP_MIN = 150.0f;     // Văng lên
+    constexpr float EXP_ORB_POP_UP_MAX = 220.0f;
+    constexpr float EXP_ORB_GRAVITY = 650.0f;
+    constexpr float EXP_ORB_BOUNCE = 0.30f;          // Nảy 1 lần khi chạm đất
+    constexpr float EXP_ORB_HALO_SIZE = 34.0f;       // Quầng sáng billboard (additive)
+    constexpr int   EXP_ORB_HALO_ALPHA = 110;
+    constexpr int   EXP_ORB_HALO_MAX = 120;          // Quá số này: bỏ quầng sáng (Hell đông, giảm lag)
+    constexpr float EXP_ORB_ABSORB_TIME = 0.12f;     // Hấp thụ: thu nhỏ + chớp
+    constexpr float EXP_MAGNET_RADIUS = 260.0f;      // Bán kính nam châm (vào vùng này là bị hút đến khi nhặt)
+    constexpr float EXP_MAGNET_SPEED = 520.0f;       // Tốc độ hút tối đa
+    constexpr float EXP_MAGNET_SPEED_START = 60.0f;  // Tốc độ lúc mới bị hút (ease-in)
+    constexpr float EXP_MAGNET_ACCEL = 1600.0f;      // Gia tốc hút (đơn vị/s^2)
+    constexpr float EXP_MAGNET_CURVE = 140.0f;       // Lực cong ngang lúc đầu (giảm dần về 0)
+    constexpr float EXP_MAGNET_CURVE_TIME = 0.35f;   // Thời gian cong
     constexpr float EXP_PICKUP_RADIUS = 45.0f;       // Bán kính nhặt
     // Hell: thẻ bị giảm mạnh (~1/10): +10% -> +1%. Thẻ vẫn cộng dồn. (bulletCount / extraJumps giữ nguyên)
     constexpr float HELL_CARD_BONUS_SCALE = 0.10f;
