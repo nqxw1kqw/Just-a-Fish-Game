@@ -225,6 +225,9 @@
     <ClInclude Include="FontManager.h">
       <Filter>UI</Filter>
     </ClInclude>
+    <ClInclude Include="Localization.h">
+      <Filter>UI</Filter>
+    </ClInclude>
     <ClInclude Include="ResultScreen.h">
       <Filter>UI</Filter>
     </ClInclude>
@@ -306,6 +309,9 @@
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="FontManager.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Localization.cpp">
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="ResultScreen.cpp">

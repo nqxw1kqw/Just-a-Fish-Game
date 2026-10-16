@@ -15,6 +15,7 @@
 #include "Render3DUtil.h"
 #include "DxLib.h"
 #include "FontManager.h"
+#include "Localization.h"
 #include "SoundManager.h"
 #include "Input.h"
 
@@ -225,7 +226,7 @@ void GamePrototype::SaveHighscore()
 void GamePrototype::SaveHighscoreIfEndlessRun()
 {
     // Chỉ lưu khi đang có một ván Endless (không lưu ở màn Title)
-    if (IsEndlessLike() && state_ != GameState::Title && state_ != GameState::ModeSelect)
+    if (IsEndlessLike() && state_ != GameState::Title && state_ != GameState::LanguageSelect && state_ != GameState::ModeSelect)
     {
         SaveHighscore();
     }
@@ -242,7 +243,9 @@ void GamePrototype::Init()
     boss_.Init();
     LoadHighscore();
     Reset();
-    state_ = GameState::Title; // Luôn bắt đầu từ màn Title (G1, Task 10 T4a)
+    // Luôn bắt đầu từ màn chọn ngôn ngữ (lựa chọn đã lưu được chọn sẵn), sau đó tới Title
+    state_ = GameState::LanguageSelect;
+    langSelectIdx_ = (L10N::Get() == Language::Japanese) ? 1 : 0;
 }
 
 void GamePrototype::Shutdown()
@@ -930,8 +933,39 @@ void GamePrototype::Update(float dt)
         renderInterpEnabled_ = !renderInterpEnabled_;
     }
 
+    // F11: ẩn/hiện bảng thông tin (stats, thẻ, debug panel, hướng dẫn phím) - chỉ hiển thị, không bật cheat
+    if (input.IsPressed(GameConsts::KEY_TOGGLE_PANELS))
+    {
+        panelsVisible_ = !panelsVisible_;
+    }
+
     // Xử lý các phím Debug / Cheat / Camera tinh chỉnh (Phần D)
     debugController_.Update(dt, *this);
+
+    // 00. Màn chọn ngôn ngữ (màn đầu tiên)
+    if (state_ == GameState::LanguageSelect)
+    {
+        SoundManager::Instance().PlayBGM(BgmId::Title, true);
+        if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) || input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S)
+            || input.IsPressed(KEY_INPUT_LEFT) || input.IsPressed(KEY_INPUT_RIGHT))
+        {
+            langSelectIdx_ = 1 - langSelectIdx_;
+        }
+        bool k1 = input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1);
+        bool k2 = input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2);
+        if (k1) langSelectIdx_ = 0;
+        if (k2) langSelectIdx_ = 1;
+        if (k1 || k2 || input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
+        {
+            L10N::Set(langSelectIdx_ == 1 ? Language::Japanese : Language::English, true);
+            FontManager::ApplyLanguage();
+            state_ = GameState::Title;
+            Input::Instance().Flush(); // tránh Enter/1/2 bị hiểu là chọn mode ở Title
+            return;
+        }
+        effects_.Update(dt, player_.GetPosition());
+        return;
+    }
 
     // 0. Màn hình Tiêu đề (Title - G1, Task 10 T4a)
     if (state_ == GameState::Title)
@@ -943,6 +977,14 @@ void GamePrototype::Update(float dt)
         bool k1Pressed = input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1);
         bool k2Pressed = input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2);
         bool k3Pressed = input.IsPressed(KEY_INPUT_3) || input.IsPressed(KEY_INPUT_NUMPAD3);
+
+        // [L]: quay lại màn chọn ngôn ngữ
+        if (input.IsPressed(GameConsts::KEY_LANGUAGE_SELECT))
+        {
+            langSelectIdx_ = (L10N::Get() == Language::Japanese) ? 1 : 0;
+            state_ = GameState::LanguageSelect;
+            return;
+        }
 
         if (upPressed) titleSelectedMode_ = (titleSelectedMode_ + 2) % 3;
         if (downPressed) titleSelectedMode_ = (titleSelectedMode_ + 1) % 3;
@@ -973,7 +1015,7 @@ void GamePrototype::Update(float dt)
     }
 
     // Kiểm tra chết (Game Over)
-    if (state_ != GameState::GameOver && state_ != GameState::Victory && state_ != GameState::Title)
+    if (state_ != GameState::GameOver && state_ != GameState::Victory && state_ != GameState::Title && state_ != GameState::LanguageSelect)
     {
         if (player_.GetHp() <= 0.0f)
         {
@@ -1342,7 +1384,7 @@ void GamePrototype::DrawArena() const
 void GamePrototype::Draw() const
 {
     // #15: Sương mù xanh dưới nước chỉ cho cảnh 3D lúc chơi (tắt ở màn Title)
-    const bool useFog = (state_ != GameState::Title);
+    const bool useFog = (state_ != GameState::Title && state_ != GameState::LanguageSelect);
     if (useFog)
     {
         SetFogEnable(TRUE);
@@ -1373,7 +1415,7 @@ void GamePrototype::Draw() const
     weapon_.Draw(player_);
 
     // 6b. 光の筋: tia sáng từ mặt nước + caustics (additive, vẽ sau vật thể đục)
-    if (state_ != GameState::Title)
+    if (state_ != GameState::Title && state_ != GameState::LanguageSelect)
     {
         godRays_.Draw();
     }
@@ -1416,6 +1458,10 @@ void GamePrototype::Draw() const
     if (state_ == GameState::Title)
     {
         uiRenderer_.DrawTitleScreen(*this);
+    }
+    else if (state_ == GameState::LanguageSelect)
+    {
+        uiRenderer_.DrawLanguageSelectScreen(*this);
     }
 
     // 12. Màn hình Thắng / Thua

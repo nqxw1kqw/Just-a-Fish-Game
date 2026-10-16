@@ -9,6 +9,16 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "FontManager.h"
+#include "Localization.h"
+namespace
+{
+    // Vẽ chuỗi căn giữa theo trục X quanh cx (độ dài chữ EN/JP khác nhau)
+    void DrawCX(int cx, int y, const wchar_t* text, unsigned int color, FontSize size)
+    {
+        FontManager::Draw(cx - FontManager::GetWidth(text, size) / 2, y, text, color, size);
+    }
+}
+
 #include "CardFrame.h"
 #include "Input.h"
 
@@ -369,25 +379,25 @@ void CardManager::Draw() const
 
     if (offeredCount_ <= 0)
     {
-        FontManager::Draw(sw / 2 - 260, sh / 2 - 30, L"=== ALL CARDS FULLY STACKED! ===", GetColor(255, 230, 80), FontSize::Header);
-        FontManager::Draw(sw / 2 - 220, sh / 2 + 10, L"Card pool is empty. Received 20% Max HP Heal bonus!", GetColor(100, 255, 160), FontSize::Medium);
-        FontManager::Draw(sw / 2 - 120, sh / 2 + 45, L"Press [ENTER] to continue swimming...", GetColor(200, 225, 255), FontSize::Body);
+        DrawCX(sw / 2, sh / 2 - 30, TR(L"=== ALL CARDS FULLY STACKED! ==="), GetColor(255, 230, 80), FontSize::Header);
+        DrawCX(sw / 2, sh / 2 + 10, TR(L"Card pool is empty. Received 20% Max HP Heal bonus!"), GetColor(100, 255, 160), FontSize::Medium);
+        DrawCX(sw / 2, sh / 2 + 45, TR(L"Press [ENTER] to continue swimming..."), GetColor(200, 225, 255), FontSize::Body);
         return;
     }
 
     // 2. Tiêu đề
-    FontManager::Draw(sw / 2 - 270, 90, L"=== CHOOSE 1 UPGRADE CARD (WAVE CLEARED!) ===", GetColor(255, 230, 80), FontSize::Header);
+    DrawCX(sw / 2, 90, TR(L"=== CHOOSE 1 UPGRADE CARD (WAVE CLEARED!) ==="), GetColor(255, 230, 80), FontSize::Header);
     if (offeredCount_ == 1)
     {
-        FontManager::Draw(sw / 2 - 140, 125, L"Press [Enter] or [1] to confirm upgrade", GetColor(180, 205, 235), FontSize::Body);
+        DrawCX(sw / 2, 125, TR(L"Press [Enter] or [1] to confirm upgrade"), GetColor(180, 205, 235), FontSize::Body);
     }
     else if (offeredCount_ == 2)
     {
-        FontManager::Draw(sw / 2 - 210, 125, L"Use [A/D] to select + [Enter] to confirm, or press keys [1] / [2]", GetColor(180, 205, 235), FontSize::Body);
+        DrawCX(sw / 2, 125, TR(L"Use [A/D] to select + [Enter] to confirm, or press keys [1] / [2]"), GetColor(180, 205, 235), FontSize::Body);
     }
     else
     {
-        FontManager::Draw(sw / 2 - 230, 125, L"Use [A/D] to select + [Enter] to confirm, or press keys [1] / [2] / [3]", GetColor(180, 205, 235), FontSize::Body);
+        DrawCX(sw / 2, 125, TR(L"Use [A/D] to select + [Enter] to confirm, or press keys [1] / [2] / [3]"), GetColor(180, 205, 235), FontSize::Body);
     }
 
     // 3. Bố cục thẻ Card linh hoạt (T3, T4d: căn giữa theo số thẻ offeredCount_)
@@ -412,7 +422,7 @@ void CardManager::Draw() const
         const CardFrame::Style& frame = CardFrame::GetStyle(card.rarity);
         int edgeColor = static_cast<int>(frame.edge);
         wchar_t rarityStr[24];
-        swprintf_s(rarityStr, L"[%s]", frame.label);
+        swprintf_s(rarityStr, L"[%s]", TR(frame.label));
         CardFrame::DrawBack(cx, cardY, cardW, cardH, card.rarity, isSelected, frameTime + i * 0.7f);
 
         // Thanh tiêu đề số phím tắt [1..3], độ hiếm và thông tin stack trong Endless (Task 10 T4d)
@@ -420,11 +430,11 @@ void CardManager::Draw() const
         if (isEndless_)
         {
             int currentCount = GetCardCount(card.id);
-            swprintf_s(slotHeader, L"Key [%d] %s (x%d/%d)", i + 1, rarityStr, currentCount, card.maxStack);
+            swprintf_s(slotHeader, TR(L"Key [%d] %s (x%d/%d)"), i + 1, rarityStr, currentCount, card.maxStack);
         }
         else
         {
-            swprintf_s(slotHeader, L"Key [%d]  %s", i + 1, rarityStr);
+            swprintf_s(slotHeader, TR(L"Key [%d]  %s"), i + 1, rarityStr);
         }
         FontManager::Draw(cx + 12, cardY + 12, slotHeader, edgeColor, FontSize::Small);
 
@@ -443,23 +453,23 @@ void CardManager::Draw() const
             // Fallback nếu không có ảnh: vẽ ô màu trơn kèm cảnh báo (T2)
             DrawBox(imgX, imgY, imgX + imgSize, imgY + imgSize, GetColor(30, 42, 60), TRUE);
             DrawBox(imgX, imgY, imgX + imgSize, imgY + imgSize, GetColor(70, 90, 120), FALSE);
-            FontManager::Draw(imgX + 25, imgY + imgSize / 2 - 15, L"[NO IMAGE]", GetColor(255, 120, 100), FontSize::Body);
+            FontManager::Draw(imgX + 25, imgY + imgSize / 2 - 15, TR(L"[NO IMAGE]"), GetColor(255, 120, 100), FontSize::Body);
         }
 
         // Tên thẻ (chữ trắng)
         int textY = imgY + imgSize + 14;
-        FontManager::Draw(cx + 16, textY, card.name.c_str(), GetColor(255, 255, 255), FontSize::Medium);
+        FontManager::Draw(cx + 16, textY, TR(card.name.c_str()), GetColor(255, 255, 255), FontSize::Medium);
 
         // Đường kẻ ngăn cách mảnh
         DrawLine(cx + 16, textY + 28, cx + cardW - 16, textY + 28, GetColor(50, 75, 110));
 
         // Dòng lợi ích (chữ xanh lá)
-        FontManager::Draw(cx + 16, textY + 36, card.benefit.c_str(), GetColor(80, 255, 120), FontSize::Small);
+        FontManager::Draw(cx + 16, textY + 36, TR(card.benefit.c_str()), GetColor(80, 255, 120), FontSize::Small);
 
         // Dòng đánh đổi (chữ đỏ cam, ẩn đi nếu không có đánh đổi)
         if (!card.drawback.empty())
         {
-            FontManager::Draw(cx + 16, textY + 62, card.drawback.c_str(), GetColor(255, 100, 90), FontSize::Small);
+            FontManager::Draw(cx + 16, textY + 62, TR(card.drawback.c_str()), GetColor(255, 100, 90), FontSize::Small);
         }
 
         // Hiệu ứng phủ (vệt sáng, ảnh khung PNG nếu có)
@@ -468,7 +478,7 @@ void CardManager::Draw() const
         // Con trỏ chọn bên dưới thẻ
         if (isSelected)
         {
-            FontManager::Draw(cx + cardW / 2 - 76, cardY + cardH + 16, L"> SELECTED (ENTER) <", GetColor(255, 230, 80), FontSize::Medium);
+            FontManager::Draw(cx + cardW / 2 - 76, cardY + cardH + 16, TR(L"> SELECTED (ENTER) <"), GetColor(255, 230, 80), FontSize::Medium);
         }
     }
 
@@ -477,12 +487,12 @@ void CardManager::Draw() const
     {
         int listX = sw - 320;
         int listY = 30;
-        FontManager::Draw(listX, listY, L"=== ACTIVE CARDS ===", GetColor(255, 220, 80), FontSize::Body);
+        FontManager::Draw(listX, listY, TR(L"=== ACTIVE CARDS ==="), GetColor(255, 220, 80), FontSize::Body);
         listY += 24;
         for (const auto& c : activeCards_)
         {
             int col = static_cast<int>(CardFrame::GetStyle(c.rarity).edge); // cùng màu với khung thẻ
-            FontManager::DrawFormat(listX, listY, col, FontSize::Small, L"- %s", c.name.c_str());
+            FontManager::DrawFormat(listX, listY, col, FontSize::Small, L"- %s", TR(c.name.c_str()));
             listY += 20;
         }
     }

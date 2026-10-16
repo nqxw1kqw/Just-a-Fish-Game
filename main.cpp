@@ -1,4 +1,4 @@
-#include <Windows.h>
+﻿#include <Windows.h>
 #include <crtdbg.h>
 #include <atomic>
 #include <new>
@@ -6,6 +6,7 @@
 #include "Consts.h"
 #include "GamePrototype.h"
 #include "FontManager.h"
+#include "Localization.h"
 #include "SoundManager.h"
 
 #ifdef _DEBUG
@@ -87,7 +88,8 @@ int WINAPI WinMain(
         return -1;
     }
 
-    // Khởi tạo Font tùy chỉnh (Yabikoma)
+    // Ngôn ngữ đã lưu (Data/settings.ini) -> chọn bộ font EN (Yabikoma) / JP (Rounded M+ 1c)
+    L10N::Init();
     FontManager::Init();
 
     // Khởi tạo Module Âm thanh (SoundManager)

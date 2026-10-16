@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "PlayerFish.h"
 #include "Enemy.h"
 #include "Bullet.h"
@@ -15,6 +15,7 @@
 
 enum class GameState
 {
+    LanguageSelect, // Màn đầu tiên: chọn ngôn ngữ EN / JP
     Title,        // Màn hình tiêu đề bắt đầu game (G1)
     Wave,         // Đang trong wave chiến đấu (G2)
     CardPick,     // Đang chọn 1 trong 3 thẻ nâng cấp (C2)
@@ -134,7 +135,9 @@ private:
     float GetWaveTimer() const { return waveTimer_; }
     float GetWaveDuration() const { return waveDuration_; }
 
-    GameState state_ = GameState::Title;
+    GameState state_ = GameState::LanguageSelect;
+    int langSelectIdx_ = 0;              // 0 = English, 1 = 日本語
+    bool panelsVisible_ = GameConsts::INFO_PANELS_DEFAULT_VISIBLE; // F11: bảng stats/thẻ/debug/hướng dẫn
     GameMode mode_ = GameMode::Classic;
     GameMode runStartMode_ = GameMode::Classic; // Chế độ lúc bắt đầu ván (tutorial tự chuyển sang Endless giữa ván)
     int titleSelectedMode_ = 0; // 0 = Classic, 1 = Endless
