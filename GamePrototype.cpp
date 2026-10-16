@@ -643,20 +643,20 @@ void GamePrototype::OnWaveComplete()
 
     // G3: Cuối mỗi wave hồi 30% máu tối đa
     player_.Heal(player_.GetMaxHp() * (mode_ == GameMode::Hell ? GameConsts::HELL_WAVE_HEAL_PERCENT : GameConsts::WAVE_HEAL_PERCENT));
-    effects_.SpawnHitParticles(player_.GetPosition() + Vec3{ 0, 15, 0 }, 25, GetColor(80, 255, 120));
+    effects_.PlayFx(FxId::HealWaveEnd, player_.GetPosition() + Vec3{ 0, 15, 0 });
 
     // Hook 11: Vảy hồi phục (Heal thêm 15% max HP - Phần C boost)
     if (cardManager_.HasHook(HookType::OnWaveEnd))
     {
         player_.Heal(player_.GetMaxHp() * 0.15f);
-        effects_.SpawnHitParticles(player_.GetPosition() + Vec3{ 0, 15, 0 }, 15, GetColor(120, 255, 180));
+        effects_.PlayFx(FxId::HealCardScale, player_.GetPosition() + Vec3{ 0, 15, 0 });
     }
 
     // Task 10 T4d: Trong Endless, nếu pool thẻ đã hết sạch
     if (IsEndlessLike() && cardManager_.GetAvailableCardsPoolCount() == 0)
     {
         player_.Heal(player_.GetMaxHp() * GameConsts::ENDLESS_EMPTY_POOL_HEAL);
-        effects_.SpawnHitParticles(player_.GetPosition() + Vec3{ 0, 20, 0 }, 30, GetColor(255, 215, 60));
+        effects_.PlayFx(FxId::HealPoolBonus, player_.GetPosition() + Vec3{ 0, 20, 0 });
 
         AdvanceAfterCardPick();
         return;
@@ -1302,7 +1302,7 @@ void GamePrototype::Update(float dt)
 
                     // Hồi 50% máu tối đa thưởng diệt Boss
                     player_.Heal(player_.GetMaxHp() * 0.50f);
-                    effects_.SpawnHitParticles(player_.GetPosition() + Vec3{ 0, 20, 0 }, 30, GetColor(255, 230, 80));
+                    effects_.PlayFx(FxId::HealBossReward, player_.GetPosition() + Vec3{ 0, 20, 0 });
 
                     // Stage cuối -> CLEAR; ngược lại chọn thẻ rồi sang stage kế tiếp
                     if (currentWave_ >= GameConsts::ENDLESS_MAX_STAGE)

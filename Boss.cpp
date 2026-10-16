@@ -872,7 +872,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
                 {
                     ring.dodgedNotice = true;
                     // Hiệu ứng hạt xanh lá biểu dương né thành công (A7)
-                    effects.SpawnHitParticles(player.GetPosition() + Vec3{ 0, 8, 0 }, 8, GetColor(100, 255, 180));
+                    effects.PlayFx(FxId::TsunamiDodge, player.GetPosition() + Vec3{ 0, 8, 0 }, Vec3{ 0, 0, 0 });
                 }
             }
             else if (!player.IsInvulnerable())

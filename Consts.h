@@ -258,7 +258,15 @@ namespace GameConsts
     constexpr float TUTORIAL_WAVE_DURATION = 15.0f;  // Mỗi stage tutorial 15 giây
     constexpr float HELL_WAVE_DURATION = 20.0f;      // Hell: 20 giây mỗi stage
     constexpr float HELL_DAMAGE_TAKEN_MUL = 1.5f;    // Hell: sát thương nhận vào x1.5
-    constexpr int   HELL_MAX_ALIVE = 13;             // Hell: trần cứng số quái sống (dễ đọc, không dọn quái giữa stage)
+    constexpr int   HELL_MAX_ALIVE = 13;             // Hell: trần số quái sống ở stage 1 (không dọn quái giữa stage)
+    // Hell: mỗi stage tăng số quái (giữ trần để tránh lag)
+    constexpr int   HELL_MAX_ALIVE_STAGES_PER_ADD = 2; // Cứ 2 stage: trần quái sống +1
+    constexpr int   HELL_MAX_ALIVE_CAP = 24;         // Trần cứng tuyệt đối (perf)
+    constexpr int   HELL_SPAWN_PER_STAGE_ADD = 1;    // Mỗi nhóm sinh thêm +1 con ...
+    constexpr int   HELL_SPAWN_STAGES_PER_ADD = 4;   // ... cứ mỗi 4 stage
+    constexpr int   HELL_SPAWN_GROUP_ADD_MAX = 3;    // Tối đa +3 con / nhóm
+    constexpr float HELL_COST_CAP_PER_STAGE = 0.04f; // Ngân sách quái sống +4% / stage
+    constexpr float HELL_COST_CAP_MUL_MAX = 2.2f;    // Trần hệ số ngân sách
     // Phase 2 - Hell: sinh quái riêng
     constexpr float HELL_SPAWN_INTERVAL_MUL = 0.75f; // Khoảng nghỉ sinh quái x0.75 (sinh nhanh hơn)
     constexpr float HELL_COST_CAP_MUL = 1.25f;       // Trần ngân sách quái sống x1.25 (vẫn bị HELL_MAX_ALIVE chặn)

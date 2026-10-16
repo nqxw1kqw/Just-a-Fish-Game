@@ -437,6 +437,14 @@ bool EnemyManager::SpawnRandomEdge(EnemyType type, const Vec3& playerPos)
     return false; // Hết 4 lượt thử đều quá gần người chơi thì bỏ qua
 }
 
+int EnemyManager::GetEffectiveMaxAlive() const
+{
+    if (maxAlive_ <= 0) return 0;
+    if (!isHell_) return maxAlive_;
+    int n = maxAlive_ + (currentWave_ - 1) / GameConsts::HELL_MAX_ALIVE_STAGES_PER_ADD;
+    return (std::min)(n, GameConsts::HELL_MAX_ALIVE_CAP);
+}
+
 void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
 {
     waveTimer_ += dt;
@@ -454,6 +462,12 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
             // Sinh theo nhóm nhỏ: W1-2 tối đa 2 con, W3+ tối đa 3 con
             int maxGroup = (currentWave_ <= 2) ? 2 : 3;
             int groupSize = 1 + (rand() % maxGroup);
+            if (isHell_)
+            {
+                // Hell: mỗi HELL_SPAWN_STAGES_PER_ADD stage, mỗi nhóm thêm HELL_SPAWN_PER_STAGE_ADD con
+                int add = ((currentWave_ - 1) / GameConsts::HELL_SPAWN_STAGES_PER_ADD) * GameConsts::HELL_SPAWN_PER_STAGE_ADD;
+                groupSize += (std::min)(add, GameConsts::HELL_SPAWN_GROUP_ADD_MAX);
+            }
             // Nhân khoảng nghỉ với số con trong nhóm
             spawnTimer_ = -spawnInterval * (groupSize - 1);
 
@@ -483,8 +497,10 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
 
                 // Kiểm tra trần chi phí quái sống của wave: chỉ sinh nếu không vượt trần
                 float cost = GetEnemyCost(typeToSpawn);
-                if (maxAlive_ > 0 && GetActiveCount() >= maxAlive_) break; // Hell: trần số quái sống
-                const float capMul = isHell_ ? GameConsts::HELL_COST_CAP_MUL : 1.0f;
+                if (maxAlive_ > 0 && GetActiveCount() >= GetEffectiveMaxAlive()) break; // Hell: trần số quái sống (tăng theo stage)
+                const float capMul = isHell_
+                    ? (std::min)(GameConsts::HELL_COST_CAP_MUL_MAX, GameConsts::HELL_COST_CAP_MUL + GameConsts::HELL_COST_CAP_PER_STAGE * (currentWave_ - 1))
+                    : 1.0f;
                 if (GetAliveCost() + cost <= GetWaveCostCap(currentWave_) * capMul)
                 {
                     SpawnRandomEdge(typeToSpawn, player.GetPosition());
@@ -592,7 +608,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                     e.chargeTimer -= dt;
                     e.pos.x += e.chargeDir.x * (e.speed * 3.2f) * dt;
                     e.pos.z += e.chargeDir.z * (e.speed * 3.2f) * dt;
-                    effects.SpawnHitParticles(e.pos + Vec3{ 0, 4, 0 }, 1, GetColor(255, 120, 60));
+                    effects.PlayFx(FxId::ChargeDashTrail, e.pos + Vec3{ 0, 4, 0 }, Vec3{ e.chargeDir.x, 0.0f, e.chargeDir.z });
 
                     // Cá mập quẫy đuôi dữ dội khi húc, sủi bọt trắng xóa
                     e.waterFxTimer += dt;

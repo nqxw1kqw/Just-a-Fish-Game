@@ -7,6 +7,9 @@
 #include "FishDeathFx.h"
 #include "../PlayerHurt/PlayerHurtFx.h"
 #include "../EnemyHit/EnemyHitFx.h"
+#include "../Heal/HealFx.h"
+#include "../Dodge/DodgeFx.h"
+#include "../EnemyTrail/EnemyTrailFx.h"
 
 struct HitFxSet
 {
@@ -15,10 +18,13 @@ struct HitFxSet
     FishDeathFx death;
     PlayerHurtEffect playerHurt;   // Fuyuu: máu khi người chơi trúng đòn
     EnemyHitEffect enemyHit;       // Fuyuu: trúng đòn quái/boss (thay HitBubblePuff)
+    HealEffect heal;               // Fuyuu: hồi máu (5 kiểu, NamedFx Heal*)
+    TsunamiDodgeEffect dodge;      // Fuyuu: né sóng thần thành công
+    ChargeDashTrailEffect dashTrail; // Fuyuu: vệt lao của quái Charge (dùng chung mọi con)
 
-    void Update(float dt) { spark.Update(dt); puff.Update(dt); death.Update(dt); playerHurt.Update(dt); enemyHit.Update(dt); }
-    void Draw() const { puff.Draw(); death.Draw(); enemyHit.Draw(); playerHurt.Draw(); spark.Draw(); }
-    void Clear() { spark.Clear(); puff.Clear(); death.Clear(); playerHurt.Clear(); enemyHit.Clear(); }
+    void Update(float dt) { spark.Update(dt); puff.Update(dt); death.Update(dt); playerHurt.Update(dt); enemyHit.Update(dt); heal.Update(dt); dodge.Update(dt); dashTrail.Update(dt); }
+    void Draw() const { puff.Draw(); death.Draw(); enemyHit.Draw(); playerHurt.Draw(); dashTrail.Draw(); dodge.Draw(); heal.Draw(); spark.Draw(); SetUseLighting(TRUE); SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255); }
+    void Clear() { spark.Clear(); puff.Clear(); death.Clear(); playerHurt.Clear(); enemyHit.Clear(); heal.Clear(); dodge.Clear(); dashTrail.Clear(); }
 };
 
 namespace HitFlash
