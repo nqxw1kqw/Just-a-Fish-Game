@@ -277,7 +277,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
             huntPose_ = 0.0f;
             Vec3 g{ pos_.x, 0.0f, pos_.z };
-            // TODO(SharkFx/Fuyuu): SandDiveBurst tại g
+            Fx().sand.SandDiveBurst(DxConv::ToVECTOR(g)); // Fuyuu: cát + bùn khi lặn
             effects.SpawnWaterSplash(g, 110.0f, 1.4f);
             effects.SpawnBubbles(g, 30, 90.0f, 3.0f, 6.0f);
             effects.AddTrauma(0.3f);
@@ -299,8 +299,10 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         pos_ += Fwd() * (spd * dt);
         pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
         Vec3 vel = (pos_ - old) * (1.0f / (std::max)(dt, 0.0001f));
-        // Vây nhô khỏi cát + vệt nước/bọt (TODO(SharkFx/Fuyuu): SandFinTrail)
+        // Vây nhô khỏi cát + vệt nước/bọt + vệt cát (Fuyuu SandFinTrail, Hell đông quái -> bớt)
         Fx().fin.SetFin(DxConv::ToVECTOR(Vec3{ pos_.x, 6.0f, pos_.z } - Fwd() * 20.0f), DxConv::ToVECTOR(vel));
+        if (effects.particleScale_ >= 1.0f || static_cast<float>(rand()) / static_cast<float>(RAND_MAX) <= effects.particleScale_)
+            Fx().sand.SandFinTrail(DxConv::ToVECTOR(Vec3{ pos_.x, 2.0f, pos_.z } - Fwd() * 20.0f), DxConv::ToVECTOR(vel));
         // Bám ngắn rồi khoá vị trí người chơi từ xa (vòng đỏ hiện ngay)
         if (actionTimer_ >= GameConsts::SHARK_HUNT_TRACK_TIME)
         {
@@ -321,6 +323,9 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             Vec3 face = Collision::FlatDiff(huntLockPos_, pos_);
             if (face.LengthSq() > 1.0f) yaw_ = YawOf(face);
             Fx().fin.Stop();
+            // Fuyuu: cát rung trong vòng đỏ suốt lúc khoá + lao ngầm
+            Fx().sand.LockRingDust(DxConv::ToVECTOR(huntLockPos_), GameConsts::SHARK_HUNT_BITE_RADIUS,
+                                   GameConsts::SHARK_HUNT_LOCK_TIME + GameConsts::SHARK_HUNT_DASH_TIME);
             action_ = SharkAction::HuntLock;
             actionTimer_ = 0.0f;
             SoundManager::Instance().PlaySFX(SfxId::SharkTelegraph); // vòng đỏ khóa mục tiêu
@@ -354,8 +359,10 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         if (!arrived) pos_ += to * (step / d);
         pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
         tailSpeedMul_ = 4.0f;
-        Fx().fin.SetFin(DxConv::ToVECTOR(Vec3{ pos_.x, 6.0f, pos_.z } - Fwd() * 20.0f),
-                        DxConv::ToVECTOR((pos_ - old) * (1.0f / (std::max)(dt, 0.0001f))));
+        Vec3 dashVel = (pos_ - old) * (1.0f / (std::max)(dt, 0.0001f));
+        Fx().fin.SetFin(DxConv::ToVECTOR(Vec3{ pos_.x, 6.0f, pos_.z } - Fwd() * 20.0f), DxConv::ToVECTOR(dashVel));
+        if (effects.particleScale_ >= 1.0f || static_cast<float>(rand()) / static_cast<float>(RAND_MAX) <= effects.particleScale_)
+            Fx().sand.SandFinTrail(DxConv::ToVECTOR(Vec3{ pos_.x, 2.0f, pos_.z } - Fwd() * 20.0f), DxConv::ToVECTOR(dashVel));
         if (arrived)
         {
             Fx().fin.Stop();
@@ -371,7 +378,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
             if (dGrab <= GameConsts::SHARK_HUNT_BITE_RADIUS + player.GetHitboxRadius() && player.Grab(GameConsts::SHARK_HUNT_BITE_DAMAGE, effects))
                 grabbedPlayer_ = &player;
             AppLogAdd(L"[SHARK] Hunt burst: dist=%.1f radius=%.1f grabbed=%d\n", dGrab, GameConsts::SHARK_HUNT_BITE_RADIUS, grabbedPlayer_ ? 1 : 0);
-            // TODO(SharkFx/Fuyuu): SandEruptBurst tại huntLockPos_
+            Fx().sand.SandEruptBurst(DxConv::ToVECTOR(huntLockPos_), GameConsts::SHARK_HUNT_BITE_RADIUS); // Fuyuu: phun cát
             Fx().bite.Bite(DxConv::ToVECTOR(huntLockPos_ + Vec3{ 0.0f, 25.0f, 0.0f }));
             effects.SpawnShockwave(huntLockPos_, GameConsts::SHARK_HUNT_BITE_RADIUS * 1.6f);
             effects.SpawnWaterSplash(huntLockPos_, 120.0f, 1.6f);

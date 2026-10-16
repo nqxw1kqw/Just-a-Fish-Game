@@ -5,6 +5,7 @@
 #include "SharkCircleFinFx.h"
 #include "SharkVortexFx.h"
 #include "SharkRageFx.h"
+#include "../SharkSand/SharkSandFx.h"
 
 struct SharkFxSet
 {
@@ -12,13 +13,14 @@ struct SharkFxSet
     SharkCircleFinFx fin;
     SharkVortexFx vortex;
     SharkRageFx rage;
+    SharkSandEffect sand; // Fuyuu: cát khi Hunt (lặn, vệt vây, phun, bụi vòng khoá)
 
-    void Update(float dt) { bite.Update(dt); fin.Update(dt); vortex.Update(dt); rage.Update(dt); }
+    void Update(float dt) { bite.Update(dt); fin.Update(dt); vortex.Update(dt); rage.Update(dt); sand.Update(dt); }
     void Draw() const
     {
-        vortex.Draw(); fin.Draw(); bite.Draw(); rage.Draw();
+        vortex.Draw(); sand.Draw(); fin.Draw(); bite.Draw(); rage.Draw();
         SetUseLighting(TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     }
-    void ClearAll() { bite.Clear(); fin.Clear(); vortex.Clear(); rage.Clear(); }
+    void ClearAll() { bite.Clear(); fin.Clear(); vortex.Clear(); rage.Clear(); sand.Clear(); }
 };

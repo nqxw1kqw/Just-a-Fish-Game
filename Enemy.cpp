@@ -608,7 +608,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                     e.chargeTimer -= dt;
                     e.pos.x += e.chargeDir.x * (e.speed * 3.2f) * dt;
                     e.pos.z += e.chargeDir.z * (e.speed * 3.2f) * dt;
-                    effects.PlayFx(FxId::ChargeDashTrail, e.pos + Vec3{ 0, 4, 0 }, Vec3{ -e.chargeDir.x, 0.0f, -e.chargeDir.z });
+                    effects.PlayFx(FxId::ChargeDashTrail, e.pos + Vec3{ 0, 4, 0 }, Vec3{ e.chargeDir.x, 0.0f, e.chargeDir.z });
 
                     // Cá mập quẫy đuôi dữ dội khi húc, sủi bọt trắng xóa
                     e.waterFxTimer += dt;

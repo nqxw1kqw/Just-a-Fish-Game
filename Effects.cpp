@@ -197,11 +197,20 @@ void EffectSystem::PlayFx(FxId id, const Vec3& pos, const Vec3& dir, float scale
 
 void EffectSystem::RegisterNamedFx()
 {
-    // Khi Fuyuu giao hiệu ứng (vd. Effects/Heal/HealFx.h với lớp HealWaveEndFx có Emit/Update/Draw/Clear):
-    //   1) thêm thành viên vào HitFxSet (Effects/Hit/HitFeedback.h) + Update/Draw/Clear
-    //   2) đăng ký ở đây:
-    //      RegisterFx(FxId::HealWaveEnd, [this](VECTOR p, VECTOR d, float k) { hitFx_->healWaveEnd.Emit(p, k); });
-    // Hiện chưa có hiệu ứng nào -> mọi PlayFx là no-op.
+    // Hiệu ứng của Fuyuu (Effects/Heal, Effects/Dodge, Effects/EnemyTrail) - pool nằm trong HitFxSet (heap)
+    HitFxSet* fx = hitFx_.get();
+    RegisterFx(FxId::HealWaveEnd,    [fx](VECTOR p, VECTOR, float) { fx->heal.HealWaveEnd(p); });
+    RegisterFx(FxId::HealCardScale,  [fx](VECTOR p, VECTOR, float) { fx->heal.HealCardScale(p); });
+    RegisterFx(FxId::HealPoolBonus,  [fx](VECTOR p, VECTOR, float) { fx->heal.HealPoolBonus(p); });
+    RegisterFx(FxId::HealBossReward, [fx](VECTOR p, VECTOR, float) { fx->heal.HealBossReward(p); });
+    RegisterFx(FxId::HealOnKill,     [fx](VECTOR p, VECTOR, float) { fx->heal.HealOnKill(p); });
+    RegisterFx(FxId::TsunamiDodge,   [fx](VECTOR p, VECTOR d, float) { fx->dodge.Emit(p, d); });
+    // Vệt lao gọi mỗi frame: Hell đông quái (scale < 1) -> bỏ bớt frame theo xác suất
+    RegisterFx(FxId::ChargeDashTrail, [fx](VECTOR p, VECTOR d, float k)
+    {
+        if (k < 1.0f && static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > k) return;
+        fx->dashTrail.Emit(p, d);
+    });
 }
 
 void EffectSystem::SpawnExpOrb(const Vec3& pos, float val)
