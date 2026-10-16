@@ -3,6 +3,7 @@
 #include "PlayerFish.h"
 #include "Boss.h"
 #include "FontManager.h"
+#include "Localization.h"
 #include "Consts.h"
 #include "DxLib.h"
 #include <algorithm>
@@ -130,24 +131,24 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
     if (player.IsAirborne())
     {
         DrawCircleAA(sx, sy, 17.0f, 36, GetColor(255, 215, 60), TRUE);
-        FontManager::Draw(textX, textY, L"AIRBORNE  - INVINCIBLE", GetColor(255, 225, 90), FontSize::Body);
+        FontManager::Draw(textX, textY, TR(L"AIRBORNE  - INVINCIBLE"), GetColor(255, 225, 90), FontSize::Body);
     }
     else if (player.GetLandRecoveryTimer() > 0.0f)
     {
         DrawRadial(sx, sy, 17.0f, 1.0f - player.GetLandRecoveryTimer() / GameConsts::LAND_RECOVERY, GetColor(230, 110, 50));
-        FontManager::Draw(textX, textY, L"RECOVERING...", GetColor(255, 170, 120), FontSize::Body);
+        FontManager::Draw(textX, textY, TR(L"RECOVERING..."), GetColor(255, 170, 120), FontSize::Body);
     }
     else if (player.CanJump())
     {
         float glow = 0.5f + 0.5f * std::sin(pulse_ * 6.0f);
         DrawCircleAA(sx, sy, 17.0f, 36, GetColor(Lerp(40, 90, glow), Lerp(190, 255, glow), Lerp(120, 170, glow)), TRUE);
-        FontManager::Draw(textX, textY, L"[SPACE] SLAM READY", GetColor(140, 255, 190), FontSize::Body);
+        FontManager::Draw(textX, textY, TR(L"[SPACE] SLAM READY"), GetColor(140, 255, 190), FontSize::Body);
     }
     else
     {
         float cdMax = (std::max)(0.01f, player.GetJumpCooldownMax());
         DrawRadial(sx, sy, 17.0f, 1.0f - player.GetJumpCooldownTimer() / cdMax, GetColor(80, 160, 230));
-        FontManager::DrawFormat(textX, textY, GetColor(190, 215, 240), FontSize::Body, L"SLAM  %.1fs", player.GetJumpCooldownTimer());
+        FontManager::DrawFormat(textX, textY, GetColor(190, 215, 240), FontSize::Body, TR(L"SLAM  %.1fs"), player.GetJumpCooldownTimer());
     }
     DrawCircleAA(sx, sy, 17.0f, 36, GetColor(200, 230, 255), FALSE, 2.0f);
     FontManager::Draw(static_cast<int>(sx) - 4, static_cast<int>(sy) - 8, L"S", GetColor(10, 20, 30), FontSize::Body);
@@ -156,20 +157,20 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
     if (player.GetComboCount() >= 2)
     {
         unsigned int cc = player.IsComboBuffActive() ? GetColor(255, 200, 60) : GetColor(220, 230, 245);
-        FontManager::DrawFormat(PANEL_X + PANEL_W - 110, textY, cc, FontSize::Body, player.IsComboBuffActive() ? L"x%d COMBO!" : L"x%d combo", player.GetComboCount());
+        FontManager::DrawFormat(PANEL_X + PANEL_W - 110, textY, cc, FontSize::Body, player.IsComboBuffActive() ? TR(L"x%d COMBO!") : TR(L"x%d combo"), player.GetComboCount());
     }
 }
 
 void BattleHud::DrawBossBar(const WhaleBoss& boss) const
 {
     const bool p2 = boss.GetPhase() == BossPhase::Phase2;
-    DrawBossBarCore(boss.IsActive(), boss.GetHp(), boss.GetMaxHp(), p2, L"GIANT WHALE", p2 ? L"PHASE 2 - ENRAGED" : L"PHASE 1", 0.5f);
+    DrawBossBarCore(boss.IsActive(), boss.GetHp(), boss.GetMaxHp(), p2, TR(L"GIANT WHALE"), p2 ? TR(L"PHASE 2 - ENRAGED") : TR(L"PHASE 1"), 0.5f);
 }
 
 void BattleHud::DrawBossBar(const SharkBoss& shark) const
 {
     const bool fr = shark.IsFrenzy();
-    DrawBossBarCore(shark.IsActive(), shark.GetHp(), shark.GetMaxHp(), fr, L"GREAT SHARK", fr ? L"FRENZY" : L"HUNTING", GameConsts::SHARK_FRENZY_HP_RATIO);
+    DrawBossBarCore(shark.IsActive(), shark.GetHp(), shark.GetMaxHp(), fr, TR(L"GREAT SHARK"), fr ? TR(L"FRENZY") : TR(L"HUNTING"), GameConsts::SHARK_FRENZY_HP_RATIO);
 }
 
 void BattleHud::DrawBossBarCore(bool active, float hp, float maxHp, bool p2, const wchar_t* name, const wchar_t* phaseLabel, float markRatio) const

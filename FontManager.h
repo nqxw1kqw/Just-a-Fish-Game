@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <windows.h>
 #include <wingdi.h>
 #include "DxLib.h"
@@ -17,16 +17,29 @@ class FontManager
 public:
     static void Init();
     static void Shutdown();
+    // Chọn bộ font theo ngôn ngữ hiện tại (L10N::Get()): EN = Yabikoma, JP = Rounded M+ 1c
+    static void ApplyLanguage();
     static int GetHandle(FontSize size);
+    // Handle font Nhật (luôn có, dùng để vẽ chữ JP khi ngôn ngữ đang là EN, ví dụ màn chọn ngôn ngữ)
+    static int GetHandleJP(FontSize size);
 
-    // Vẽ chuỗi ký tự bằng Font tùy chỉnh (Yabikoma)
+    // Vẽ chuỗi ký tự bằng Font tùy chỉnh
     static void Draw(int x, int y, const wchar_t* text, unsigned int color, FontSize size = FontSize::Body);
+    static void DrawJP(int x, int y, const wchar_t* text, unsigned int color, FontSize size = FontSize::Body);
 
-    // Vẽ chuỗi định dạng (Format String) bằng Font tùy chỉnh (Yabikoma)
+    // Vẽ chuỗi định dạng (Format String) bằng Font tùy chỉnh
     static void DrawFormat(int x, int y, unsigned int color, FontSize size, const wchar_t* fmt, ...);
 
+    // Độ rộng chuỗi (px) theo font hiện tại - dùng để căn giữa
+    static int GetWidth(const wchar_t* text, FontSize size);
+
 private:
-    static int fontHandles_[5];
+    static void CreateSet(int* handles, const wchar_t* fontName);
+    static void DeleteSet(int* handles);
+
+    static int fontHandles_[5];   // bộ Latin (Yabikoma)
+    static int jpHandles_[5];     // bộ Nhật
     static bool initialized_;
     static bool fontLoaded_;
+    static bool jpFontLoaded_;
 };

@@ -1,4 +1,4 @@
-#include "DebugController.h"
+﻿#include "DebugController.h"
 #include "GamePrototype.h"
 #include "FontManager.h"
 #include "SoundManager.h"
@@ -21,7 +21,7 @@ namespace
 
 void DebugController::Reset()
 {
-    showDebugHUD_ = true;
+    showDebugHUD_ = GameConsts::DEBUG_HUD_DEFAULT_VISIBLE;
     debugUsed_ = false;
     debugEnemyTypeIdx_ = 1;
 }
@@ -358,8 +358,8 @@ void DebugController::DrawHUD(const GamePrototype& game) const
         FontManager::Draw(sw - 120, 14, L"[DEBUG]", GetColor(255, 255, 255), FontSize::Body);
     }
 
-    // 5. Debug Panel góc phải (F1)
-    if (showDebugHUD_)
+    // 5. Debug Panel góc phải (F1). F11 ẩn toàn bộ bảng thông tin
+    if (showDebugHUD_ && game.panelsVisible_)
     {
         int panW = 460;
         int panH = (game.state_ == GameState::Boss) ? 770 : 670;

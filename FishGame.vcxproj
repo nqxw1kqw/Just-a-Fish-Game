@@ -124,6 +124,7 @@
     <ClInclude Include="Effects\Shark\SharkFxSet.h" />
     <ClInclude Include="Boss.h" />
     <ClInclude Include="FontManager.h" />
+    <ClInclude Include="Localization.h" />
     <ClInclude Include="DebugController.h" />
     <ClInclude Include="CameraController.h" />
     <ClInclude Include="UIRenderer.h" />
@@ -171,6 +172,7 @@
     <ClCompile Include="SharkBoss.cpp" />
     <ClCompile Include="Boss.cpp" />
     <ClCompile Include="FontManager.cpp" />
+    <ClCompile Include="Localization.cpp" />
     <ClCompile Include="DebugController.cpp" />
     <ClCompile Include="CameraController.cpp" />
     <ClCompile Include="UIRenderer.cpp" />

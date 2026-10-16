@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "BattleHud.h"
 
 class GamePrototype;
@@ -11,6 +11,7 @@ public:
     void DrawBossHealthBar(const WhaleBoss& boss) const;
     void DrawBossHealthBar(const SharkBoss& shark) const;
     void DrawBossIntroScreen(bool shark = false) const;
+    void DrawLanguageSelectScreen(const GamePrototype& game) const;
     void DrawTitleScreen(const GamePrototype& game) const;
     void DrawVictoryScreen(const GamePrototype& game) const;
     void DrawGameOverScreen(const GamePrototype& game) const;

@@ -1,6 +1,7 @@
 ﻿#include "ResultScreen.h"
 #include "Input.h"
 #include "FontManager.h"
+#include "Localization.h"
 #include "Consts.h"
 #include "DxLib.h"
 #include <algorithm>
@@ -82,7 +83,7 @@ void ResultScreen::Draw(const ResultStats& s) const
     if (t < 0.25f) return;
 
     // 2. Tiêu đề: rơi xuống + nhún, từng chữ lượn sóng
-    const wchar_t* title = s.victory ? L"VICTORY!" : L"GAME OVER";
+    const wchar_t* title = s.victory ? TR(L"VICTORY!") : TR(L"GAME OVER");
     unsigned int titleCol = s.victory ? GetColor(255, 225, 70) : GetColor(255, 70, 70);
     float drop = Ease((t - 0.25f) / 0.6f);
     int baseY = static_cast<int>(150.0f - 90.0f * (1.0f - drop));
@@ -108,8 +109,8 @@ void ResultScreen::Draw(const ResultStats& s) const
         }
         x += cw;
     }
-    const wchar_t* sub = s.victory ? L"You defeated the Giant Whale!"
-                       : (s.diedAtBoss ? L"Fell before the Giant Whale..." : L"Your fish was stranded...");
+    const wchar_t* sub = s.victory ? TR(L"You defeated the Giant Whale!")
+                       : (s.diedAtBoss ? TR(L"Fell before the Giant Whale...") : TR(L"Your fish was stranded..."));
     DrawCentered(cx, baseY + 82, sub, GetColor(220, 235, 255), FontSize::Medium);
 
     // 3. Bảng thống kê (trượt vào lần lượt)
@@ -128,10 +129,10 @@ void ResultScreen::Draw(const ResultStats& s) const
     swprintf_s(rows[0], L"%02d:%02d", min, sec);
     swprintf_s(rows[1], L"%d", static_cast<int>(s.kills * countT + 0.5f));
     swprintf_s(rows[2], L"Lv.%d", s.level);
-    if (s.endless) swprintf_s(rows[3], s.victory ? L"%d / %d  CLEAR" : L"Stage %d", s.wave, GameConsts::ENDLESS_MAX_STAGE);
-    else swprintf_s(rows[3], L"Tutorial %d / %d", s.wave, GameConsts::TUTORIAL_WAVES);
+    if (s.endless) swprintf_s(rows[3], s.victory ? TR(L"%d / %d  CLEAR") : TR(L"Stage %d"), s.wave, GameConsts::ENDLESS_MAX_STAGE);
+    else swprintf_s(rows[3], TR(L"Tutorial %d / %d"), s.wave, GameConsts::TUTORIAL_WAVES);
     swprintf_s(rows[4], L"%d", static_cast<int>(score * countT + 0.5f));
-    const wchar_t* labels[5] = { L"TIME", L"KILLS", L"LEVEL", L"WAVE", L"SCORE" };
+    const wchar_t* labels[5] = { TR(L"TIME"), TR(L"KILLS"), TR(L"LEVEL"), TR(L"WAVE"), TR(L"SCORE") };
     for (int i = 0; i < 5; ++i)
     {
         float ra = Ease((t - 0.7f - i * 0.1f) / 0.3f);
@@ -150,19 +151,19 @@ void ResultScreen::Draw(const ResultStats& s) const
     {
         int bm = static_cast<int>(s.bestTime) / 60, bs = static_cast<int>(s.bestTime) % 60;
         wchar_t best[96];
-        swprintf_s(best, L"Best: Wave %d  |  Kills %d  |  %02d:%02d  |  Score %d", s.bestWave, s.bestKills, bm, bs, s.bestScore);
+        swprintf_s(best, TR(L"Best: Wave %d  |  Kills %d  |  %02d:%02d  |  Score %d"), s.bestWave, s.bestKills, bm, bs, s.bestScore);
         DrawCentered(cx, extraY, best, GetColor(255, 215, 80), FontSize::Body);
         extraY += 22;
     }
     if (s.debugUsed)
     {
-        DrawCentered(cx, extraY, s.endless ? L"[DEBUG MODE USED - RECORD NOT SAVED]" : L"[DEBUG MODE USED]", GetColor(255, 90, 90), FontSize::Body);
+        DrawCentered(cx, extraY, s.endless ? TR(L"[DEBUG MODE USED - RECORD NOT SAVED]") : TR(L"[DEBUG MODE USED]"), GetColor(255, 90, 90), FontSize::Body);
     }
 
     // 4. Menu Retry / Title
     float ma = Ease((t - 1.2f) / 0.4f);
     if (ma <= 0.0f) return;
-    const wchar_t* items[2] = { s.victory ? L"Play Again" : L"Retry", L"Return to Title" };
+    const wchar_t* items[2] = { s.victory ? TR(L"Play Again") : TR(L"Retry"), TR(L"Return to Title") };
     int my = 650;
     for (int i = 0; i < 2; ++i)
     {
@@ -179,5 +180,5 @@ void ResultScreen::Draw(const ResultStats& s) const
         }
         DrawCentered(cx, by + 11, items[i], sel ? GetColor(255, 225, 60) : GetColor(200, 215, 235), FontSize::Medium);
     }
-    DrawCentered(cx, my + 122, L"[W/S]: Select   [Enter/Space]: OK   [R]: Retry   [T]: Title", GetColor(140, 170, 200), FontSize::Small);
+    DrawCentered(cx, my + 122, TR(L"[W/S]: Select   [Enter/Space]: OK   [R]: Retry   [T]: Title"), GetColor(140, 170, 200), FontSize::Small);
 }

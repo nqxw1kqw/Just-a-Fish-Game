@@ -1,5 +1,6 @@
 ﻿#include "CardFrame.h"
 #include "FontManager.h"
+#include "Localization.h"
 #include "DxLib.h"
 #include <algorithm>
 #include <cmath>
@@ -115,7 +116,7 @@ void CardFrame::DrawBack(int x, int y, int w, int h, CardRarity rarity, bool sel
     DrawBox(x + 6, by, x + w - 6, by + bandH, s.edgeDark, TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     DrawLine(x + 6, by, x + w - 6, by, s.edge);
-    FontManager::Draw(x + 14, by + 4, s.label, s.edge, FontSize::Small);
+    FontManager::Draw(x + 14, by + 4, TR(s.label), s.edge, FontSize::Small);
     for (int i = 0; i < s.gems; ++i)
     {
         float gx = static_cast<float>(x + w - 22 - i * 20), gy = static_cast<float>(by + bandH / 2);

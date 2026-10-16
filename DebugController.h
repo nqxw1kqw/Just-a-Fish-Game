@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 
 class GamePrototype;
@@ -17,7 +17,7 @@ public:
     int GetDebugEnemyTypeIdx() const { return debugEnemyTypeIdx_; }
 
 private:
-    bool showDebugHUD_ = true;
+    bool showDebugHUD_ = false;
     bool debugUsed_ = false;
     int debugEnemyTypeIdx_ = 1;
 };
