@@ -254,6 +254,67 @@ namespace GameConsts
     constexpr int   TUTORIAL_WAVES = 3;              // Tutorial (Cá Voi): 5 -> 3 wave, rồi Boss Cá Voi, rồi tự vào Endless
     constexpr int   ENDLESS_BOSS_EVERY = 5;          // Stage 5, 10, 15... là stage Boss (ngẫu nhiên Cá Voi / Cá Mập)
     constexpr int   ENDLESS_MAX_STAGE = 30;          // Endless tối đa 30 stage -> màn CLEAR
+    // Phase 1 flow: Tutorial 15s/stage -> Whale -> chọn chế độ Normal / Hell
+    constexpr float TUTORIAL_WAVE_DURATION = 15.0f;  // Mỗi stage tutorial 15 giây
+    constexpr float HELL_WAVE_DURATION = 20.0f;      // Hell: 20 giây mỗi stage
+    constexpr float HELL_DAMAGE_TAKEN_MUL = 1.5f;    // Hell: sát thương nhận vào x1.5
+    constexpr int   HELL_MAX_ALIVE = 13;             // Hell: trần cứng số quái sống (dễ đọc, không dọn quái giữa stage)
+    // Phase 2 - Hell: sinh quái riêng
+    constexpr float HELL_SPAWN_INTERVAL_MUL = 0.75f; // Khoảng nghỉ sinh quái x0.75 (sinh nhanh hơn)
+    constexpr float HELL_COST_CAP_MUL = 1.25f;       // Trần ngân sách quái sống x1.25 (vẫn bị HELL_MAX_ALIVE chặn)
+    constexpr float HELL_ENEMY_HP_MUL = 1.20f;       // HP quái x1.2 so với Normal
+    constexpr int   HELL_TIER_OFFSET = 1;            // Bảng tỉ lệ quái: dịch sớm 1 bậc (Tanker/Charge sớm hơn)
+    constexpr float HELL_WAVE_HEAL_PERCENT = 0.20f;
+    constexpr float HELL_PLAYER_DMG_MUL = 1.5f;      // Hell: quái + Boss nhận x1.5 sát thương từ người chơi
+    // Hell: hạt hiệu ứng nhẹ hơn khi đông quái (giảm lag)
+    constexpr int   HELL_FX_LIGHT_THRESHOLD = 8;     // Từ 8 quái sống trở lên
+    constexpr float HELL_FX_LIGHT_SCALE = 0.4f;      // Số hạt x0.4
+    // Normal + Hell: mỗi lần lên cấp (EXP) -> +1 điểm ngẫu nhiên vào 5 chỉ số (Tutorial không áp dụng)
+    constexpr float LV_ATK_PCT = 0.05f;              // Attack: +5% sát thương Slam + đạn / điểm
+    constexpr float LV_DEF_PCT = 0.04f;              // Def: -4% sát thương nhận / điểm
+    constexpr float LV_DEF_MAX = 0.50f;              // Def: giảm tối đa 50%
+    constexpr float LV_SPD_PCT = 0.04f;              // Speed: +4% tốc độ bơi / điểm
+    constexpr float LV_CD_PCT = -0.04f;              // Cooldown: -4% hồi nhảy / điểm
+    constexpr int   LV_LUCK_RARITY_SHIFT = 4;        // Luck: +4 vào roll độ hiếm (0..99) / điểm -> thẻ hiếm hơn
+    constexpr float LEVEL_UP_BANNER_TIME = 2.0f;     // Thời gian hiện bảng LEVEL UP
+    // EXP orb (Normal + Hell): mọi quái chết đều rơi 1 viên trắng
+    constexpr float EXP_ORB_VALUE = 5.0f;            // EXP / viên (lên cấp đầu cần 30, x1.4 mỗi cấp)
+    constexpr float EXP_ORB_SIZE = 9.0f;             // Kích thước khối 3D
+    constexpr float EXP_MAGNET_RADIUS = 260.0f;      // Bán kính nam châm
+    constexpr float EXP_MAGNET_SPEED = 520.0f;       // Tốc độ hút
+    constexpr float EXP_PICKUP_RADIUS = 45.0f;       // Bán kính nhặt
+    // Hell: thẻ bị giảm mạnh (~1/10): +10% -> +1%. Thẻ vẫn cộng dồn. (bulletCount / extraJumps giữ nguyên)
+    constexpr float HELL_CARD_BONUS_SCALE = 0.10f;
+    constexpr float HELL_ROULETTE_FADE_TIME = 0.5f;  // Mờ dần sau khi hiện thẻ trúng
+    // Phase 2 - Hell: vòng quay thẻ (không dừng game)
+    constexpr float HELL_ROULETTE_SPIN_TIME = 1.6f;  // Thời gian quay
+    constexpr float HELL_ROULETTE_HOLD_TIME = 1.2f;  // Hiện thẻ trúng sau khi dừng
+    constexpr float HELL_ROULETTE_STEP_START = 0.05f;// Khoảng đổi ô lúc đầu (giây)
+    constexpr float HELL_ROULETTE_STEP_END = 0.28f;  // Khoảng đổi ô lúc cuối (chậm dần)
+    // Phase 2 - Hell: Boss thông minh hơn (AI giữ nguyên, chỉ đổi nhịp/trọng số)
+    constexpr float HELL_BOSS_COOLDOWN_SPEED = 1.4f; // Hồi chiêu nhanh x1.4
+    constexpr float HELL_BOSS_REST_MUL = 0.6f;       // Thời gian nghỉ giữa chuỗi chiêu x0.6
+    constexpr float HELL_WHALE_STRONG_WEIGHT_MUL = 1.5f; // Cá Voi: DoubleSlam/Tsunami/BubbleNet/Dive x1.5
+    constexpr float HELL_WHALE_MINION_WEIGHT_MUL = 0.5f; // Cá Voi: ít triệu hồi hơn (sàn đã đông)
+    constexpr float HELL_WHALE_P1_DOUBLESLAM_WEIGHT = 1.5f; // Cá Voi: DoubleSlam có từ Phase 1
+    constexpr float HELL_SHARK_HUNT_FIRST_DELAY = 3.0f;  // Cá Mập: Hunt lần đầu sau 3s (Normal 8s)
+    constexpr float HELL_SHARK_HUNT_COOLDOWN = 8.0f;     // Cá Mập: hồi Hunt 8s (Normal 14s)
+    constexpr float HELL_SHARK_HUNT_WEIGHT_MUL = 2.0f;   // Cá Mập: trọng số Hunt x2
+    constexpr float HELL_SHARK_VORTEX_WEIGHT_MUL = 1.5f; // Cá Mập: trọng số Vortex x1.5
+    constexpr float HELL_CARD_TOAST_TIME = 2.5f;     // Hell: thời gian hiện tên thẻ tự chọn
+    // Gợi ý tutorial (mỗi gợi ý hiện 1 lần / phiên, [TAB] bỏ qua)
+    constexpr float TIP_SOFT_PAUSE_TIME = 0.8f;      // Thời gian làm chậm khi gợi ý vừa hiện
+    constexpr float TIP_SOFT_PAUSE_SCALE = 0.35f;    // Tốc độ game khi làm chậm
+    constexpr float TIP_MAX_TIME = 8.0f;             // Gợi ý tự tắt sau thời gian này
+    constexpr float TIP_BOSS_SHOW_TIME = 4.0f;       // Gợi ý Boss hiện trong thời gian này
+    constexpr float TIP_MOVE_DISTANCE = 120.0f;      // Bơi đủ quãng này = hoàn thành gợi ý di chuyển
+    constexpr float TIP_START_DELAY = 0.4f;          // Trễ trước gợi ý đầu tiên của stage 1
+    // Tutorial dễ hơn (chỉ áp dụng trong Tutorial, Normal/Hell không đổi)
+    constexpr float TUTORIAL_PLAYER_HP_BONUS = 0.50f;        // +50% HP tối đa (modifier Percent)
+    constexpr float TUTORIAL_DMG_MUL_VS_ENEMY = 1.50f;       // x1.5 sát thương lên quái thường (nhân thêm vào PLAYER_DMG_MUL_VS_ENEMY)
+    constexpr float TUTORIAL_DAMAGE_TAKEN_MUL = 0.75f;       // Stage tutorial: nhận x0.75 sát thương
+    constexpr float TUTORIAL_BOSS_DAMAGE_TAKEN_MUL = 0.40f;  // Trận Cá Voi tutorial: nhận x0.40 sát thương
+    constexpr float TUTORIAL_DMG_MUL_VS_BOSS = 3.0f;         // Trận Cá Voi tutorial: người chơi gây x3 sát thương lên Boss
     constexpr float TUTORIAL_BOSS_CLEAR_HEAL = 0.50f;// Hồi máu khi hạ Cá Voi tutorial trước khi vào Endless
     // Sát thương của cá chính lên quái thường (không áp dụng cho Boss)
     constexpr float PLAYER_DMG_MUL_VS_ENEMY = 1.35f;

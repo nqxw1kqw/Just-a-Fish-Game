@@ -34,7 +34,7 @@ void CardManager::Reset()
 
 CardRarity CardManager::PickRarity(int completedWave) const
 {
-    int r = rand() % 100;
+    int r = (std::min)(99, rand() % 100 + luck_ * GameConsts::LV_LUCK_RARITY_SHIFT);
     if (completedWave <= 2)
     {
         // 75% Common, 25% Rare, 0% Epic
@@ -288,14 +288,29 @@ bool CardManager::Update(float dt)
     return false;
 }
 
+const Card* CardManager::AutoPickRandom()
+{
+    if (offeredCount_ <= 0) return nullptr;
+    activeCards_.push_back(currentOffer_[rand() % offeredCount_]);
+    offeredCount_ = 0;
+    return &activeCards_.back();
+}
+
 void CardManager::ApplyToStats(PlayerStats& stats) const
 {
     stats.ResetToBase();
 
     for (const auto& card : activeCards_)
     {
-        for (const auto& mod : card.modifiers)
+        for (const auto& baseMod : card.modifiers)
         {
+            // Hell: giảm hiệu lực thẻ (Add/Percent x scale, More: 1 + (v-1) x scale). Chỉ số đếm nguyên giữ nguyên.
+            auto mod = baseMod;
+            if (bonusScale_ != 1.0f && mod.statName != "bulletCount" && mod.statName != "extraJumps")
+            {
+                if (mod.type == ModifierType::More) mod.value = 1.0f + (mod.value - 1.0f) * bonusScale_;
+                else mod.value *= bonusScale_;
+            }
             if (mod.statName == "maxHp") stats.maxHp.AddModifier(card.id, mod.type, mod.value);
             else if (mod.statName == "moveSpeed") stats.moveSpeed.AddModifier(card.id, mod.type, mod.value);
             else if (mod.statName == "jumpCooldown") stats.jumpCooldown.AddModifier(card.id, mod.type, mod.value);

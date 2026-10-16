@@ -84,6 +84,8 @@ public:
     void SpawnCrabScuttle(const Vec3& pos, const Vec3& moveDir, const Vec3& facingDir, float radius);
     void DrawShallowOcean(float arenaHalfSize) const;
     void SpawnHitParticles(const Vec3& pos, int count, int color);
+    void SetParticleScale(float s) { particleScale_ = s; } // Hell: giảm hạt khi đông quái
+    float particleScale_ = 1.0f;
     void SpawnExpOrb(const Vec3& pos, float val = 1.0f);
     void SpawnDamagePopup(const Vec3& pos, float damage, bool isCrit = false);
     void AddTrauma(float amount);

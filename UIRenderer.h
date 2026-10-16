@@ -15,6 +15,8 @@ public:
     void DrawVictoryScreen(const GamePrototype& game) const;
     void DrawGameOverScreen(const GamePrototype& game) const;
     void DrawPauseScreen(const GamePrototype& game) const;
+    void DrawModeSelectScreen(const GamePrototype& game) const;
+    void DrawFlowOverlay(const GamePrototype& game) const; // gợi ý tutorial + thẻ Hell
 
 private:
     BattleHud battleHud_; // 戦闘HUD

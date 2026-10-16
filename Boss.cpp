@@ -155,6 +155,7 @@ void WhaleBoss::Spawn(const Vec3& arenaCenter)
 bool WhaleBoss::TakeDamage(float dmg, EffectSystem& effects)
 {
     if (!active_ || hp_ <= 0.0f) return false;
+    dmg *= damageTakenMul_;
 
     // Boss rework: đang choáng thì nhận thêm sát thương
     if (action_ == BossAction::Stunned) dmg *= stunDamageMul_;
@@ -345,6 +346,12 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
             if (skill == BossSkill::Inhale) w *= 1.5f;
             if (skill == BossSkill::Dive) w *= 2.0f;
         }
+        if (hell_)
+        {
+            if (skill == BossSkill::DoubleSlam || skill == BossSkill::Tsunami || skill == BossSkill::BubbleNet || skill == BossSkill::Dive)
+                w *= GameConsts::HELL_WHALE_STRONG_WEIGHT_MUL;
+            if (skill == BossSkill::Minions) w *= GameConsts::HELL_WHALE_MINION_WEIGHT_MUL;
+        }
         // AI pacing: giảm trọng số chiêu dùng gần đây
         if (skill == lastSkill_) w *= GameConsts::AI_REPEAT_WEIGHT_LAST;
         else if (skill == prevSkill_) w *= GameConsts::AI_REPEAT_WEIGHT_PREV;
@@ -363,6 +370,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
         TryAddCandidate(BossSkill::Inhale, 1.5f);
         TryAddCandidate(BossSkill::BubbleNet, 1.0f);
         TryAddCandidate(BossSkill::Dive, 1.5f);
+        if (hell_) TryAddCandidate(BossSkill::DoubleSlam, GameConsts::HELL_WHALE_P1_DOUBLESLAM_WEIGHT);
     }
     else
     {
@@ -561,6 +569,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
 
     {
         float cdt = enraged_ ? dt * GameConsts::RAGE_COOLDOWN_MUL : dt;
+        if (hell_) cdt *= GameConsts::HELL_BOSS_COOLDOWN_SPEED;
         if (tailCooldown_ > 0.0f) tailCooldown_ -= cdt;
         if (bubbleNetCooldown_ > 0.0f) bubbleNetCooldown_ -= cdt;
         if (inhaleCooldown_ > 0.0f) inhaleCooldown_ -= cdt;
@@ -593,7 +602,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         // AI pacing: hết đợt (và không còn combo chờ) -> vào cửa sổ nghỉ
         if (comboNext_ == BossSkill::None && burstCount_ >= burstSize_ && restTimer_ <= 0.0f)
         {
-            restTimer_ = CurrentRestTime();
+            restTimer_ = CurrentRestTime() * (hell_ ? GameConsts::HELL_BOSS_REST_MUL : 1.0f);
             burstCount_ = 0;
             burstSize_ = RollBurstSize();
             RecordActionHistory(L"Rest");

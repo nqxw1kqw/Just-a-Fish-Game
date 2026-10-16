@@ -165,6 +165,7 @@ void EffectSystem::SpawnShockwave(const Vec3& pos, float maxRadius)
 
 void EffectSystem::SpawnHitParticles(const Vec3& pos, int count, int color)
 {
+    if (particleScale_ < 1.0f) count = (std::max)(1, static_cast<int>(count * particleScale_));
     int spawned = 0;
     for (auto& p : particles_)
     {
@@ -305,13 +306,13 @@ void EffectSystem::Update(float dt, const Vec3& playerPos)
         // Tự động bay về phía người chơi khi ở gần (nam châm hút exp)
         Vec3 toPlayer = playerPos - e.pos;
         float distSq = toPlayer.LengthSq();
-        if (distSq < 220.0f * 220.0f)
+        if (distSq < GameConsts::EXP_MAGNET_RADIUS * GameConsts::EXP_MAGNET_RADIUS)
         {
             float dist = std::sqrt(distSq);
             if (dist > 1.0f)
             {
                 Vec3 dir = toPlayer / dist;
-                float magnetSpeed = 480.0f;
+                float magnetSpeed = GameConsts::EXP_MAGNET_SPEED;
                 e.pos += dir * magnetSpeed * dt;
             }
         }
@@ -386,14 +387,14 @@ void EffectSystem::Draw() const
     }
 
     // Vẽ hạt EXP (Khối ngọc xanh ngọc bích phát sáng xoay)
-    int expColor = GetColor(50, 255, 160);
-    int expEdge = GetColor(20, 180, 100);
+    int expColor = GetColor(250, 250, 255); // EXP orb trắng
+    int expEdge = GetColor(170, 190, 220);
     for (const auto& e : expOrbs_)
     {
         if (!e.active) continue;
         float hoverY = e.pos.y + std::sin(e.life * 8.0f) * 2.5f;
         Vec3 orbPos{ e.pos.x, hoverY, e.pos.z };
-        Vec3 sz{ 8.0f, 8.0f, 8.0f };
+        Vec3 sz{ GameConsts::EXP_ORB_SIZE, GameConsts::EXP_ORB_SIZE, GameConsts::EXP_ORB_SIZE };
         VECTOR minP = DxConv::ToVECTOR(orbPos - sz * 0.5f);
         VECTOR maxP = DxConv::ToVECTOR(orbPos + sz * 0.5f);
         Render3D::DrawBox3D(minP, maxP, expColor, TRUE);

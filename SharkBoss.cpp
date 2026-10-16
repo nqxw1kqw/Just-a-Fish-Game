@@ -127,7 +127,7 @@ void SharkBoss::EndSkill()
     if (burstCount_ >= size)
     {
         burstCount_ = 0;
-        restTimer_ = frenzy_ ? GameConsts::SHARK_REST_TIME_FRENZY : GameConsts::SHARK_REST_TIME;
+        restTimer_ = (frenzy_ ? GameConsts::SHARK_REST_TIME_FRENZY : GameConsts::SHARK_REST_TIME) * (hell_ ? GameConsts::HELL_BOSS_REST_MUL : 1.0f);
         action_ = SharkAction::Rest;
     }
     else
@@ -144,8 +144,8 @@ void SharkBoss::PickNext(PlayerFish& player)
     float w[N] = {
         frenzy_ ? GameConsts::SHARK_WEIGHT_BITE_FRENZY : GameConsts::SHARK_WEIGHT_BITE,
         GameConsts::SHARK_WEIGHT_STRAFE,
-        (vortexTimer_ <= 0.0f && vortexCooldown_ <= 0.0f) ? GameConsts::SHARK_WEIGHT_VORTEX : 0.0f,
-        (huntCooldown_ <= 0.0f && lastSkill_ != SharkSkill::Hunt) ? GameConsts::SHARK_WEIGHT_HUNT : 0.0f
+        (vortexTimer_ <= 0.0f && vortexCooldown_ <= 0.0f) ? GameConsts::SHARK_WEIGHT_VORTEX * (hell_ ? GameConsts::HELL_SHARK_VORTEX_WEIGHT_MUL : 1.0f) : 0.0f,
+        (huntCooldown_ <= 0.0f && lastSkill_ != SharkSkill::Hunt) ? GameConsts::SHARK_WEIGHT_HUNT * (hell_ ? GameConsts::HELL_SHARK_HUNT_WEIGHT_MUL : 1.0f) : 0.0f
     };
     float total = 0.0f;
     for (int i = 0; i < N; ++i)
@@ -219,7 +219,7 @@ void SharkBoss::StartHunt()
     action_ = SharkAction::HuntLeap;
     actionTimer_ = 0.0f;
     huntElapsed_ = 0.0f;
-    huntCooldown_ = GameConsts::SHARK_HUNT_COOLDOWN;
+    huntCooldown_ = hell_ ? GameConsts::HELL_SHARK_HUNT_COOLDOWN : GameConsts::SHARK_HUNT_COOLDOWN;
     chainBitesLeft_ = 0;
     SoundManager::Instance().PlaySFX(SfxId::SharkDive); // quẫy nhảy lao xuống cát
 }
@@ -507,8 +507,9 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
 
     fightTimer_ += dt;
     if (hitFlashTimer_ > 0.0f) hitFlashTimer_ -= dt;
-    if (vortexCooldown_ > 0.0f) vortexCooldown_ -= dt;
-    if (huntCooldown_ > 0.0f) huntCooldown_ -= dt;
+    const float cdt = hell_ ? dt * GameConsts::HELL_BOSS_COOLDOWN_SPEED : dt;
+    if (vortexCooldown_ > 0.0f) vortexCooldown_ -= cdt;
+    if (huntCooldown_ > 0.0f) huntCooldown_ -= cdt;
     if (action_ == SharkAction::HuntDrag) huntPose_ += (0.0f - huntPose_) * (std::min)(1.0f, dt * 4.0f);
     if (finHitCd_ > 0.0f) finHitCd_ -= dt;
 
@@ -715,6 +716,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
 bool SharkBoss::TakeDamage(float dmg, EffectSystem& effects)
 {
     if (!active_ || hp_ <= 0.0f) return false;
+    dmg *= damageTakenMul_;
     if (action_ == SharkAction::Stunned || action_ == SharkAction::HuntRecover) dmg *= GameConsts::SHARK_STUN_DAMAGE_MUL;
     hp_ -= dmg;
     hitFlashTimer_ = GameConsts::HIT_FLASH_TIME;

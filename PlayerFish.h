@@ -53,6 +53,7 @@ public:
     // Hỗ trợ Debug & Quy tắc công bằng (Phần D & Phần A5)
     void SetGodMode(bool enable) { isGodMode_ = enable; }
     bool IsGodMode() const { return isGodMode_; }
+    void SetDamageTakenMul(float mul) { damageTakenMul_ = mul; } // Hell: x1.5
     void ResetJumpCooldown() { jumpCooldownTimer_ = 0.0f; }
     void FullHealAndResetJumpCooldown()
     {
@@ -64,6 +65,7 @@ public:
 
     // Thu thập EXP
     void AddExp(int amount);
+    int ConsumeLevelUps() { int n = pendingLevelUps_; pendingLevelUps_ = 0; return n; }
 
     // Getters & Trạng thái Lõi nhảy
     const Vec3& GetPosition() const { return pos_; }
@@ -147,6 +149,7 @@ private:
     float swimTimer_ = 0.0f;
     float invulnerableTimer_ = 0.0f;
     bool isGodMode_ = false;
+    float damageTakenMul_ = 1.0f;
     float damageTakenThisWave_ = 0.0f;
 
     // Cơ chế nhảy & tấn công (J1 -> J5)
@@ -184,6 +187,7 @@ private:
     int exp_ = 0;
     int expNext_ = 30; // 20 + 10 * 1
     int level_ = 1;
+    int pendingLevelUps_ = 0;
 
     // Hiệu ứng
     float hitFlashTimer_ = 0.0f;
