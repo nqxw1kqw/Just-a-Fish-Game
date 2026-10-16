@@ -24,6 +24,11 @@ struct ExpOrb
     Vec3 vel;
     float value = 1.0f;
     float life = 0.0f;
+    float spin = 0.0f;        // pha xoay riêng (không xoay đồng loạt)
+    float magnetT = -1.0f;    // < 0: chưa bị hút; >= 0: thời gian đã bị hút (tăng tốc dần)
+    float curveSign = 1.0f;   // hướng cong khi bay vào người chơi
+    float absorbT = -1.0f;    // >= 0: đang bị hấp thụ (thu nhỏ + chớp) rồi biến mất
+    bool landed = false;
     bool active = false;
 };
 
@@ -95,6 +100,10 @@ private:
     std::array<NamedFx::Handler, static_cast<size_t>(FxId::Count)> namedFx_{};
     mutable std::array<bool, static_cast<size_t>(FxId::Count)> namedFxWarned_{};
     std::array<ExpOrb, 300> expOrbs_{};
+    void UpdateExpOrbs(float dt, const Vec3& playerPos);
+    void DrawExpOrbs() const;
+    Vec3 expTarget_{};             // vị trí người chơi (điểm hấp thụ)
+    mutable int expGlowTex_ = -1;  // texture quầng sáng mềm (tạo lười)
     std::array<DamagePopup, MAX_DAMAGE_POPUPS> damagePopups_{};
 
     WaterSplashSystem waterSplash_;
