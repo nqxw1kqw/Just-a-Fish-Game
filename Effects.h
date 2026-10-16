@@ -16,17 +16,6 @@ struct Shockwave
     bool active = false;
 };
 
-// Hạt vụn 3D
-struct Particle3D
-{
-    Vec3 pos;
-    Vec3 vel;
-    Vec3 size;
-    int color = 0;
-    float life = 0.0f;
-    float maxLife = 0.5f;
-    bool active = false;
-};
 
 // Hạt ngọc kinh nghiệm / tiền
 struct ExpOrb
@@ -52,6 +41,7 @@ struct DamagePopup
 
 #include "WaterSplash.h"
 #include "BubbleSystem.h"
+#include "NamedFx.h"
 
 struct HitFxSet; // Effects/Hit/HitFeedback.h
 
@@ -83,7 +73,10 @@ public:
     void SpawnFrogLand(const Vec3& pos, float radius);
     void SpawnCrabScuttle(const Vec3& pos, const Vec3& moveDir, const Vec3& facingDir, float radius);
     void DrawShallowOcean(float arenaHalfSize) const;
-    void SpawnHitParticles(const Vec3& pos, int count, int color);
+    // Hiệu ứng theo tên (thay hạt khối lập phương cũ). No-op nếu hiệu ứng chưa được đăng ký.
+    void PlayFx(FxId id, const Vec3& pos, const Vec3& dir = Vec3{ 0, 1, 0 }, float scale = 1.0f);
+    void RegisterFx(FxId id, NamedFx::Handler handler);
+    bool HasFx(FxId id) const;
     void SetParticleScale(float s) { particleScale_ = s; } // Hell: giảm hạt khi đông quái
     float particleScale_ = 1.0f;
     void SpawnExpOrb(const Vec3& pos, float val = 1.0f);
@@ -98,7 +91,9 @@ private:
     static constexpr size_t MAX_DAMAGE_POPUPS = 128;
 
     std::array<Shockwave, 32> shockwaves_{};
-    std::array<Particle3D, 500> particles_{};
+    void RegisterNamedFx(); // nơi đăng ký hiệu ứng Fuyuu theo tên
+    std::array<NamedFx::Handler, static_cast<size_t>(FxId::Count)> namedFx_{};
+    mutable std::array<bool, static_cast<size_t>(FxId::Count)> namedFxWarned_{};
     std::array<ExpOrb, 300> expOrbs_{};
     std::array<DamagePopup, MAX_DAMAGE_POPUPS> damagePopups_{};
 

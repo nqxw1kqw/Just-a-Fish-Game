@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector3.h"
 #include "Consts.h"
 #include <array>
@@ -108,6 +108,7 @@ public:
     void SetAutoSpawn(bool enable) { autoSpawn_ = enable; }
     void SetPlayerDmgMul(float m) { playerDmgMul_ = m; } // Tutorial: người chơi gây thêm sát thương
     void SetMaxAlive(int n) { maxAlive_ = n; }
+    int GetEffectiveMaxAlive() const; // Hell: trần quái sống tăng theo stage (HELL_MAX_ALIVE_*)
     void SetHell(bool h) { isHell_ = h; } // Phase 2: tỉ lệ/scaling riêng Hell // 0 = không giới hạn (Hell: trần quái sống)
 
     // Quản lý mô hình 3D (Đa quái: Minion, Hopper, Tanker, Float, Charge)

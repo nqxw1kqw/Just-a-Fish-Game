@@ -14,6 +14,7 @@
 #include "SoundManager.h"
 #include "Effects/Hit/HitFeedback.h"
 #include <cwchar>
+#include <utility>
 
 namespace
 {
@@ -24,7 +25,7 @@ namespace
     }
 }
 
-EffectSystem::EffectSystem() : hitFx_(std::make_unique<HitFxSet>()) {}
+EffectSystem::EffectSystem() : hitFx_(std::make_unique<HitFxSet>()) { RegisterNamedFx(); }
 EffectSystem::~EffectSystem() = default;
 
 void EffectSystem::SpawnHitFeedback(const Vec3& pos, const Vec3& dir, bool crit)
@@ -59,7 +60,6 @@ void EffectSystem::Init()
 void EffectSystem::Reset()
 {
     for (auto& s : shockwaves_) s.active = false;
-    for (auto& p : particles_) p.active = false;
     for (auto& e : expOrbs_) e.active = false;
     for (auto& dp : damagePopups_) dp.active = false;
     waterSplash_.Reset();
@@ -163,31 +163,45 @@ void EffectSystem::SpawnShockwave(const Vec3& pos, float maxRadius)
     }
 }
 
-void EffectSystem::SpawnHitParticles(const Vec3& pos, int count, int color)
+void EffectSystem::RegisterFx(FxId id, NamedFx::Handler handler)
 {
-    if (particleScale_ < 1.0f) count = (std::max)(1, static_cast<int>(count * particleScale_));
-    int spawned = 0;
-    for (auto& p : particles_)
-    {
-        if (!p.active)
-        {
-            p.pos = pos;
-            p.vel = Vec3{
-                RandomFloat(-180.0f, 180.0f),
-                RandomFloat(80.0f, 260.0f),
-                RandomFloat(-180.0f, 180.0f)
-            };
-            float sz = RandomFloat(4.0f, 9.0f);
-            p.size = Vec3{ sz, sz, sz };
-            p.color = color;
-            p.life = 0.0f;
-            p.maxLife = RandomFloat(0.35f, 0.6f);
-            p.active = true;
+    size_t i = static_cast<size_t>(id);
+    if (i < namedFx_.size()) namedFx_[i] = std::move(handler);
+}
 
-            spawned++;
-            if (spawned >= count) break;
+bool EffectSystem::HasFx(FxId id) const
+{
+    size_t i = static_cast<size_t>(id);
+    return i < namedFx_.size() && static_cast<bool>(namedFx_[i]);
+}
+
+void EffectSystem::PlayFx(FxId id, const Vec3& pos, const Vec3& dir, float scale)
+{
+    size_t i = static_cast<size_t>(id);
+    if (i >= namedFx_.size()) return;
+    if (!namedFx_[i])
+    {
+        // Chưa có hiệu ứng (đang chờ Fuyuu): bỏ qua, chỉ log 1 lần
+        if (!namedFxWarned_[i])
+        {
+            namedFxWarned_[i] = true;
+            wchar_t wname[64] = {};
+            const char* n = NamedFx::Name(id);
+            for (int k = 0; k < 63 && n[k]; ++k) wname[k] = static_cast<wchar_t>(n[k]);
+            AppLogAdd(L"[FX] '%s' chưa đăng ký -> bỏ qua\n", wname);
         }
+        return;
     }
+    namedFx_[i](DxConv::ToVECTOR(pos), DxConv::ToVECTOR(dir), scale * particleScale_);
+}
+
+void EffectSystem::RegisterNamedFx()
+{
+    // Khi Fuyuu giao hiệu ứng (vd. Effects/Heal/HealFx.h với lớp HealWaveEndFx có Emit/Update/Draw/Clear):
+    //   1) thêm thành viên vào HitFxSet (Effects/Hit/HitFeedback.h) + Update/Draw/Clear
+    //   2) đăng ký ở đây:
+    //      RegisterFx(FxId::HealWaveEnd, [this](VECTOR p, VECTOR d, float k) { hitFx_->healWaveEnd.Emit(p, k); });
+    // Hiện chưa có hiệu ứng nào -> mọi PlayFx là no-op.
 }
 
 void EffectSystem::SpawnExpOrb(const Vec3& pos, float val)
@@ -236,6 +250,7 @@ Vec3 EffectSystem::GetCameraShakeOffset(float shakeScale) const
 void EffectSystem::Update(float dt, const Vec3& playerPos)
 {
     if (hitFx_) hitFx_->Update(dt);
+    (void)playerPos;
     shakeTime_ += dt;
     if (trauma_ > 0.0f)
     {
@@ -262,61 +277,6 @@ void EffectSystem::Update(float dt, const Vec3& playerPos)
         }
     }
 
-    // Cập nhật hạt vụn
-    for (auto& p : particles_)
-    {
-        if (!p.active) continue;
-        p.life += dt;
-        if (p.life >= p.maxLife)
-        {
-            p.active = false;
-            continue;
-        }
-
-        p.vel.y -= 600.0f * dt; // Trọng lực
-        p.pos += p.vel * dt;
-
-        if (p.pos.y < p.size.y * 0.5f)
-        {
-            p.pos.y = p.size.y * 0.5f;
-            p.vel.y = -p.vel.y * 0.35f; // Nảy nhẹ
-            p.vel.x *= 0.7f;
-            p.vel.z *= 0.7f;
-        }
-    }
-
-    // Cập nhật hạt exp
-    for (auto& e : expOrbs_)
-    {
-        if (!e.active) continue;
-        e.life += dt;
-
-        // Trọng lực ban đầu nếu đang văng
-        if (e.pos.y > 6.0f)
-        {
-            e.vel.y -= 450.0f * dt;
-            e.pos += e.vel * dt;
-            if (e.pos.y <= 6.0f)
-            {
-                e.pos.y = 6.0f;
-                e.vel = { 0, 0, 0 };
-            }
-        }
-
-        // Tự động bay về phía người chơi khi ở gần (nam châm hút exp)
-        Vec3 toPlayer = playerPos - e.pos;
-        float distSq = toPlayer.LengthSq();
-        if (distSq < GameConsts::EXP_MAGNET_RADIUS * GameConsts::EXP_MAGNET_RADIUS)
-        {
-            float dist = std::sqrt(distSq);
-            if (dist > 1.0f)
-            {
-                Vec3 dir = toPlayer / dist;
-                float magnetSpeed = GameConsts::EXP_MAGNET_SPEED;
-                e.pos += dir * magnetSpeed * dt;
-            }
-        }
-    }
 
     // 4. Cập nhật số sát thương nổi (Floating Damage Numbers)
     for (auto& dp : damagePopups_)
@@ -375,15 +335,6 @@ void EffectSystem::Draw() const
         Render3D::DrawCircle3D(s.center, s.currentRadius, 32, ringColor, false);
         Render3D::DrawCircle3D(s.center, s.currentRadius * 0.85f, 32, innerColor, false);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-    }
-
-    // Vẽ hạt vụn 3D (Particles)
-    for (const auto& p : particles_)
-    {
-        if (!p.active) continue;
-        VECTOR minP = DxConv::ToVECTOR(p.pos - p.size * 0.5f);
-        VECTOR maxP = DxConv::ToVECTOR(p.pos + p.size * 0.5f);
-        Render3D::DrawBox3D(minP, maxP, p.color, TRUE);
     }
 
     // Vẽ hạt EXP (Khối ngọc xanh ngọc bích phát sáng xoay)

@@ -102,6 +102,9 @@
     <ClInclude Include="Effects.h">
       <Filter>Effects</Filter>
     </ClInclude>
+    <ClInclude Include="NamedFx.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
     <ClInclude Include="Effects\\EnemyHit\\EnemyHitFx.h">
       <Filter>Effects\EnemyHit</Filter>
     </ClInclude>

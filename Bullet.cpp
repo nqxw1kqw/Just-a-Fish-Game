@@ -274,7 +274,7 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
                 if (hasSharkHook_ && (rand() % 100 < 15))
                 {
                     const_cast<PlayerFish&>(player).Heal(5.0f);
-                    effects.SpawnHitParticles(player.GetPosition() + Vec3{ 0, 15, 0 }, 6, GetColor(80, 255, 120));
+                    effects.PlayFx(FxId::HealOnKill, player.GetPosition() + Vec3{ 0, 15, 0 });
                 }
             }
         }
