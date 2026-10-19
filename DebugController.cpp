@@ -157,7 +157,10 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 {
                     if (game.state_ == GameState::Boss)
                     {
-                        if (game.sharkFight_) game.shark_.Kill();
+                        if (game.bossKind_ == 4) game.swordfish_.Kill();
+                        else if (game.bossKind_ == 3) game.turtle_.Kill();
+                        else if (game.bossKind_ == 2) game.squid_.Kill();
+                        else if (game.sharkFight_) game.shark_.Kill();
                         else game.boss_.Kill();
                     }
                     else if (game.state_ == GameState::CardPick)
@@ -199,10 +202,13 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 if (k5) game.SkipToEndlessWave(5);  // Ctrl+5: Endless stage 5 (Boss đầu tiên)
                 if (k6) game.SkipToBoss();
                 if (k7) game.SkipToEndlessWave(1);   // Ctrl+7: Endless stage 1
-                if (k8) game.SkipToEndlessWave(15);  // Ctrl+8: Endless stage 15 (Boss)
-                if (k9) game.SkipToEndlessWave(GameConsts::ENDLESS_MAX_STAGE); // Ctrl+9: stage 30 (Boss cuối)
+                if (k8 && shiftHeld) game.SkipToSwordfishBoss(); // Ctrl+Shift+8: Boss Cá Kiếm (Endless)
+                else if (k8) game.SkipToEndlessWave(15);  // Ctrl+8: Endless stage 15 (Boss)
+                if (k9 && shiftHeld) game.SkipToTurtleBoss(); // Ctrl+Shift+9: Boss Rùa Cổ (Endless)
+                else if (k9) game.SkipToEndlessWave(GameConsts::ENDLESS_MAX_STAGE); // Ctrl+9: stage 30 (Boss cuối)
                 bool k0 = (input.IsPressed(KEY_INPUT_0) || input.IsPressed(KEY_INPUT_NUMPAD0));
-                if (k0) game.SkipToSharkBoss(); // Ctrl+0: Boss Cá Mập (Endless)
+                if (k0 && shiftHeld) game.SkipToSquidBoss(); // Ctrl+Shift+0: Boss Mực (Endless)
+                else if (k0) game.SkipToSharkBoss(); // Ctrl+0: Boss Cá Mập (Endless)
             }
 
             // F6: Nhảy thẳng đến Boss (hoặc Ctrl+6)
@@ -282,7 +288,34 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 else if (input.IsPressed(KEY_INPUT_8)) forced = 8;
                 else if (input.IsPressed(KEY_INPUT_9)) forced = 9;
                 else if (input.IsPressed(KEY_INPUT_0)) forced = 10;
-                if (forced != 0 && game.sharkFight_ && game.state_ == GameState::Boss)
+                if (forced != 0 && game.bossKind_ == 4 && game.state_ == GameState::Boss)
+                {
+                    // Trận Cá Kiếm: Shift+1 Sword Dash | 2 Spin | 3 Rage Dive
+                    debugUsed_ = true;
+                    if (forced == 1) game.swordfish_.ForceDash(game.player_);
+                    else if (forced == 2) game.swordfish_.ForceSpin(game.player_);
+                    else if (forced == 3) game.swordfish_.ForceRage(game.effects_);
+                }
+                else if (forced != 0 && game.bossKind_ == 3 && game.state_ == GameState::Boss)
+                {
+                    // Trận Rùa Cổ: Shift+1 Roll | 2 Bite | 3 Tail Sweep | 4 Phase 2
+                    debugUsed_ = true;
+                    if (forced == 1) game.turtle_.ForceRoll(game.player_);
+                    else if (forced == 2) game.turtle_.ForceBite(game.player_);
+                    else if (forced == 3) game.turtle_.ForceTail(game.player_);
+                    else if (forced == 4) game.turtle_.ForcePhase2(game.effects_);
+                }
+                else if (forced != 0 && game.bossKind_ == 2 && game.state_ == GameState::Boss)
+                {
+                    // Trận Mực: Shift+1 Slam | 2 Ink Spray | 3 Ink Jet | 4 Grab | 5 Enrage
+                    debugUsed_ = true;
+                    if (forced == 1) game.squid_.ForceSlam(game.player_);
+                    else if (forced == 2) game.squid_.ForceInkSpray(game.player_);
+                    else if (forced == 3) game.squid_.ForceInkJet(game.player_);
+                    else if (forced == 4) game.squid_.ForceGrab(game.player_);
+                    else if (forced == 5) game.squid_.ForceEnrage(game.effects_);
+                }
+                else if (forced != 0 && game.sharkFight_ && game.state_ == GameState::Boss)
                 {
                     // Trận Cá Mập: Shift+1 Bite | 2 Strafe | 3 Vortex | 4 Frenzy | 5 Hunt
                     debugUsed_ = true;

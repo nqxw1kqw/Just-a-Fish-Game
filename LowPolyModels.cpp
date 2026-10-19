@@ -1,4 +1,4 @@
-#include "LowPolyModels.h"
+﻿#include "LowPolyModels.h"
 #include "DxLib.h"
 #include <algorithm>
 #include <vector>
@@ -21,6 +21,10 @@ namespace
         { L"Data/Model/LowPoly/WhaleBoss.x", L"WhaleBoss", -1 },
         { L"Data/Model/LowPoly/SharkBoss.x", L"SharkBoss", -1 },
         { L"Data/Model/LowPoly/SharkBossTail.x", L"SharkBossTail", -1 },
+        { L"Data/Model/LowPoly/SquidBoss.x", L"SquidBoss", -1 },
+        { L"Data/Model/LowPoly/SquidTentacle.x", L"SquidTentacle", -1 },
+        { L"Data/Model/LowPoly/TurtleBoss.x", L"TurtleBoss", -1 },
+        { L"Data/Model/LowPoly/SwordfishBoss.x", L"SwordfishBoss", -1 },
     };
 
     bool s_loaded = false;

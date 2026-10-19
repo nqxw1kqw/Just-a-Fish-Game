@@ -69,6 +69,15 @@
     <ClInclude Include="SharkBoss.h">
       <Filter>Boss\Shark</Filter>
     </ClInclude>
+    <ClInclude Include="SquidBoss.h">
+      <Filter>Boss\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="SwordfishBoss.h">
+      <Filter>Boss\Shark</Filter>
+    </ClInclude>
+    <ClInclude Include="TurtleBoss.h">
+      <Filter>Boss\Shark</Filter>
+    </ClInclude>
     <ClInclude Include="Boss.h">
       <Filter>Boss\Whale</Filter>
     </ClInclude>
@@ -249,6 +258,15 @@
       <Filter>Audio</Filter>
     </ClCompile>
     <ClCompile Include="SharkBoss.cpp">
+      <Filter>Boss\Shark</Filter>
+    </ClCompile>
+    <ClCompile Include="SquidBoss.cpp">
+      <Filter>Boss\Shark</Filter>
+    </ClCompile>
+    <ClCompile Include="SwordfishBoss.cpp">
+      <Filter>Boss\Shark</Filter>
+    </ClCompile>
+    <ClCompile Include="TurtleBoss.cpp">
       <Filter>Boss\Shark</Filter>
     </ClCompile>
     <ClCompile Include="Boss.cpp">
