@@ -2,6 +2,7 @@
 #include "Vector3.h"
 #include "Consts.h"
 #include "DxLib.h"
+#include <memory>
 
 // Boss #4: Ancient Turtle. Slow tank. Its shell blocks most damage until
 // player slams crack it (shell HP -> break -> long stagger).
@@ -10,6 +11,7 @@
 // (close range all around). Phase 2 below 50% HP.
 class PlayerFish;
 class EffectSystem;
+struct TurtleFxSet; // Effects/Turtle/TurtleFxSet.h (heap)
 
 enum class TurtleAction
 {
@@ -25,8 +27,8 @@ enum class TurtleSkill { None, Roll, Bite, Tail };
 class TurtleBoss
 {
 public:
-    TurtleBoss() = default;
-    ~TurtleBoss() = default;
+    TurtleBoss();
+    ~TurtleBoss();
     TurtleBoss(const TurtleBoss&) = delete;
     TurtleBoss& operator=(const TurtleBoss&) = delete;
 
@@ -121,6 +123,8 @@ private:
     bool biteHitDone_ = false;
     bool tailHitDone_ = false;
 
+    std::unique_ptr<TurtleFxSet> fx_;
+    TurtleFxSet& Fx() const { return *fx_; }
     Vec3 prevPos_{}; Vec3 savedPos_{};
     float prevYaw_ = 0.0f; float savedYaw_ = 0.0f;
 };

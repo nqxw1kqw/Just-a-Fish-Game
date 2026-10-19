@@ -14,6 +14,7 @@
 #include "DxConv.h"
 #include "LowPolyModels.h"
 #include "Effects/Hit/HitFeedback.h"
+#include "Effects/Turtle/TurtleFxSet.h"
 #include "DxLib.h"
 
 namespace
@@ -24,8 +25,12 @@ namespace
     float ArenaLimit() { return GameConsts::ARENA_HALF_SIZE - GameConsts::TURTLE_HITBOX_RADIUS; }
 }
 
+TurtleBoss::TurtleBoss() : fx_(std::make_unique<TurtleFxSet>()) {}
+TurtleBoss::~TurtleBoss() = default;
+
 void TurtleBoss::Reset()
 {
+    if (fx_) fx_->ClearAll();
     active_ = false;
     action_ = TurtleAction::Idle;
     phase2_ = false;
@@ -109,6 +114,7 @@ void TurtleBoss::EndSkill()
 void TurtleBoss::StartWithdraw(PlayerFish& player)
 {
     (void)player;
+    if (fx_) Fx().withdrawDust.Emit(DxConv::ToVECTOR(Vec3{ pos_.x, 4.0f, pos_.z }));
     NoteSkill(TurtleSkill::Roll);
     action_ = TurtleAction::Withdraw;
     actionTimer_ = 0.0f;
@@ -178,6 +184,11 @@ void TurtleBoss::BreakShell(EffectSystem& effects)
     effects.AddTrauma(0.7f);
     effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 200.0f);
     effects.SpawnWaterSplash(pos_ + Vec3{ 0.0f, 30.0f, 0.0f }, 110.0f, 1.6f);
+    if (fx_)
+    {
+        Fx().shellBreak.Emit(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 45.0f, 0.0f }), 95.0f); // Fuyuu shell shards
+        Fx().staggerStars.Start(DxConv::ToVECTOR(pos_ + Fwd() * 100.0f + Vec3{ 0.0f, 55.0f, 0.0f }), GameConsts::TURTLE_STAGGER_TIME);
+    }
     effects.SpawnBubbles(pos_ + Vec3{ 0.0f, 50.0f, 0.0f }, 40, 90.0f, 3.0f, 7.0f);
     AppLogAdd(L"[TURTLE] Shell broken -> stagger\n");
 }
@@ -227,6 +238,7 @@ void TurtleBoss::UpdateAdvance(float dt, const PlayerFish& player, float speedMu
 void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
 {
     if (!active_ || hp_ <= 0.0f) return;
+    if (fx_) fx_->Update(dt);
     animTime_ += dt;
     bobPhase_ += dt * GameConsts::TURTLE_ANIM_BOB_SPEED;
     fightTimer_ += dt;
@@ -263,6 +275,9 @@ void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         float speed = RollSpeed();
         pos_ += rollDir_ * (speed * dt);
         rollTravel_ += speed * dt;
+        // Fuyuu roll trail (crowd-lightened by particleScale like Shark sand)
+        if (fx_ && (effects.particleScale_ >= 1.0f || Rand01() <= effects.particleScale_))
+            Fx().rollTrail.EmitNode(DxConv::ToVECTOR(Vec3{ pos_.x, 6.0f, pos_.z }), DxConv::ToVECTOR(rollDir_ * speed));
         rollAngle_ += speed * dt / GameConsts::TURTLE_ROLL_SPIN_RADIUS;
         yaw_ = YawOf(rollDir_);
         float lim = ArenaLimit();
@@ -282,6 +297,7 @@ void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         {
             effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 130.0f);
             effects.SpawnWaterSplash(Vec3{ pos_.x, 0.0f, pos_.z }, 90.0f, 1.0f);
+            if (fx_) Fx().rollImpact.Emit(DxConv::ToVECTOR(Vec3{ pos_.x, 10.0f, pos_.z }), DxConv::ToVECTOR(rollDir_ * -1.0f)); // wall normal = back into arena
             rollsLeft_--;
             if (rollsLeft_ > 0)
             {
@@ -289,6 +305,7 @@ void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
                 action_ = TurtleAction::Withdraw;
                 actionTimer_ = 0.0f;
                 withdrawDuration_ = GameConsts::TURTLE_WITHDRAW_TIME_P2;
+                if (fx_) Fx().withdrawDust.Emit(DxConv::ToVECTOR(Vec3{ pos_.x, 4.0f, pos_.z }));
                 rollAngle_ = 0.0f;
                 Vec3 toP = Collision::FlatDiff(player.GetPosition(), pos_);
                 if (toP.LengthSq() > 1.0f) yaw_ = YawOf(toP);
@@ -307,7 +324,8 @@ void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         break;
     case TurtleAction::Stagger:
         actionTimer_ += dt;
-        if (actionTimer_ >= GameConsts::TURTLE_STAGGER_TIME) EndSkill();
+        if (fx_) Fx().staggerStars.SetHead(DxConv::ToVECTOR(pos_ + Fwd() * 100.0f + Vec3{ 0.0f, 55.0f, 0.0f }));
+        if (actionTimer_ >= GameConsts::TURTLE_STAGGER_TIME) { if (fx_) Fx().staggerStars.Stop(); EndSkill(); }
         break;
     case TurtleAction::BiteTelegraph:
         TurnToward(YawOf(Collision::FlatDiff(player.GetPosition(), pos_)), GameConsts::TURTLE_TURN_RATE * 1.4f, dt);
@@ -315,6 +333,7 @@ void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         if (actionTimer_ >= GameConsts::TURTLE_BITE_TELEGRAPH)
         {
             biteDir_ = Fwd();
+            if (fx_) Fx().biteSnap.Emit(DxConv::ToVECTOR(pos_ + biteDir_ * 95.0f + Vec3{ 0.0f, 32.0f, 0.0f }), DxConv::ToVECTOR(biteDir_));
             action_ = TurtleAction::BiteLunge;
             actionTimer_ = 0.0f;
         }
@@ -391,6 +410,7 @@ bool TurtleBoss::TakeDamageInternal(float dmg, EffectSystem& effects, bool fromS
     if (hp_ <= 0.0f)
     {
         hp_ = 0.0f;
+        if (fx_) fx_->ClearAll();
         effects.AddTrauma(1.0f);
         effects.SpawnFishDeath(pos_ + Vec3{ 0.0f, 40.0f, 0.0f }, 130.0f);
         effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 200.0f);
@@ -492,5 +512,6 @@ void TurtleBoss::Draw() const
             float flash = hitFlashTimer_ / GameConsts::HIT_FLASH_TIME;
             HitFlash::DrawModel(handle, flash);
         }
+        if (fx_) fx_->Draw();
     }
 }

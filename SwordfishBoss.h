@@ -12,6 +12,7 @@
 class PlayerFish;
 class EffectSystem;
 class SharkSandEffect; // Effects/SharkSand/SharkSandFx.h (heap, sand FX shared with Shark hunt)
+struct SwordfishFxSet; // Effects/Swordfish/SwordfishFxSet.h (heap)
 
 enum class SwordfishAction
 {
@@ -124,6 +125,7 @@ private:
     float sandTrailAcc_ = 0.0f;
 
     std::unique_ptr<SharkSandEffect> sandFx_;
+    std::unique_ptr<SwordfishFxSet> swordFx_;
     Vec3 prevPos_{}; Vec3 savedPos_{};
     float prevYaw_ = 0.0f; float savedYaw_ = 0.0f;
 };

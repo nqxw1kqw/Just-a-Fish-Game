@@ -15,6 +15,7 @@
 #include "LowPolyModels.h"
 #include "Effects/Hit/HitFeedback.h"
 #include "Effects/SharkSand/SharkSandFx.h"
+#include "Effects/Swordfish/SwordfishFxSet.h"
 #include "DxLib.h"
 
 namespace
@@ -25,12 +26,13 @@ namespace
     float ArenaLimit() { return GameConsts::ARENA_HALF_SIZE - GameConsts::SWORDFISH_HITBOX_RADIUS; }
 }
 
-SwordfishBoss::SwordfishBoss() : sandFx_(std::make_unique<SharkSandEffect>()) {}
+SwordfishBoss::SwordfishBoss() : sandFx_(std::make_unique<SharkSandEffect>()), swordFx_(std::make_unique<SwordfishFxSet>()) {}
 SwordfishBoss::~SwordfishBoss() = default;
 
 void SwordfishBoss::Reset()
 {
     if (sandFx_) sandFx_->Clear();
+    if (swordFx_) swordFx_->ClearAll();
     active_ = false;
     action_ = SwordfishAction::Idle;
     raged_ = false;
@@ -148,6 +150,7 @@ void SwordfishBoss::StartSpin()
     NoteSkill(SwordfishSkill::Spin);
     visualYaw_ = 0.0f;
     spinHitCd_ = 0.0f;
+    if (swordFx_) swordFx_->spinVortex.Start(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 26.0f, 0.0f }), GameConsts::SWORDFISH_SPIN_TIME);
     action_ = SwordfishAction::Spin;
     actionTimer_ = 0.0f;
 }
@@ -171,6 +174,7 @@ void SwordfishBoss::StartRage(EffectSystem& effects)
     action_ = SwordfishAction::RageLeap;
     actionTimer_ = 0.0f;
     effects.SpawnWaterSplash(pos_, 70.0f, 1.0f);
+    if (swordFx_) swordFx_->leapArc.Emit(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 20.0f, 0.0f }), DxConv::ToVECTOR(Fwd() * 320.0f + Vec3{ 0.0f, 180.0f, 0.0f })); // Fuyuu leap droplets
 }
 
 void SwordfishBoss::PickNext(PlayerFish& player, EffectSystem& effects)
@@ -256,6 +260,7 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         pitchSmooth_ += (pitchT - pitchSmooth_) * lk;
     }
     if (sandFx_) sandFx_->Update(dt);
+    if (swordFx_) swordFx_->Update(dt);
     fightTimer_ += dt;
     if (hitFlashTimer_ > 0.0f) hitFlashTimer_ -= dt;
     if (spinHitCd_ > 0.0f) spinHitCd_ -= dt;
@@ -289,6 +294,9 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         pos_ += dashDir_ * step;
         dashTravel_ += step;
         yaw_ = YawOf(dashDir_);
+        // Fuyuu dash streak (crowd-lightened by particleScale like Shark sand)
+        if (swordFx_ && (effects.particleScale_ >= 1.0f || Rand01() <= effects.particleScale_))
+            swordFx_->dashStreak.EmitNode(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 30.0f, 0.0f }), DxConv::ToVECTOR(dashDir_ * GameConsts::SWORDFISH_DASH_SPEED));
         float lim = ArenaLimit();
         pos_.x = std::clamp(pos_.x, -lim, lim);
         pos_.z = std::clamp(pos_.z, -lim, lim);
@@ -342,6 +350,7 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     {
         actionTimer_ += dt;
         visualYaw_ += dt * GameConsts::SWORDFISH_SPIN_SPEED;
+        if (swordFx_) swordFx_->spinVortex.SetBody(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 26.0f, 0.0f }));
         Vec3 toP = Collision::FlatDiff(player.GetPosition(), pos_);
         float d = toP.Length();
         if (d > 1.0f) pos_ += (toP / d) * (GameConsts::SWORDFISH_SPIN_ADVANCE * dt);
@@ -362,7 +371,7 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             effects.AddTrauma(0.45f);
             effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 110.0f);
         }
-        if (actionTimer_ >= GameConsts::SWORDFISH_SPIN_TIME) { action_ = SwordfishAction::SpinDrift; actionTimer_ = 0.0f; }
+        if (actionTimer_ >= GameConsts::SWORDFISH_SPIN_TIME) { if (swordFx_) swordFx_->spinVortex.Stop(); action_ = SwordfishAction::SpinDrift; actionTimer_ = 0.0f; }
         break;
     }
     case SwordfishAction::SpinDrift:
@@ -411,7 +420,8 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         Vec3 vel = radial * ((d > GameConsts::SWORDFISH_SAND_ORBIT_RANGE) ? 1.0f : 0.15f) + side * 0.8f;
         if (vel.LengthSq() > 1.0f) vel = vel.Normalized();
         pos_ += vel * (GameConsts::SWORDFISH_SAND_SPEED * dt);
-        if (sandFx_) sandFx_->SandFinTrail(DxConv::ToVECTOR(Vec3{ pos_.x, 2.0f, pos_.z }), DxConv::ToVECTOR(vel * GameConsts::SWORDFISH_SAND_SPEED));
+        if (sandFx_ && (effects.particleScale_ >= 1.0f || Rand01() <= effects.particleScale_))
+            sandFx_->SandFinTrail(DxConv::ToVECTOR(Vec3{ pos_.x, 2.0f, pos_.z }), DxConv::ToVECTOR(vel * GameConsts::SWORDFISH_SAND_SPEED));
         yaw_ = YawOf(vel);
         float lim = ArenaLimit();
         pos_.x = std::clamp(pos_.x, -lim, lim);
@@ -507,6 +517,8 @@ bool SwordfishBoss::TakeDamageInternal(float dmg, EffectSystem& effects)
     if (hp_ <= 0.0f)
     {
         hp_ = 0.0f;
+        if (sandFx_) sandFx_->Clear();
+        if (swordFx_) swordFx_->ClearAll();
         effects.AddTrauma(1.0f);
         effects.SpawnFishDeath(pos_ + Vec3{ 0.0f, 35.0f, 0.0f }, 120.0f);
         effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 180.0f);
@@ -604,5 +616,6 @@ void SwordfishBoss::Draw() const
             HitFlash::DrawModel(handle, flash);
         }
         if (sandFx_) sandFx_->Draw();
+        if (swordFx_) swordFx_->Draw();
     }
 }
