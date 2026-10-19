@@ -25,6 +25,7 @@ namespace
         { L"Data/Model/LowPoly/SquidTentacle.x", L"SquidTentacle", -1 },
         { L"Data/Model/LowPoly/TurtleBoss.x", L"TurtleBoss", -1 },
         { L"Data/Model/LowPoly/SwordfishBoss.x", L"SwordfishBoss", -1 },
+        { L"Data/Model/LowPoly/Floor.x", L"Floor", -1 },
     };
 
     bool s_loaded = false;
