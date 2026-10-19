@@ -1076,7 +1076,10 @@ void GamePrototype::Update(float dt)
     // 00. Màn chọn ngôn ngữ (màn đầu tiên)
     if (state_ == GameState::LanguageSelect)
     {
-        SoundManager::Instance().PlayBGM(BgmId::Title, true);
+        // Màn ngôn ngữ (trước Title): im lặng hoàn toàn - không phát BGM, dừng mọi BGM đang phát
+        // (kể cả khi quay lại từ Title bằng [L]). BGM chỉ bắt đầu từ Title.
+        if (SoundManager::Instance().GetCurrentBgm() != BgmId::Count)
+            SoundManager::Instance().StopBGM(false);
         if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) || input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S)
             || input.IsPressed(KEY_INPUT_LEFT) || input.IsPressed(KEY_INPUT_RIGHT))
         {
