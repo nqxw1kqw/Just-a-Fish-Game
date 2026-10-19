@@ -19,11 +19,11 @@ def build_swordfish():
     # streamlined body loft: (z, half width, half height, center y), tail -95 .. nose 55
     keys = [(-95, 2, 3, 34), (-80, 7, 9, 34), (-58, 12, 17, 35), (-32, 16, 24, 36),
             (-6, 18, 28, 37), (20, 16, 25, 37), (40, 12, 18, 36), (55, 7, 10, 35)]
-    loft(m, keys, 12, lambda z, c, s: "back" if c > 0.45 else ("belly" if c < -0.5 else "body"))
+    loft(m, keys, 18, lambda z, c, s: "back" if c > 0.45 else ("belly" if c < -0.5 else "body"))
     # long flat bill/sword: tapered tube flattened (use tube via ellipsoid chain approximation)
     # bill as elongated flattened ellipsoid + tip cone feel via scaled ellipsoids
-    ellipsoid(m, (0, 35, 78), (5.5, 2.2, 26), "bill", lon=8, lat=5)
-    ellipsoid(m, (0, 35, 108), (3.8, 1.5, 24), "bill", lon=8, lat=5)
+    ellipsoid(m, (0, 35, 78), (5.5, 2.2, 26), "bill", lon=12, lat=6)
+    ellipsoid(m, (0, 35, 108), (3.8, 1.5, 24), "bill", lon=12, lat=6)
     ellipsoid(m, (0, 35, 138), (1.6, 0.8, 22), "bill", lon=7, lat=4)
     # tall sickle dorsal fin
     prism_xz(m, [(2, -28), (10, 6), (14, 38), (10, 42), (2, 10), (-2, -20)], 62, 3, "fin")
