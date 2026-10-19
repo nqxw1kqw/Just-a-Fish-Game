@@ -256,6 +256,22 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
 {
     if (!active_) return;
     if (hp_ <= 0.0f) return;
+    animTime_ += dt;
+    if (hasLastPos_ && dt > 0.0001f)
+    {
+        Vec3 vel = (pos_ - lastPos_) / dt; vel.y = 0.0f;
+        float speed = vel.Length();
+        moveSpeedSmooth_ += (speed - moveSpeedSmooth_) * (std::min)(1.0f, dt * 4.0f);
+        Vec3 fw = Fwd(); Vec3 side{ -fw.z, 0.0f, fw.x };
+        float fwdSpeed = vel.x * fw.x + vel.z * fw.z;
+        float latSpeed = vel.x * side.x + vel.z * side.z;
+        float bankT = std::clamp(-latSpeed * GameConsts::SQUID_ANIM_LEAN_PER_SPEED, -GameConsts::SQUID_ANIM_BANK_MAX, GameConsts::SQUID_ANIM_BANK_MAX);
+        float pitchT = std::clamp(fwdSpeed * GameConsts::SQUID_ANIM_LEAN_PER_SPEED * 0.7f, -GameConsts::SQUID_ANIM_PITCH_MAX, GameConsts::SQUID_ANIM_PITCH_MAX);
+        float lk = (std::min)(1.0f, dt * GameConsts::SQUID_ANIM_LEAN_SMOOTH);
+        bankSmooth_ += (bankT - bankSmooth_) * lk;
+        pitchSmooth_ += (pitchT - pitchSmooth_) * lk;
+        pulsePhase_ += dt * GameConsts::SQUID_ANIM_PULSE_SPEED * (1.0f + moveSpeedSmooth_ / GameConsts::SQUID_ANIM_SURGE_SPEED_REF);
+    }
     if (fx_) fx_->Update(dt);
     if (enraged_ && fx_) fx_->enrageAura.SetBoss(DxConv::ToVECTOR(GetMantlePos()));
     fightTimer_ += dt;
@@ -391,6 +407,7 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         if (actionTimer_ >= GameConsts::SQUID_GRAB_RECOVER) EndSkill();
         break;
     }
+    lastPos_ = pos_; hasLastPos_ = true;
 }
 
 int SquidBoss::GetInkOverlayAlpha() const
@@ -470,7 +487,7 @@ void SquidBoss::DrawScreenOverlay() const
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 }
 
-void SquidBoss::DrawTentacle(const Vec3& base, const Vec3& dir, float length) const
+void SquidBoss::DrawTentacle(const Vec3& base, const Vec3& dir, float length, float thickScale) const
 {
     int handle = LowPolyModels::GetHandle(LowPolyId::SquidTentacle);
     if (handle < 0 || length <= 1.0f) return;
@@ -478,7 +495,7 @@ void SquidBoss::DrawTentacle(const Vec3& base, const Vec3& dir, float length) co
     VECTOR up = (std::fabs(z.y) > 0.9f) ? VGet(1.0f, 0.0f, 0.0f) : VGet(0.0f, 1.0f, 0.0f);
     VECTOR x = VNorm(VCross(up, z));
     VECTOR y = VCross(z, x);
-    float thick = GameConsts::SQUID_SCALE;
+    float thick = (thickScale > 0.0f) ? thickScale : GameConsts::SQUID_SCALE;
     float zScale = length / GameConsts::SQUID_TENTACLE_MODEL_LENGTH;
     MATRIX m = MGetIdent();
     m.m[0][0] = x.x * thick; m.m[0][1] = x.y * thick; m.m[0][2] = x.z * thick;
@@ -488,6 +505,58 @@ void SquidBoss::DrawTentacle(const Vec3& base, const Vec3& dir, float length) co
     MV1SetMatrix(handle, m);
     MV1SetDifColorScale(handle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
     MV1DrawModel(handle);
+}
+
+void SquidBoss::DrawArmChain(const Vec3& base, const Vec3& dir, float length, float curl, float phase) const
+{
+    const int segs = GameConsts::SQUID_ANIM_ARM_SEGMENTS;
+    float segLen = length / segs;
+    Vec3 p = base;
+    Vec3 d = dir.Normalized();
+    Vec3 axis{ -d.z, 0.0f, d.x };
+    if (axis.LengthSq() < 0.01f) axis = Vec3{ 1.0f, 0.0f, 0.0f };
+    axis = axis.Normalized();
+    for (int i = 0; i < segs; ++i)
+    {
+        float sway = std::sin(animTime_ * GameConsts::SQUID_ANIM_SWAY_SPEED + phase + i * 0.9f) * GameConsts::SQUID_ANIM_SWAY_AMP;
+        float bend = curl + sway * (1.0f - curl);
+        VECTOR dv = VTransform(DxConv::ToVECTOR(d), MGetRotAxis(DxConv::ToVECTOR(axis), bend * 0.6f));
+        d = Vec3{ dv.x, dv.y, dv.z };
+        if (d.LengthSq() > 0.01f) d = d.Normalized();
+        float thick = GameConsts::SQUID_SCALE * GameConsts::SQUID_ANIM_ARM_THICK * (1.0f - 0.16f * i);
+        DrawTentacle(p, d, segLen * 1.08f, thick);
+        p += d * segLen;
+    }
+}
+
+void SquidBoss::DrawArms() const
+{
+    Vec3 fw = Fwd();
+    Vec3 right{ fw.z, 0.0f, -fw.x };
+    bool streaming = moveSpeedSmooth_ >= GameConsts::SQUID_ANIM_STREAM_SPEED;
+    bool raising = (action_ == SquidAction::SlamTelegraph || action_ == SquidAction::SlamStrike ||
+                    action_ == SquidAction::GrabTelegraph || action_ == SquidAction::GrabPull);
+    float streamK = streaming ? 1.0f : std::clamp(moveSpeedSmooth_ / GameConsts::SQUID_ANIM_STREAM_SPEED, 0.0f, 1.0f);
+    for (int i = 0; i < GameConsts::SQUID_ANIM_ARM_COUNT; ++i)
+    {
+        float t = (GameConsts::SQUID_ANIM_ARM_COUNT > 1) ? static_cast<float>(i) / (GameConsts::SQUID_ANIM_ARM_COUNT - 1) : 0.5f;
+        float spread = (t - 0.5f) * 2.0f; // -1..1
+        Vec3 base = pos_ + right * (spread * 26.0f * GameConsts::SQUID_SCALE)
+                  + fw * (40.0f * GameConsts::SQUID_SCALE)
+                  + Vec3{ 0.0f, 20.0f * GameConsts::SQUID_SCALE, 0.0f };
+        Vec3 idleDir = (fw * 0.55f + right * (spread * 0.30f) + Vec3{ 0.0f, -0.85f, 0.0f });
+        Vec3 streamDir = (fw * -0.85f + right * (spread * 0.20f) + Vec3{ 0.0f, -0.30f, 0.0f });
+        Vec3 dir = idleDir * (1.0f - streamK) + streamDir * streamK;
+        float curl = GameConsts::SQUID_ANIM_CURL_IDLE * (1.0f - streamK) + GameConsts::SQUID_ANIM_CURL_STREAM * streamK;
+        float len = GameConsts::SQUID_ANIM_ARM_LENGTH;
+        if (raising)
+        {
+            dir = fw * 0.95f + right * (spread * 0.25f) + Vec3{ 0.0f, -0.15f, 0.0f };
+            curl = 0.12f;
+            len *= 1.15f;
+        }
+        DrawArmChain(base, dir, len, curl, i * 1.7f);
+    }
 }
 
 void SquidBoss::Draw() const
@@ -558,14 +627,24 @@ void SquidBoss::Draw() const
         if (handle >= 0)
         {
             // Model: origin at bottom, mantle at -Z, arms/tentacles at +Z (forward).
-            float sway = std::sin(hoverPhase_ * 0.7f) * 0.05f;
-            MATRIX m = MMult(MMult(MMult(MGetScale(VGet(GameConsts::SQUID_SCALE, GameConsts::SQUID_SCALE, GameConsts::SQUID_SCALE)), MGetRotZ(sway)), MGetRotY(yaw_)), MGetTranslate(DxConv::ToVECTOR(pos_)));
+            // Procedural swim: idle roll/pitch + lean into motion + propulsion pulse (scale + surge).
+            float pulse = std::sin(pulsePhase_);
+            float surgeK = 0.35f + 0.65f * std::clamp(moveSpeedSmooth_ / GameConsts::SQUID_ANIM_SURGE_SPEED_REF, 0.0f, 1.0f);
+            Vec3 drawPos = pos_ + Fwd() * (pulse * GameConsts::SQUID_ANIM_SURGE_AMP * surgeK)
+                         + Vec3{ 0.0f, std::sin(animTime_ * 1.4f) * 3.0f, 0.0f };
+            float sc = GameConsts::SQUID_SCALE;
+            float scZ = sc * (1.0f + pulse * GameConsts::SQUID_ANIM_PULSE_SCALE);
+            float scXY = sc * (1.0f - pulse * GameConsts::SQUID_ANIM_PULSE_SCALE * 0.5f);
+            float roll = bankSmooth_ + std::sin(animTime_ * 0.9f) * GameConsts::SQUID_ANIM_ROLL_IDLE;
+            float pitch = pitchSmooth_ + std::sin(animTime_ * 1.1f + 1.0f) * 0.03f;
+            MATRIX m = MMult(MMult(MMult(MMult(MGetScale(VGet(scXY, scXY, scZ)), MGetRotZ(roll)), MGetRotX(pitch)), MGetRotY(yaw_)), MGetTranslate(DxConv::ToVECTOR(drawPos)));
             MV1SetMatrix(handle, m);
             COLOR_F tint = enraged_ ? GetColorF(1.4f, 0.7f, 0.8f, 1.0f) : GetColorF(1.0f, 1.0f, 1.0f, 1.0f);
             MV1SetDifColorScale(handle, tint);
             float flash = hitFlashTimer_ / GameConsts::HIT_FLASH_TIME;
             HitFlash::DrawModel(handle, flash);
         }
+        DrawArms();
         // Ink projectiles are drawn by Fuyuu SquidInkJetFx nodes (emitted per frame in UpdateInkShots).
         SetUseLighting(TRUE);
     }

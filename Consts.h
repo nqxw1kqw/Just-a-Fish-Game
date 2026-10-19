@@ -545,6 +545,25 @@ namespace GameConsts
     constexpr float SQUID_INK_OVERLAY_DRIP_SPEED = 45.0f;
     constexpr float SQUID_INK_OVERLAY_DRIP_MAX = 60.0f;
     constexpr float SQUID_TENTACLE_MODEL_LENGTH = 322.0f;
+    // Procedural animation (single-mesh model, no bones)
+    constexpr float SQUID_ANIM_SWAY_SPEED = 2.2f;    // Tentacle sway speed (rad/s)
+    constexpr float SQUID_ANIM_SWAY_AMP = 0.35f;     // Tentacle sway amplitude (rad per segment)
+    constexpr int   SQUID_ANIM_ARM_COUNT = 8;        // Extra model arms under/front of the body
+    constexpr int   SQUID_ANIM_ARM_SEGMENTS = 3;     // Chained segments per arm
+    constexpr float SQUID_ANIM_ARM_LENGTH = 130.0f;  // Total arm length (game units)
+    constexpr float SQUID_ANIM_ARM_THICK = 0.55f;    // Arm thickness x SQUID_SCALE
+    constexpr float SQUID_ANIM_CURL_IDLE = 0.50f;    // Extra bend per segment when idle
+    constexpr float SQUID_ANIM_CURL_STREAM = 0.10f;  // Bend when streaming back (moving fast)
+    constexpr float SQUID_ANIM_STREAM_SPEED = 120.0f;// Speed where arms start streaming back
+    constexpr float SQUID_ANIM_BANK_MAX = 0.35f;     // Max roll lean (rad)
+    constexpr float SQUID_ANIM_PITCH_MAX = 0.22f;    // Max pitch lean (rad)
+    constexpr float SQUID_ANIM_LEAN_PER_SPEED = 0.0016f; // Lean per (unit/s)
+    constexpr float SQUID_ANIM_LEAN_SMOOTH = 5.0f;   // Lean smoothing (1/s)
+    constexpr float SQUID_ANIM_ROLL_IDLE = 0.06f;    // Idle body roll (rad)
+    constexpr float SQUID_ANIM_PULSE_SPEED = 2.4f;   // Propulsion pulse (rad/s, + speed factor)
+    constexpr float SQUID_ANIM_PULSE_SCALE = 0.045f; // Mantle length pulse (+/- ratio)
+    constexpr float SQUID_ANIM_SURGE_AMP = 10.0f;    // Forward surge per pulse (units)
+    constexpr float SQUID_ANIM_SURGE_SPEED_REF = 160.0f; // Speed where surge is full
     constexpr float SQUID_INK_SLOW_FACTOR = 0.65f;
     constexpr float SQUID_INK_SLOW_TIME = 1.20f;
     constexpr float SQUID_INK_COOLDOWN = 9.0f;

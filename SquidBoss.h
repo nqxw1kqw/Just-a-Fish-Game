@@ -54,7 +54,9 @@ public:
     void SetHpMultiplier(float mul);
     const Vec3& GetPosition() const { return pos_; }
     Vec3 GetMantlePos() const;
-    void DrawTentacle(const Vec3& base, const Vec3& dir, float length) const;
+    void DrawTentacle(const Vec3& base, const Vec3& dir, float length, float thick = -1.0f) const;
+    void DrawArmChain(const Vec3& base, const Vec3& dir, float length, float curl, float phase) const;
+    void DrawArms() const;
     float GetHitboxRadius() const { return GameConsts::SQUID_HITBOX_RADIUS; }
     float GetBossFightTimer() const { return fightTimer_; }
     int GetBossTier() const { return tier_; }
@@ -95,6 +97,13 @@ private:
     float fightTimer_ = 0.0f;
     float hitFlashTimer_ = 0.0f;
     float hoverPhase_ = 0.0f;
+    float animTime_ = 0.0f;
+    float pulsePhase_ = 0.0f;
+    float bankSmooth_ = 0.0f;
+    float pitchSmooth_ = 0.0f;
+    float moveSpeedSmooth_ = 0.0f;
+    Vec3 lastPos_{};
+    bool hasLastPos_ = false;
     float strafeSign_ = 1.0f;
     float strafeTimer_ = 0.0f;
 
