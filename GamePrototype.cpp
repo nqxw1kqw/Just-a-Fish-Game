@@ -1069,7 +1069,9 @@ void GamePrototype::Update(float dt)
     }
 
     // Xử lý các phím Debug / Cheat / Camera tinh chỉnh (Phần D)
-    debugController_.Update(dt, *this);
+    // Debug/cheat keys chỉ chạy trong lúc chơi (không chạy sau màn Language/Title)
+    if (state_ != GameState::LanguageSelect && state_ != GameState::Title)
+        debugController_.Update(dt, *this);
 
     // 00. Màn chọn ngôn ngữ (màn đầu tiên)
     if (state_ == GameState::LanguageSelect)
@@ -1092,7 +1094,6 @@ void GamePrototype::Update(float dt)
             Input::Instance().Flush(); // tránh Enter/1/2 bị hiểu là chọn mode ở Title
             return;
         }
-        effects_.Update(dt, player_.GetPosition());
         return;
     }
 
@@ -1117,7 +1118,6 @@ void GamePrototype::Update(float dt)
             return;
         }
 
-        effects_.Update(dt, player_.GetPosition());
         return;
     }
 
@@ -1510,6 +1510,19 @@ void GamePrototype::Draw() const
         return;
     }
 
+    // Language / Title: chỉ vẽ đúng màn hình đó, không vẽ world/HUD phía sau (tránh bleed + không sim nền)
+    if (state_ == GameState::LanguageSelect)
+    {
+        SetFogEnable(FALSE);
+        uiRenderer_.DrawLanguageSelectScreen(*this);
+        return;
+    }
+    if (state_ == GameState::Title)
+    {
+        SetFogEnable(FALSE);
+        uiRenderer_.DrawTitleScreen(*this);
+        return;
+    }
     // #15: Sương mù xanh dưới nước chỉ cho cảnh 3D lúc chơi (tắt ở màn Title)
     const bool useFog = (state_ != GameState::Title && state_ != GameState::LanguageSelect);
     if (useFog)
@@ -1583,15 +1596,8 @@ void GamePrototype::Draw() const
 
     uiRenderer_.DrawFlowOverlay(*this); // gợi ý tutorial + thẻ Hell
 
-    // 11. Màn hình Tiêu đề Title
-    if (state_ == GameState::Title)
-    {
-        uiRenderer_.DrawTitleScreen(*this);
-    }
-    else if (state_ == GameState::LanguageSelect)
-    {
-        uiRenderer_.DrawLanguageSelectScreen(*this);
-    }
+    // (11. Language/Title đã vẽ ở đầu Draw và return)
+
 
     // 12. Màn hình Thắng / Thua
     if (state_ == GameState::Victory)
