@@ -246,6 +246,9 @@
     <ClInclude Include="UIRenderer.h">
       <Filter>UI</Filter>
     </ClInclude>
+    <ClInclude Include="ModeSelectScreen.h">
+      <Filter>UI</Filter>
+    </ClInclude>
     <ClInclude Include="CollisionUtil.h">
       <Filter>Utility</Filter>
     </ClInclude>
@@ -339,6 +342,9 @@
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="UIRenderer.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ModeSelectScreen.cpp">
       <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>

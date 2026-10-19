@@ -12,6 +12,21 @@ namespace
 
     // Bảng EN -> JP (日本語). Thêm chuỗi mới: thêm 1 dòng tại đây và bọc chuỗi trong code bằng TR(L"...").
     const Entry kTable[] = {
+        { L"CHOOSE YOUR NEXT DIVE", L"次の海を選ぼう" },
+        { L"Tutorial cleared. Your cards and recovery carry over.", L"チュートリアルクリア！ カードと回復はそのまま引き継ぎます。" },
+        { L"NORMAL", L"ノーマル" },
+        { L"HELL", L"ヘル" },
+        { L"Find your rhythm", L"自分のペースで挑もう" },
+        { L"Brave the depths", L"深海の試練に挑もう" },
+        { L"Choose your upgrade after each stage", L"ステージごとに強化カードを選択" },
+        { L"A fresh battlefield every stage", L"毎ステージ、敵をリセット" },
+        { L"Take 1.5x damage", L"受けるダメージが1.5倍" },
+        { L"Random upgrades as the battle continues", L"戦闘中にランダムで強化" },
+        { L"Enemies carry over between stages", L"ステージを越えて敵が残る" },
+        { L"30 stages / Boss every 5 stages", L"全30ステージ / 5ステージごとにボス" },
+        { L"SELECTED", L"選択中" },
+        { L"ENTER / SPACE - DIVE IN", L"ENTER / SPACE   決定" },
+        { L"A / D or LEFT / RIGHT to choose     1 / 2 to start", L"A / D・左右キーで選択     1 / 2で開始" },
         { L"NORMAL STAGE %d / %d", L"ノーマル ステージ %d / %d" },
         { L"HELL STAGE %d / %d", L"ヘル ステージ %d / %d" },
         { L"TUTORIAL %d / %d", L"チュートリアル %d / %d" },

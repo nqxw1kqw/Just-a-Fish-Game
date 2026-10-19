@@ -19,6 +19,16 @@ namespace
 #include <algorithm>
 #include <cwchar>
 
+void UIRenderer::Init()
+{
+    modeSelectScreen_.Init();
+}
+
+void UIRenderer::Shutdown()
+{
+    modeSelectScreen_.Shutdown();
+}
+
 void UIRenderer::DrawBossHealthBar(const WhaleBoss& boss) const
 {
     battleHud_.DrawBossBar(boss);
@@ -274,33 +284,7 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
 
 void UIRenderer::DrawModeSelectScreen(const GamePrototype& game) const
 {
-    int sw = GameConsts::SCREEN_WIDTH;
-    int sh = GameConsts::SCREEN_HEIGHT;
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 210);
-    DrawBox(0, 0, sw, sh, GetColor(8, 18, 32), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-
-    int midX = sw / 2;
-    int midY = sh / 2;
-    DrawCX(midX, midY - 150, TR(L"TUTORIAL CLEAR!  CHOOSE YOUR MODE"), GetColor(100, 220, 255), FontSize::Header);
-    DrawCX(midX, midY - 110, TR(L"Your cards and the whale-clear heal carry over."), GetColor(200, 220, 240), FontSize::Body);
-
-    const wchar_t* names[2] = { TR(L"[1] NORMAL"), TR(L"[2] HELL") };
-    const wchar_t* descs[2] = {
-        TR(L"30 stages (20s), pick 1 of 3 cards, field cleared each stage, boss every 5"),
-        TR(L"Damage taken x1.5, random card (no pause), enemies stay between stages") };
-    for (int i = 0; i < 2; ++i)
-    {
-        bool sel = (game.modeSelectIdx_ == i);
-        int y = midY - 60 + i * 80;
-        int edge = sel ? (i == 1 ? GetColor(255, 90, 70) : GetColor(255, 220, 80)) : GetColor(60, 90, 130);
-        int bg = sel ? (i == 1 ? GetColor(70, 20, 20) : GetColor(25, 55, 95)) : GetColor(15, 25, 40);
-        DrawBox(midX - 380, y, midX + 380, y + 62, bg, TRUE);
-        DrawBox(midX - 380, y, midX + 380, y + 62, edge, FALSE);
-        FontManager::Draw(midX - 360, y + 8, names[i], sel ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
-        FontManager::Draw(midX - 360, y + 36, descs[i], GetColor(200, 215, 235), FontSize::Small);
-    }
-    DrawCX(midX, midY + 120, TR(L"[UP/DOWN] + [ENTER/SPACE], or [1] / [2]"), GetColor(255, 255, 255), FontSize::Body);
+    modeSelectScreen_.Draw(game.modeSelectIdx_);
 }
 
 void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const

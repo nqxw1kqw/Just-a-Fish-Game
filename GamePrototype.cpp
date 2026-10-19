@@ -240,6 +240,7 @@ void GamePrototype::Init()
     enemies_.Init();
     weapon_.Init();
     cardManager_.Init();
+    uiRenderer_.Init();
     boss_.Init();
     LoadHighscore();
     Reset();
@@ -255,6 +256,7 @@ void GamePrototype::Shutdown()
 
     enemies_.Shutdown();
     cardManager_.Shutdown();
+    uiRenderer_.Shutdown();
     effects_.Shutdown();
     LowPolyModels::Release();
 }
@@ -1177,10 +1179,16 @@ void GamePrototype::Update(float dt)
     // Phase 1: Màn chọn chế độ sau tutorial (Normal / Hell)
     if (state_ == GameState::ModeSelect)
     {
-        if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) ||
-            input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S))
-        {
+        const int previousSelection = modeSelectIdx_;
+        if (input.IsPressed(KEY_INPUT_LEFT) || input.IsPressed(KEY_INPUT_A))
+            modeSelectIdx_ = 0;
+        else if (input.IsPressed(KEY_INPUT_RIGHT) || input.IsPressed(KEY_INPUT_D))
+            modeSelectIdx_ = 1;
+        else if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) ||
+                 input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S))
             modeSelectIdx_ = 1 - modeSelectIdx_;
+        if (previousSelection != modeSelectIdx_)
+        {
             SoundManager::Instance().PlaySFX(SfxId::UiHover);
         }
         int choose = -1;
@@ -1511,6 +1519,14 @@ void GamePrototype::DrawArena() const
 
 void GamePrototype::Draw() const
 {
+    // The illustrated menu is a complete screen; combat HUD/tips must not cover it.
+    if (state_ == GameState::ModeSelect)
+    {
+        SetFogEnable(FALSE);
+        uiRenderer_.DrawModeSelectScreen(*this);
+        return;
+    }
+
     // #15: Sương mù xanh dưới nước chỉ cho cảnh 3D lúc chơi (tắt ở màn Title)
     const bool useFog = (state_ != GameState::Title && state_ != GameState::LanguageSelect);
     if (useFog)
@@ -1582,10 +1598,6 @@ void GamePrototype::Draw() const
         uiRenderer_.DrawBossIntroScreen(bossKind_);
     }
 
-    if (state_ == GameState::ModeSelect)
-    {
-        uiRenderer_.DrawModeSelectScreen(*this);
-    }
     uiRenderer_.DrawFlowOverlay(*this); // gợi ý tutorial + thẻ Hell
 
     // 11. Màn hình Tiêu đề Title

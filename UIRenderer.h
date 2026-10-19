@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "BattleHud.h"
+#include "ModeSelectScreen.h"
 
 class GamePrototype;
 class WhaleBoss;
@@ -9,6 +10,8 @@ class SwordfishBoss;
 class UIRenderer
 {
 public:
+    void Init();
+    void Shutdown();
     void DrawHUD(const GamePrototype& game) const;
     void DrawBossHealthBar(const WhaleBoss& boss) const;
     void DrawBossHealthBar(const SharkBoss& shark) const;
@@ -25,5 +28,6 @@ public:
     void DrawFlowOverlay(const GamePrototype& game) const; // gợi ý tutorial + thẻ Hell
 
 private:
+    ModeSelectScreen modeSelectScreen_;
     BattleHud battleHud_; // 戦闘HUD
 };
