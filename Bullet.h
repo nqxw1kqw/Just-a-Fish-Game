@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector3.h"
 #include "Consts.h"
 #include "Stats.h"
@@ -9,6 +9,7 @@ class EffectSystem;
 class PlayerFish;
 class WhaleBoss;
 class SharkBoss;
+class SquidBoss;
 
 struct Bullet
 {
@@ -29,7 +30,7 @@ class WeaponSystem
 public:
     void Init();
     void Reset();
-    void Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss = nullptr, SharkBoss* shark = nullptr);
+    void Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss = nullptr, SharkBoss* shark = nullptr, SquidBoss* squid = nullptr);
     void Draw(const PlayerFish& player) const;
 
     // Render interpolation (#26)

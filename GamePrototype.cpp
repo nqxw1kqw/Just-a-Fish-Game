@@ -270,7 +270,9 @@ void GamePrototype::Reset()
     cardManager_.Reset();
     boss_.Reset();
     shark_.Reset();
+    squid_.Reset();
     sharkFight_ = false;
+    bossKind_ = 0;
 
     enemies_.SetEndless(IsEndlessLike());
     cardManager_.SetEndless(IsEndlessLike());
@@ -375,13 +377,16 @@ void GamePrototype::StartBossFight()
     enemies_.KillAll(effects_); // Dọn quái nhỏ chuẩn bị sàn đấu
     if (mode_ == GameMode::Classic) player_.SetDamageTakenMul(GameConsts::TUTORIAL_BOSS_DAMAGE_TAKEN_MUL);
     enemies_.SetAutoSpawn(false); // Trong trận Boss, quái chỉ xuất hiện theo đòn của Boss
-    if (sharkFight_) shark_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
+    if (bossKind_ == 1) shark_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
+    else if (bossKind_ == 2) squid_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
     boss_.SetDamageTakenMul(mode_ == GameMode::Classic ? GameConsts::TUTORIAL_DMG_MUL_VS_BOSS
                           : mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
     shark_.SetDamageTakenMul(mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
-    if (!sharkFight_) boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
+    squid_.SetDamageTakenMul(mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
+    if (bossKind_ == 0) boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
     boss_.SetHellMode(mode_ == GameMode::Hell);
     shark_.SetHellMode(mode_ == GameMode::Hell);
+    squid_.SetHellMode(mode_ == GameMode::Hell);
     effects_.AddTrauma(0.5f);
     SoundManager::Instance().PlayBGM(BgmId::Boss, true);
 }
@@ -390,13 +395,16 @@ void GamePrototype::StartBossFight()
 // HP Boss: mul = 1 + ENDLESS_BOSS_HP_PER_STAGE * (stage - 5)  (stage 5 = x1.0, stage 30 = x2.25)
 void GamePrototype::PrepareEndlessBoss(int stage)
 {
-    sharkFight_ = (rand() % 2) == 1;
+    // Boss rotation: Whale / Shark / Giant Squid (random, tutorial stays Whale)
+    bossKind_ = rand() % 3;
+    sharkFight_ = (bossKind_ == 1);
     const int tier = (std::max)(1, stage / GameConsts::ENDLESS_BOSS_EVERY);
     const float hpMul = 1.0f + GameConsts::ENDLESS_BOSS_HP_PER_STAGE
         * static_cast<float>((std::max)(0, stage - GameConsts::ENDLESS_BOSS_EVERY));
-    if (sharkFight_) { shark_.SetBossDifficulty(tier); shark_.SetHpMultiplier(hpMul); }
+    if (bossKind_ == 1) { shark_.SetBossDifficulty(tier); shark_.SetHpMultiplier(hpMul); }
+    else if (bossKind_ == 2) { squid_.SetBossDifficulty(tier); squid_.SetHpMultiplier(hpMul); }
     else { boss_.SetBossDifficulty(tier); boss_.SetHpMultiplier(hpMul); }
-    AppLogAdd(L"[ENDLESS] Stage %d boss: %s tier=%d hpMul=%.2f\n", stage, sharkFight_ ? L"Shark" : L"Whale", tier, hpMul);
+    AppLogAdd(L"[ENDLESS] Stage %d boss kind=%d tier=%d hpMul=%.2f\n", stage, bossKind_, tier, hpMul);
 }
 
 void GamePrototype::BeginBossIntro()
@@ -429,7 +437,7 @@ void GamePrototype::AdvanceAfterCardPick()
     {
         if (currentWave_ >= GameConsts::TUTORIAL_WAVES)
         {
-            sharkFight_ = false; // Tutorial: luôn là Cá Voi
+            sharkFight_ = false; bossKind_ = 0; // Tutorial: luôn là Cá Voi
             BeginBossIntro();
         }
         else
@@ -457,7 +465,9 @@ void GamePrototype::EnterEndlessFromTutorial(GameMode mode)
     ReapplyAllStats(); // bỏ buff HP tutorial
     boss_.Reset();
     shark_.Reset();
+    squid_.Reset();
     sharkFight_ = false;
+    bossKind_ = 0;
     // Hồi máu đã được cộng lúc hạ Cá Voi (trước màn chọn chế độ); thẻ được giữ nguyên
     StartStage(1);
     Input::Instance().Flush();
@@ -701,7 +711,9 @@ void GamePrototype::SkipToWave(int waveTarget)
     player_.Reset();
     boss_.Reset();
     shark_.Reset();
+    squid_.Reset();
     sharkFight_ = false;
+    bossKind_ = 0;
 
     ReapplyAllStats();
     StartWave(waveTarget);
@@ -725,7 +737,9 @@ void GamePrototype::SkipToEndlessWave(int waveTarget)
     player_.Reset();
     boss_.Reset();
     shark_.Reset();
+    squid_.Reset();
     sharkFight_ = false;
+    bossKind_ = 0;
 
     ReapplyAllStats();
     StartStage(waveTarget);
@@ -745,7 +759,9 @@ void GamePrototype::SkipToBoss()
     player_.Reset();
     boss_.Reset();
     shark_.Reset();
+    squid_.Reset();
     sharkFight_ = false;
+    bossKind_ = 0;
 
     ReapplyAllStats();
     StartBossFight();
@@ -765,13 +781,38 @@ void GamePrototype::SkipToSharkBoss()
     player_.Reset();
     boss_.Reset();
     shark_.Reset();
+    squid_.Reset();
 
     ReapplyAllStats();
     currentWave_ = GameConsts::ENDLESS_BOSS_EVERY;
     PrepareEndlessBoss(currentWave_);
     sharkFight_ = true; // Debug: luôn Cá Mập
+    bossKind_ = 1;
     shark_.SetBossDifficulty(1);
     shark_.SetHpMultiplier(1.0f);
+    StartBossFight();
+}
+
+void GamePrototype::SkipToSquidBoss()
+{
+    debugController_.MarkDebugUsed();
+    mode_ = GameMode::Endless;
+    cardManager_.SetEndless(true);
+    enemies_.SetEndless(true);
+    cardManager_.Reset();
+    cardManager_.GrantRandomCards(5);
+    enemies_.Reset();
+    effects_.Reset();
+    player_.Reset();
+    boss_.Reset();
+    shark_.Reset();
+    squid_.Reset();
+    ReapplyAllStats();
+    currentWave_ = GameConsts::ENDLESS_BOSS_EVERY;
+    bossKind_ = 2;
+    sharkFight_ = false;
+    squid_.SetBossDifficulty(1);
+    squid_.SetHpMultiplier(1.0f);
     StartBossFight();
 }
 
@@ -887,6 +928,7 @@ void GamePrototype::BeginRenderInterp(float alpha)
     enemies_.BeginRenderInterp(alpha);
     boss_.BeginRenderInterp(alpha);
     shark_.BeginRenderInterp(alpha);
+    squid_.BeginRenderInterp(alpha);
     weapon_.BeginRenderInterp(alpha);
     cameraController_.ApplyInterpolated(alpha, effects_);
     renderInterpActive_ = true;
@@ -899,6 +941,7 @@ void GamePrototype::EndRenderInterp()
     enemies_.EndRenderInterp();
     boss_.EndRenderInterp();
     shark_.EndRenderInterp();
+    squid_.EndRenderInterp();
     weapon_.EndRenderInterp();
     renderInterpActive_ = false;
 }
@@ -910,6 +953,7 @@ void GamePrototype::Update(float dt)
     enemies_.SavePrevTransforms();
     boss_.SavePrevTransform();
     shark_.SavePrevTransform();
+    squid_.SavePrevTransform();
     weapon_.SavePrevTransforms();
     cameraController_.SavePrev();
 
@@ -1215,12 +1259,13 @@ void GamePrototype::Update(float dt)
             );
 
             // Sóng nước trúng Boss nếu đứng gần
-            const Vec3 bossPos = sharkFight_ ? shark_.GetPosition() : boss_.GetPosition();
-            const float bossRad = sharkFight_ ? shark_.GetHitboxRadius() : boss_.GetHitboxRadius();
+            const Vec3 bossPos = (bossKind_ == 1) ? shark_.GetPosition() : (bossKind_ == 2) ? squid_.GetPosition() : boss_.GetPosition();
+            const float bossRad = (bossKind_ == 1) ? shark_.GetHitboxRadius() : (bossKind_ == 2) ? squid_.GetHitboxRadius() : boss_.GetHitboxRadius();
             float dBoss = (bossPos - player_.GetPosition()).Length();
             if (dBoss <= player_.GetSlamRadius() + bossRad)
             {
-                if (sharkFight_) shark_.TakeDamage(player_.GetSlamDamage(), effects_);
+                if (bossKind_ == 1) shark_.TakeDamage(player_.GetSlamDamage(), effects_);
+                else if (bossKind_ == 2) squid_.TakeDamageAt(player_.GetPosition(), player_.GetSlamDamage(), effects_);
                 else boss_.TakeDamage(player_.GetSlamDamage(), effects_);
                 hitCount++;
             }
@@ -1258,14 +1303,15 @@ void GamePrototype::Update(float dt)
             }
 
             // 4. Cập nhật Boss Cá Voi
-            if (sharkFight_) shark_.Update(dt, player_, effects_);
+            if (bossKind_ == 1) shark_.Update(dt, player_, effects_);
+            else if (bossKind_ == 2) squid_.Update(dt, player_, effects_);
             else boss_.Update(dt, player_, enemies_, effects_);
 
             // 5. Cập nhật quái đệ do Boss triệu hồi
             enemies_.Update(dt, player_, effects_);
 
             // 6. Cập nhật vũ khí bắn quái & Boss (Gai phản đòn Pufferfish & súng)
-            weapon_.Update(dt, player_, enemies_, effects_, sharkFight_ ? nullptr : &boss_, sharkFight_ ? &shark_ : nullptr);
+            weapon_.Update(dt, player_, enemies_, effects_, bossKind_ == 0 ? &boss_ : nullptr, bossKind_ == 1 ? &shark_ : nullptr, bossKind_ == 2 ? &squid_ : nullptr);
 
             // 7. Cập nhật hiệu ứng
             effects_.Update(dt, player_.GetPosition());
@@ -1274,9 +1320,9 @@ void GamePrototype::Update(float dt)
             effects_.CollectExpOrbs(player_.GetPosition(), GameConsts::EXP_PICKUP_RADIUS);
 
             // 9. Kiểm tra Boss bị hạ gục
-            const bool bossDead = sharkFight_ ? shark_.IsDead() : boss_.IsDead();
-            const float bossTime = sharkFight_ ? shark_.GetBossFightTimer() : boss_.GetBossFightTimer();
-            const int bossTier = sharkFight_ ? shark_.GetBossTier() : boss_.GetBossTier();
+            const bool bossDead = (bossKind_ == 1) ? shark_.IsDead() : (bossKind_ == 2) ? squid_.IsDead() : boss_.IsDead();
+            const float bossTime = (bossKind_ == 1) ? shark_.GetBossFightTimer() : (bossKind_ == 2) ? squid_.GetBossFightTimer() : boss_.GetBossFightTimer();
+            const int bossTier = (bossKind_ == 1) ? shark_.GetBossTier() : (bossKind_ == 2) ? squid_.GetBossTier() : boss_.GetBossTier();
             if (bossDead)
             {
                 if (mode_ == GameMode::Classic)
@@ -1297,7 +1343,7 @@ void GamePrototype::Update(float dt)
                     // Endless Mode: Hạ gục 1 lượt Boss định kỳ! (Task 10 T4c)
                     effects_.AddTrauma(0.7f);
                     enemies_.KillAll(effects_);
-                    swprintf_s(lastSummaryBuffer_, sharkFight_ ? L"Shark Tier %d: %.1f giây" : L"Boss Tier %d: %.1f giây", bossTier, bossTime);
+                    swprintf_s(lastSummaryBuffer_, bossKind_ == 2 ? L"Squid Tier %d: %.1f giây" : sharkFight_ ? L"Shark Tier %d: %.1f giây" : L"Boss Tier %d: %.1f giây", bossTier, bossTime);
                     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
 
                     // Hồi 50% máu tối đa thưởng diệt Boss
@@ -1398,7 +1444,8 @@ void GamePrototype::Draw() const
     // 2. Vẽ Decal báo hiệu trước đòn đánh của Boss trên mặt sàn
     if (state_ == GameState::Boss || state_ == GameState::BossIntro)
     {
-        if (sharkFight_) shark_.Draw();
+        if (bossKind_ == 1) shark_.Draw();
+        else if (bossKind_ == 2) squid_.Draw();
         else boss_.Draw();
     }
 
@@ -1432,7 +1479,8 @@ void GamePrototype::Draw() const
     // 8. Vẽ thanh máu Boss nếu đang đấu Boss
     if (state_ == GameState::Boss)
     {
-        if (sharkFight_) uiRenderer_.DrawBossHealthBar(shark_);
+        if (bossKind_ == 1) uiRenderer_.DrawBossHealthBar(shark_);
+        else if (bossKind_ == 2) uiRenderer_.DrawBossHealthBar(squid_);
         else uiRenderer_.DrawBossHealthBar(boss_);
     }
 
@@ -1445,7 +1493,7 @@ void GamePrototype::Draw() const
     // 10. Màn hình Chuyển cảnh Boss Intro
     if (state_ == GameState::BossIntro)
     {
-        uiRenderer_.DrawBossIntroScreen(sharkFight_);
+        uiRenderer_.DrawBossIntroScreen(bossKind_);
     }
 
     if (state_ == GameState::ModeSelect)

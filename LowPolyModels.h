@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Mô hình low-poly (Blender, màu phẳng) cho quái và Boss Cá Voi.
 // Các file nằm ở Data/Model/LowPoly/*.x (gốc tọa độ = giữa đáy, hướng +Z, 1 đơn vị = 1 đơn vị game).
@@ -15,6 +15,7 @@ enum class LowPolyId
     WhaleBoss,
     SharkBoss,      // Boss Cá Mập (Endless) - thân
     SharkBossTail,  // Đuôi tách riêng để vẫy (gốc = khớp đuôi)
+    SquidBoss,      // Boss #3: Giant Squid
     Count
 };
 

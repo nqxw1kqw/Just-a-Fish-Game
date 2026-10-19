@@ -1,4 +1,5 @@
 ﻿#include "BattleHud.h"
+#include "SquidBoss.h"
 #include "SharkBoss.h"
 #include "PlayerFish.h"
 #include "Boss.h"
@@ -171,6 +172,12 @@ void BattleHud::DrawBossBar(const SharkBoss& shark) const
 {
     const bool fr = shark.IsFrenzy();
     DrawBossBarCore(shark.IsActive(), shark.GetHp(), shark.GetMaxHp(), fr, TR(L"GREAT SHARK"), fr ? TR(L"FRENZY") : TR(L"HUNTING"), GameConsts::SHARK_FRENZY_HP_RATIO);
+}
+
+void BattleHud::DrawBossBar(const SquidBoss& squid) const
+{
+    const bool en = squid.IsEnraged();
+    DrawBossBarCore(squid.IsActive(), squid.GetHp(), squid.GetMaxHp(), en, TR(L"GIANT SQUID"), en ? TR(L"ENRAGED - DOUBLE TENTACLES") : TR(L"RANGED THREAT"), GameConsts::SQUID_ENRAGE_HP_RATIO);
 }
 
 void BattleHud::DrawBossBarCore(bool active, float hp, float maxHp, bool p2, const wchar_t* name, const wchar_t* phaseLabel, float markRatio) const
