@@ -119,6 +119,7 @@
     <ClInclude Include="SharkBoss.h" />
     <ClInclude Include="SquidBoss.h" />
     <ClInclude Include="TurtleBoss.h" />
+    <ClInclude Include="SwordfishBoss.h" />
     <ClInclude Include="Effects\Shark\SharkFxCommon.h" />
     <ClInclude Include="Effects\Shark\SharkBiteLungeFx.h" />
     <ClInclude Include="Effects\Shark\SharkCircleFinFx.h" />
@@ -175,6 +176,7 @@
     <ClCompile Include="SharkBoss.cpp" />
     <ClCompile Include="SquidBoss.cpp" />
     <ClCompile Include="TurtleBoss.cpp" />
+    <ClCompile Include="SwordfishBoss.cpp" />
     <ClCompile Include="Boss.cpp" />
     <ClCompile Include="FontManager.cpp" />
     <ClCompile Include="Localization.cpp" />

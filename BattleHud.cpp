@@ -1,6 +1,7 @@
 ﻿#include "BattleHud.h"
 #include "SquidBoss.h"
 #include "TurtleBoss.h"
+#include "SwordfishBoss.h"
 #include "SharkBoss.h"
 #include "PlayerFish.h"
 #include "Boss.h"
@@ -179,6 +180,12 @@ void BattleHud::DrawBossBar(const SquidBoss& squid) const
 {
     const bool en = squid.IsEnraged();
     DrawBossBarCore(squid.IsActive(), squid.GetHp(), squid.GetMaxHp(), en, TR(L"GIANT SQUID"), en ? TR(L"ENRAGED - DOUBLE TENTACLES") : TR(L"RANGED THREAT"), GameConsts::SQUID_ENRAGE_HP_RATIO);
+}
+
+void BattleHud::DrawBossBar(const SwordfishBoss& swordfish) const
+{
+    const bool rage = swordfish.IsRaged();
+    DrawBossBarCore(swordfish.IsActive(), swordfish.GetHp(), swordfish.GetMaxHp(), rage, TR(L"SWORDFISH"), rage ? TR(L"RAGE - SAND AMBUSH") : TR(L"FAST DUELIST"), GameConsts::SWORDFISH_RAGE_HP_RATIO);
 }
 
 void BattleHud::DrawBossBar(const TurtleBoss& turtle) const

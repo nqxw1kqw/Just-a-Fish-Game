@@ -157,7 +157,8 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 {
                     if (game.state_ == GameState::Boss)
                     {
-                        if (game.bossKind_ == 3) game.turtle_.Kill();
+                        if (game.bossKind_ == 4) game.swordfish_.Kill();
+                        else if (game.bossKind_ == 3) game.turtle_.Kill();
                         else if (game.bossKind_ == 2) game.squid_.Kill();
                         else if (game.sharkFight_) game.shark_.Kill();
                         else game.boss_.Kill();
@@ -201,7 +202,8 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 if (k5) game.SkipToEndlessWave(5);  // Ctrl+5: Endless stage 5 (Boss đầu tiên)
                 if (k6) game.SkipToBoss();
                 if (k7) game.SkipToEndlessWave(1);   // Ctrl+7: Endless stage 1
-                if (k8) game.SkipToEndlessWave(15);  // Ctrl+8: Endless stage 15 (Boss)
+                if (k8 && shiftHeld) game.SkipToSwordfishBoss(); // Ctrl+Shift+8: Boss Cá Kiếm (Endless)
+                else if (k8) game.SkipToEndlessWave(15);  // Ctrl+8: Endless stage 15 (Boss)
                 if (k9 && shiftHeld) game.SkipToTurtleBoss(); // Ctrl+Shift+9: Boss Rùa Cổ (Endless)
                 else if (k9) game.SkipToEndlessWave(GameConsts::ENDLESS_MAX_STAGE); // Ctrl+9: stage 30 (Boss cuối)
                 bool k0 = (input.IsPressed(KEY_INPUT_0) || input.IsPressed(KEY_INPUT_NUMPAD0));
@@ -286,7 +288,15 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 else if (input.IsPressed(KEY_INPUT_8)) forced = 8;
                 else if (input.IsPressed(KEY_INPUT_9)) forced = 9;
                 else if (input.IsPressed(KEY_INPUT_0)) forced = 10;
-                if (forced != 0 && game.bossKind_ == 3 && game.state_ == GameState::Boss)
+                if (forced != 0 && game.bossKind_ == 4 && game.state_ == GameState::Boss)
+                {
+                    // Trận Cá Kiếm: Shift+1 Sword Dash | 2 Spin | 3 Rage Dive
+                    debugUsed_ = true;
+                    if (forced == 1) game.swordfish_.ForceDash(game.player_);
+                    else if (forced == 2) game.swordfish_.ForceSpin(game.player_);
+                    else if (forced == 3) game.swordfish_.ForceRage(game.effects_);
+                }
+                else if (forced != 0 && game.bossKind_ == 3 && game.state_ == GameState::Boss)
                 {
                     // Trận Rùa Cổ: Shift+1 Roll | 2 Bite | 3 Tail Sweep | 4 Phase 2
                     debugUsed_ = true;

@@ -18,6 +18,7 @@ enum class LowPolyId
     SquidBoss,      // Boss #3: Giant Squid
     SquidTentacle,  // Tentacle arm (slam/grab), posed by SquidBoss
     TurtleBoss,     // Boss #4: Ancient Turtle
+    SwordfishBoss,  // Boss #5: Swordfish
     Count
 };
 

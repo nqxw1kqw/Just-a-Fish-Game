@@ -1,6 +1,7 @@
 ﻿#ifndef NOMINMAX
 #include "SquidBoss.h"
 #include "TurtleBoss.h"
+#include "SwordfishBoss.h"
 #define NOMINMAX
 #endif
 #include <windows.h>
@@ -125,7 +126,7 @@ void WeaponSystem::ShootRadial(const Vec3& center, int count, float damage, floa
     }
 }
 
-void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss, SharkBoss* shark, SquidBoss* squid, TurtleBoss* turtle)
+void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss, SharkBoss* shark, SquidBoss* squid, TurtleBoss* turtle, SwordfishBoss* swordfish)
 {
     const Vec3 playerPos = player.GetPosition();
     const Vec3 turretPos = playerPos + Vec3{ 0.0f, GameConsts::FISH_SIZE_Y + 4.0f, 0.0f };
@@ -251,6 +252,14 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
             if (Collision::DistXZ(turtle->GetPosition(), b.pos) <= (b.radius + turtle->GetHitboxRadius()))
             {
                 turtle->TakeDamage(b.damage, effects);
+                b.active = false;
+                continue;
+            }
+        }        if (swordfish && swordfish->IsAlive())
+        {
+            if (Collision::DistXZ(swordfish->GetPosition(), b.pos) <= (b.radius + swordfish->GetHitboxRadius()))
+            {
+                swordfish->TakeDamage(b.damage, effects);
                 b.active = false;
                 continue;
             }
