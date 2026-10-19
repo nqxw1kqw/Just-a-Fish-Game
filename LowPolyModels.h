@@ -16,6 +16,7 @@ enum class LowPolyId
     SharkBoss,      // Boss Cá Mập (Endless) - thân
     SharkBossTail,  // Đuôi tách riêng để vẫy (gốc = khớp đuôi)
     SquidBoss,      // Boss #3: Giant Squid
+    SquidTentacle,  // Tentacle arm (slam/grab), posed by SquidBoss
     Count
 };
 

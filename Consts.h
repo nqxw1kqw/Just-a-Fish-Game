@@ -510,9 +510,10 @@ namespace GameConsts
 
     // ================= BOSS #3: GIANT SQUID =================
     constexpr float SQUID_MAX_HP = 850.0f;
-    constexpr float SQUID_HITBOX_RADIUS = 50.0f;
+    constexpr float SQUID_SCALE = 1.7f;              // Boss model scale (grandeur)
+    constexpr float SQUID_HITBOX_RADIUS = 85.0f;
     constexpr float SQUID_SPAWN_DIST = 380.0f;
-    constexpr float SQUID_HOVER_HEIGHT = 48.0f;
+    constexpr float SQUID_HOVER_HEIGHT = 30.0f;
     constexpr float SQUID_HOVER_BOB_AMP = 8.0f;
     constexpr float SQUID_HOVER_BOB_SPEED = 1.6f;
     constexpr float SQUID_MOVE_SPEED = 150.0f;
@@ -521,15 +522,15 @@ namespace GameConsts
     constexpr float SQUID_RANGE_TOLERANCE = 60.0f;
     constexpr float SQUID_STRAFE_SPEED = 110.0f;
     constexpr float SQUID_STRAFE_SWITCH_TIME = 3.5f;
-    constexpr float SQUID_WEAK_LOCAL_Y = 35.0f;
+    constexpr float SQUID_WEAK_LOCAL_Y = 60.0f;
     constexpr float SQUID_WEAK_LOCAL_Z = 0.0f;
-    constexpr float SQUID_WEAK_RADIUS = 95.0f;
+    constexpr float SQUID_WEAK_RADIUS = 120.0f;
     constexpr float SQUID_WEAK_DAMAGE_MUL = 1.5f;
     constexpr float SQUID_RECOVER_DAMAGE_MUL = 1.25f;
     constexpr float SQUID_SLAM_TELEGRAPH = 0.85f;
     constexpr float SQUID_SLAM_TELEGRAPH_ENRAGED = 0.60f;
     constexpr float SQUID_SLAM_LOCK_TIME = 0.20f;
-    constexpr float SQUID_SLAM_COLUMN_RADIUS = 70.0f;
+    constexpr float SQUID_SLAM_COLUMN_RADIUS = 85.0f;
     constexpr float SQUID_SLAM_DAMAGE = 22.0f;
     constexpr float SQUID_SLAM_STRIKE_TIME = 0.18f;
     constexpr float SQUID_SLAM_RECOVER = 0.90f;
@@ -537,6 +538,13 @@ namespace GameConsts
     constexpr float SQUID_INK_CAST_TIME = 0.70f;
     constexpr float SQUID_INK_DARK_TIME = 2.20f;
     constexpr int   SQUID_INK_DARK_ALPHA = 165;
+    // Ink splat overlay (screen-space PNG, Data/UI/Ink/ink_splat_*.png)
+    constexpr int   SQUID_INK_OVERLAY_MAX_ALPHA = 235;
+    constexpr float SQUID_INK_OVERLAY_FADE_IN = 0.12f;
+    constexpr float SQUID_INK_OVERLAY_FADE_OUT = 1.0f;
+    constexpr float SQUID_INK_OVERLAY_DRIP_SPEED = 45.0f;
+    constexpr float SQUID_INK_OVERLAY_DRIP_MAX = 60.0f;
+    constexpr float SQUID_TENTACLE_MODEL_LENGTH = 322.0f;
     constexpr float SQUID_INK_SLOW_FACTOR = 0.65f;
     constexpr float SQUID_INK_SLOW_TIME = 1.20f;
     constexpr float SQUID_INK_COOLDOWN = 9.0f;
@@ -545,10 +553,10 @@ namespace GameConsts
     constexpr float SQUID_INKJET_INTERVAL = 0.28f;
     constexpr float SQUID_INKJET_SPEED = 420.0f;
     constexpr float SQUID_INKJET_DAMAGE = 12.0f;
-    constexpr float SQUID_INKJET_RADIUS = 14.0f;
+    constexpr float SQUID_INKJET_RADIUS = 18.0f;
     constexpr float SQUID_INKJET_LIFE = 3.0f;
     constexpr int   SQUID_INK_MAX_SHOTS = 24;
-    constexpr float SQUID_GRAB_RANGE = 260.0f;
+    constexpr float SQUID_GRAB_RANGE = 300.0f;
     constexpr float SQUID_GRAB_LOW_HP_RATIO = 0.30f;
     constexpr float SQUID_GRAB_TELEGRAPH = 0.60f;
     constexpr float SQUID_GRAB_PULL_TIME = 0.80f;

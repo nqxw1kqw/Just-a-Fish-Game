@@ -54,6 +54,7 @@ public:
     void SetHpMultiplier(float mul);
     const Vec3& GetPosition() const { return pos_; }
     Vec3 GetMantlePos() const;
+    void DrawTentacle(const Vec3& base, const Vec3& dir, float length) const;
     float GetHitboxRadius() const { return GameConsts::SQUID_HITBOX_RADIUS; }
     float GetBossFightTimer() const { return fightTimer_; }
     int GetBossTier() const { return tier_; }
@@ -118,6 +119,10 @@ private:
     std::array<InkShot, GameConsts::SQUID_INK_MAX_SHOTS> inkShots_{};
 
     Vec3 prevPos_{}; Vec3 savedPos_{};
+    Vec3 grabTargetPos_{};
+    int inkVariant_ = 0;
+    mutable int inkGraph_[3] = { -1, -1, -1 };
+    mutable bool inkGraphTried_ = false;
     std::unique_ptr<SquidFxSet> fx_;
     SquidFxSet& Fx() const { return *fx_; }
     float prevYaw_ = 0.0f; float savedYaw_ = 0.0f;

@@ -161,8 +161,9 @@ void SquidBoss::StartInkJet()
 void SquidBoss::StartGrab(PlayerFish& player)
 {
     NoteSkill(SquidSkill::Grab);
-    if (fx_) fx_->grab.Start(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 25.0f, 0.0f } + Fwd() * 80.0f),
-                             DxConv::ToVECTOR(player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f }),
+    grabTargetPos_ = player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f };
+    if (fx_) fx_->grab.Start(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 42.0f, 0.0f } + Fwd() * (80.0f * GameConsts::SQUID_SCALE)),
+                             DxConv::ToVECTOR(grabTargetPos_),
                              GameConsts::SQUID_GRAB_TELEGRAPH + GameConsts::SQUID_GRAB_PULL_TIME);
     action_ = SquidAction::GrabTelegraph;
     actionTimer_ = 0.0f;
@@ -329,8 +330,9 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         if (actionTimer_ >= GameConsts::SQUID_INK_CAST_TIME)
         {
             inkTimer_ = GameConsts::SQUID_INK_DARK_TIME;
+            inkVariant_ = rand() % 3;
             player.ApplySlow(GameConsts::SQUID_INK_SLOW_FACTOR, GameConsts::SQUID_INK_SLOW_TIME);
-            if (fx_) fx_->inkSpray.Emit(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 25.0f, 0.0f } + Fwd() * 70.0f), DxConv::ToVECTOR(Fwd()));
+            if (fx_) fx_->inkSpray.Emit(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 42.0f, 0.0f } + Fwd() * (70.0f * GameConsts::SQUID_SCALE)), DxConv::ToVECTOR(Fwd()));
             EndSkill();
         }
         break;
@@ -345,7 +347,7 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             for (auto& s : inkShots_)
             {
                 if (s.active) continue;
-                Vec3 from = pos_ + Vec3{ 0.0f, 25.0f, 0.0f } + Fwd() * 80.0f;
+                Vec3 from = pos_ + Vec3{ 0.0f, 42.0f, 0.0f } + Fwd() * (80.0f * GameConsts::SQUID_SCALE);
                 Vec3 target = player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f };
                 Vec3 dir = target - from;
                 float len = dir.Length();
@@ -360,6 +362,7 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         break;
     }
     case SquidAction::GrabTelegraph:
+        grabTargetPos_ = player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f };
         UpdateHover(dt, player, 0.2f);
         actionTimer_ += dt;
         if (actionTimer_ >= GameConsts::SQUID_GRAB_TELEGRAPH) { action_ = SquidAction::GrabPull; actionTimer_ = 0.0f; }
@@ -368,7 +371,8 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     {
         UpdateHover(dt, player, 0.15f);
         actionTimer_ += dt;
-        if (fx_) fx_->grab.SetTarget(DxConv::ToVECTOR(player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f }));
+        grabTargetPos_ = player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f };
+        if (fx_) fx_->grab.SetTarget(DxConv::ToVECTOR(grabTargetPos_));
         Vec3 toSquid = Collision::FlatDiff(pos_, player.GetPosition());
         float d = toSquid.Length();
         if (d > 1.0f && !player.IsGrabbed())
@@ -392,8 +396,10 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
 int SquidBoss::GetInkOverlayAlpha() const
 {
     if (!active_ || inkTimer_ <= 0.0f) return 0;
-    float k = (std::min)(1.0f, inkTimer_ / 0.35f);
-    return static_cast<int>(GameConsts::SQUID_INK_DARK_ALPHA * k);
+    float elapsed = GameConsts::SQUID_INK_DARK_TIME - inkTimer_;
+    float fadeIn = std::clamp(elapsed / GameConsts::SQUID_INK_OVERLAY_FADE_IN, 0.0f, 1.0f);
+    float fadeOut = std::clamp(inkTimer_ / GameConsts::SQUID_INK_OVERLAY_FADE_OUT, 0.0f, 1.0f);
+    return static_cast<int>(GameConsts::SQUID_INK_OVERLAY_MAX_ALPHA * (std::min)(fadeIn, fadeOut));
 }
 
 bool SquidBoss::TakeDamageInternal(float dmg, EffectSystem& effects, bool weak)
@@ -442,9 +448,46 @@ void SquidBoss::DrawScreenOverlay() const
 {
     int alpha = GetInkOverlayAlpha();
     if (alpha <= 0) return;
+    if (!inkGraphTried_)
+    {
+        inkGraphTried_ = true;
+        inkGraph_[0] = LoadGraph(L"Data/UI/Ink/ink_splat_0.png");
+        inkGraph_[1] = LoadGraph(L"Data/UI/Ink/ink_splat_1.png");
+        inkGraph_[2] = LoadGraph(L"Data/UI/Ink/ink_splat_2.png");
+    }
+    int mainH = inkGraph_[inkVariant_ % 3];
+    if (mainH < 0) return;
+    float elapsed = GameConsts::SQUID_INK_DARK_TIME - inkTimer_;
+    int drip = static_cast<int>((std::min)(GameConsts::SQUID_INK_OVERLAY_DRIP_MAX, elapsed * GameConsts::SQUID_INK_OVERLAY_DRIP_SPEED));
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
-    DrawBox(0, 0, GameConsts::SCREEN_WIDTH, GameConsts::SCREEN_HEIGHT, GetColor(5, 4, 12), TRUE);
+    DrawGraph(0, drip, mainH, TRUE);
+    int secondH = inkGraph_[(inkVariant_ + 1) % 3];
+    if (secondH >= 0)
+    {
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha * 7 / 10);
+        DrawRotaGraph(GameConsts::SCREEN_WIDTH / 2, GameConsts::SCREEN_HEIGHT / 2 + drip, 1.05, 0.45, secondH, TRUE);
+    }
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+}
+
+void SquidBoss::DrawTentacle(const Vec3& base, const Vec3& dir, float length) const
+{
+    int handle = LowPolyModels::GetHandle(LowPolyId::SquidTentacle);
+    if (handle < 0 || length <= 1.0f) return;
+    VECTOR z = DxConv::ToVECTOR(dir.Normalized());
+    VECTOR up = (std::fabs(z.y) > 0.9f) ? VGet(1.0f, 0.0f, 0.0f) : VGet(0.0f, 1.0f, 0.0f);
+    VECTOR x = VNorm(VCross(up, z));
+    VECTOR y = VCross(z, x);
+    float thick = GameConsts::SQUID_SCALE;
+    float zScale = length / GameConsts::SQUID_TENTACLE_MODEL_LENGTH;
+    MATRIX m = MGetIdent();
+    m.m[0][0] = x.x * thick; m.m[0][1] = x.y * thick; m.m[0][2] = x.z * thick;
+    m.m[1][0] = y.x * thick; m.m[1][1] = y.y * thick; m.m[1][2] = y.z * thick;
+    m.m[2][0] = z.x * zScale; m.m[2][1] = z.y * zScale; m.m[2][2] = z.z * zScale;
+    m.m[3][0] = base.x; m.m[3][1] = base.y; m.m[3][2] = base.z;
+    MV1SetMatrix(handle, m);
+    MV1SetDifColorScale(handle, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
+    MV1DrawModel(handle);
 }
 
 void SquidBoss::Draw() const
@@ -474,22 +517,35 @@ void SquidBoss::Draw() const
                     Vec3 side{ std::cos(a) * GameConsts::SQUID_SLAM_COLUMN_RADIUS, 0.0f, std::sin(a) * GameConsts::SQUID_SLAM_COLUMN_RADIUS };
                     DrawLine3D(DxConv::ToVECTOR(g + side), DxConv::ToVECTOR(g + side + Vec3{ 0.0f, 260.0f, 0.0f }), GetColor(255, 120, 170));
                 }
-                if (action_ == SquidAction::SlamStrike)
+                // Model tentacle arm (SquidTentacle.x): hovers during telegraph, slams down on strike.
                 {
-                    float t = std::clamp(actionTimer_ / GameConsts::SQUID_SLAM_STRIKE_TIME, 0.0f, 1.0f);
-                    float topY = 280.0f * (1.0f - t);
-                    // Tentacle: thick tapered-looking capsule slamming down (fallback visual, no new FX).
-                    DrawCapsule3D(DxConv::ToVECTOR(targets[i] + Vec3{ 0.0f, topY + 120.0f, 0.0f }),
-                                  DxConv::ToVECTOR(targets[i] + Vec3{ 0.0f, 4.0f, 0.0f }),
-                                  GameConsts::SQUID_SLAM_COLUMN_RADIUS * 0.42f, 10, GetColor(150, 55, 95), GetColor(190, 85, 125), TRUE);
-                    DrawSphere3D(DxConv::ToVECTOR(targets[i] + Vec3{ 0.0f, 8.0f, 0.0f }), GameConsts::SQUID_SLAM_COLUMN_RADIUS * 0.5f, 12, GetColor(190, 85, 125), GetColor(190, 85, 125), TRUE);
+                    float tipY = 250.0f - 70.0f * k;
+                    if (action_ == SquidAction::SlamStrike)
+                    {
+                        float t = std::clamp(actionTimer_ / GameConsts::SQUID_SLAM_STRIKE_TIME, 0.0f, 1.0f);
+                        tipY = 260.0f * (1.0f - t);
+                    }
+                    float len = 300.0f;
+                    DrawTentacle(targets[i] + Vec3{ 0.0f, tipY + len, 0.0f }, Vec3{ 0.0f, -1.0f, 0.0f }, len);
                 }
             }
         }
         // Grab telegraph / pull: tentacle line to the player area.
         if (action_ == SquidAction::GrabTelegraph || action_ == SquidAction::GrabPull)
         {
-            // Tentacle reach is drawn by Fuyuu SquidGrabTentacleFx (Fx().grab).
+            // Model tentacle arm reaching to the player + Fuyuu grab particles.
+            {
+                Vec3 base = pos_ + Vec3{ 0.0f, 42.0f, 0.0f } + Fwd() * (80.0f * GameConsts::SQUID_SCALE);
+                Vec3 dir = grabTargetPos_ - base;
+                float dist = dir.Length();
+                if (dist > 1.0f)
+                {
+                    float reach = dist;
+                    if (action_ == SquidAction::GrabTelegraph)
+                        reach = dist * std::clamp(actionTimer_ / GameConsts::SQUID_GRAB_TELEGRAPH, 0.0f, 1.0f);
+                    DrawTentacle(base, dir / dist, reach);
+                }
+            }
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
             Render3D::DrawCircle3D(Vec3{ pos_.x, 1.5f, pos_.z }, GameConsts::SQUID_GRAB_RANGE, 40, GetColor(200, 90, 140), false);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
@@ -497,13 +553,13 @@ void SquidBoss::Draw() const
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
         SetUseLighting(TRUE);
 
-        Render3D::DrawFlatShadow(Vec3{ pos_.x, 0.0f, pos_.z }, 75.0f, 0.85f);
+        Render3D::DrawFlatShadow(Vec3{ pos_.x, 0.0f, pos_.z }, 75.0f * GameConsts::SQUID_SCALE, 0.85f);
         int handle = LowPolyModels::GetHandle(LowPolyId::SquidBoss);
         if (handle >= 0)
         {
             // Model: origin at bottom, mantle at -Z, arms/tentacles at +Z (forward).
             float sway = std::sin(hoverPhase_ * 0.7f) * 0.05f;
-            MATRIX m = MMult(MMult(MGetRotZ(sway), MGetRotY(yaw_)), MGetTranslate(DxConv::ToVECTOR(pos_)));
+            MATRIX m = MMult(MMult(MMult(MGetScale(VGet(GameConsts::SQUID_SCALE, GameConsts::SQUID_SCALE, GameConsts::SQUID_SCALE)), MGetRotZ(sway)), MGetRotY(yaw_)), MGetTranslate(DxConv::ToVECTOR(pos_)));
             MV1SetMatrix(handle, m);
             COLOR_F tint = enraged_ ? GetColorF(1.4f, 0.7f, 0.8f, 1.0f) : GetColorF(1.0f, 1.0f, 1.0f, 1.0f);
             MV1SetDifColorScale(handle, tint);
