@@ -3,12 +3,14 @@
 #include "Consts.h"
 #include "DxLib.h"
 #include <array>
+#include <memory>
 
 // Boss #3: Giant Squid. Keeps mid-range, hovers and strafes.
 // Skills: Tentacle Slam (telegraphed column, double when enraged), Ink Spray (darken + slow),
 // Ink Jet (aimed shots), Grab Pull (close range or low-HP player). Enrage < 30% HP.
 class PlayerFish;
 class EffectSystem;
+struct SquidFxSet; // Effects/Squid/SquidFxSet.h (heap)
 
 enum class SquidAction
 {
@@ -23,6 +25,11 @@ enum class SquidSkill { None, TentacleSlam, InkSpray, InkJet, Grab };
 class SquidBoss
 {
 public:
+    SquidBoss();
+    ~SquidBoss();
+    SquidBoss(const SquidBoss&) = delete;
+    SquidBoss& operator=(const SquidBoss&) = delete;
+
     void Reset();
     void Spawn(const Vec3& arenaCenter);
     void Update(float dt, PlayerFish& player, EffectSystem& effects);
@@ -111,5 +118,7 @@ private:
     std::array<InkShot, GameConsts::SQUID_INK_MAX_SHOTS> inkShots_{};
 
     Vec3 prevPos_{}; Vec3 savedPos_{};
+    std::unique_ptr<SquidFxSet> fx_;
+    SquidFxSet& Fx() const { return *fx_; }
     float prevYaw_ = 0.0f; float savedYaw_ = 0.0f;
 };

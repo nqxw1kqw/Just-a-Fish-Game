@@ -15,6 +15,7 @@
 #include "LowPolyModels.h"
 #include "SoundManager.h"
 #include "Effects/Hit/HitFeedback.h"
+#include "Effects/Squid/SquidFxSet.h"
 #include "DxLib.h"
 
 namespace
@@ -25,8 +26,12 @@ namespace
     float ArenaLimit() { return GameConsts::ARENA_HALF_SIZE - GameConsts::SQUID_HITBOX_RADIUS; }
 }
 
+SquidBoss::SquidBoss() : fx_(std::make_unique<SquidFxSet>()) {}
+SquidBoss::~SquidBoss() = default;
+
 void SquidBoss::Reset()
 {
+    if (fx_) fx_->ClearAll();
     active_ = false;
     action_ = SquidAction::Idle;
     enraged_ = false;
@@ -155,8 +160,10 @@ void SquidBoss::StartInkJet()
 
 void SquidBoss::StartGrab(PlayerFish& player)
 {
-    (void)player;
     NoteSkill(SquidSkill::Grab);
+    if (fx_) fx_->grab.Start(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 25.0f, 0.0f } + Fwd() * 80.0f),
+                             DxConv::ToVECTOR(player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f }),
+                             GameConsts::SQUID_GRAB_TELEGRAPH + GameConsts::SQUID_GRAB_PULL_TIME);
     action_ = SquidAction::GrabTelegraph;
     actionTimer_ = 0.0f;
     grabHitDone_ = false;
@@ -167,6 +174,7 @@ void SquidBoss::StartEnrage(EffectSystem& effects)
 {
     if (enraged_) return;
     enraged_ = true;
+    if (fx_) { fx_->enrageAura.Start(); fx_->enrageAura.SetBoss(DxConv::ToVECTOR(GetMantlePos())); }
     effects.AddTrauma(0.45f);
     effects.SpawnBubbles(pos_ + Vec3{ 0.0f, 35.0f, 0.0f }, 30, 70.0f, 3.0f, 6.0f);
     effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 150.0f);
@@ -234,6 +242,7 @@ void SquidBoss::UpdateInkShots(float dt, PlayerFish& player, EffectSystem& effec
         s.life += dt;
         if (s.life >= GameConsts::SQUID_INKJET_LIFE) { s.active = false; continue; }
         s.pos += s.vel * dt;
+        if (fx_) fx_->inkJet.EmitNode(DxConv::ToVECTOR(s.pos), DxConv::ToVECTOR(s.vel.Normalized()));
         Vec3 target = player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f };
         if ((s.pos - target).Length() <= GameConsts::SQUID_INKJET_RADIUS + player.GetHitboxRadius())
         {
@@ -246,6 +255,8 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
 {
     if (!active_) return;
     if (hp_ <= 0.0f) return;
+    if (fx_) fx_->Update(dt);
+    if (enraged_ && fx_) fx_->enrageAura.SetBoss(DxConv::ToVECTOR(GetMantlePos()));
     fightTimer_ += dt;
     if (hitFlashTimer_ > 0.0f) hitFlashTimer_ -= dt;
     const float cdt = hell_ ? dt * GameConsts::HELL_BOSS_COOLDOWN_SPEED : dt;
@@ -295,6 +306,8 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             effects.AddTrauma(0.35f);
             effects.SpawnShockwave(slamPos_, GameConsts::SQUID_SLAM_COLUMN_RADIUS * 1.5f);
             effects.SpawnWaterSplash(slamPos_, GameConsts::SQUID_SLAM_COLUMN_RADIUS, 1.2f);
+            if (fx_) fx_->slam.EmitImpact(DxConv::ToVECTOR(slamPos_), GameConsts::SQUID_SLAM_COLUMN_RADIUS);
+            if (slamSecond_ && fx_) fx_->slam.EmitImpact(DxConv::ToVECTOR(slamPos2_), GameConsts::SQUID_SLAM_COLUMN_RADIUS);
             if (slamSecond_) effects.SpawnShockwave(slamPos2_, GameConsts::SQUID_SLAM_COLUMN_RADIUS * 1.5f);
             Vec3 pp = player.GetPosition();
             bool hit = Collision::DistXZ(pp, slamPos_) <= GameConsts::SQUID_SLAM_COLUMN_RADIUS + player.GetHitboxRadius();
@@ -317,7 +330,7 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         {
             inkTimer_ = GameConsts::SQUID_INK_DARK_TIME;
             player.ApplySlow(GameConsts::SQUID_INK_SLOW_FACTOR, GameConsts::SQUID_INK_SLOW_TIME);
-            effects.SpawnBubbles(pos_ + Vec3{ 0.0f, 25.0f, 0.0f } + Fwd() * 70.0f, 24, 60.0f, 3.0f, 7.0f);
+            if (fx_) fx_->inkSpray.Emit(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 25.0f, 0.0f } + Fwd() * 70.0f), DxConv::ToVECTOR(Fwd()));
             EndSkill();
         }
         break;
@@ -339,6 +352,7 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
                 s.pos = from;
                 s.vel = (len > 1.0f) ? dir / len * GameConsts::SQUID_INKJET_SPEED : Fwd() * GameConsts::SQUID_INKJET_SPEED;
                 s.life = 0.0f; s.active = true;
+                if (fx_) fx_->inkJet.EmitNode(DxConv::ToVECTOR(from), DxConv::ToVECTOR(s.vel.Normalized()));
                 break;
             }
         }
@@ -354,6 +368,7 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     {
         UpdateHover(dt, player, 0.15f);
         actionTimer_ += dt;
+        if (fx_) fx_->grab.SetTarget(DxConv::ToVECTOR(player.GetPosition() + Vec3{ 0.0f, 12.0f, 0.0f }));
         Vec3 toSquid = Collision::FlatDiff(pos_, player.GetPosition());
         float d = toSquid.Length();
         if (d > 1.0f && !player.IsGrabbed())
@@ -363,7 +378,7 @@ void SquidBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             grabHitDone_ = true;
             if (!player.IsAirborne()) player.TakeDamage(GameConsts::SQUID_GRAB_DAMAGE, effects, &pos_);
         }
-        if (actionTimer_ >= GameConsts::SQUID_GRAB_PULL_TIME) { action_ = SquidAction::GrabRecover; actionTimer_ = 0.0f; }
+        if (actionTimer_ >= GameConsts::SQUID_GRAB_PULL_TIME) { if (fx_) fx_->grab.Stop(); action_ = SquidAction::GrabRecover; actionTimer_ = 0.0f; }
         break;
     }
     case SquidAction::GrabRecover:
@@ -397,6 +412,7 @@ bool SquidBoss::TakeDamageInternal(float dmg, EffectSystem& effects, bool weak)
     {
         hp_ = 0.0f;
         for (auto& s : inkShots_) s.active = false;
+        if (fx_) fx_->ClearAll();
         effects.AddTrauma(1.0f);
         effects.SpawnFishDeath(mantle, 120.0f);
     }
@@ -473,10 +489,7 @@ void SquidBoss::Draw() const
         // Grab telegraph / pull: tentacle line to the player area.
         if (action_ == SquidAction::GrabTelegraph || action_ == SquidAction::GrabPull)
         {
-            Vec3 from = pos_ + Vec3{ 0.0f, 25.0f, 0.0f } + Fwd() * 80.0f;
-            Vec3 to = pos_ + Fwd() * GameConsts::SQUID_GRAB_RANGE + Vec3{ 0.0f, 12.0f, 0.0f };
-            if (action_ == SquidAction::GrabPull) to = from + Fwd() * GameConsts::SQUID_GRAB_RANGE;
-            DrawCapsule3D(DxConv::ToVECTOR(from), DxConv::ToVECTOR(to), 6.0f, 8, GetColor(170, 70, 110), GetColor(200, 95, 135), TRUE);
+            // Tentacle reach is drawn by Fuyuu SquidGrabTentacleFx (Fx().grab).
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
             Render3D::DrawCircle3D(Vec3{ pos_.x, 1.5f, pos_.z }, GameConsts::SQUID_GRAB_RANGE, 40, GetColor(200, 90, 140), false);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
@@ -497,14 +510,8 @@ void SquidBoss::Draw() const
             float flash = hitFlashTimer_ / GameConsts::HIT_FLASH_TIME;
             HitFlash::DrawModel(handle, flash);
         }
-        // Ink jet projectiles (fallback visual until Fuyuu ink FX arrives).
-        SetUseLighting(FALSE);
-        for (const auto& s : inkShots_)
-        {
-            if (!s.active) continue;
-            DrawSphere3D(DxConv::ToVECTOR(s.pos), GameConsts::SQUID_INKJET_RADIUS, 12, GetColor(12, 8, 22), GetColor(35, 22, 55), TRUE);
-            DrawSphere3D(DxConv::ToVECTOR(s.pos + Vec3{ 0.0f, 4.0f, 0.0f }), GameConsts::SQUID_INKJET_RADIUS * 0.45f, 8, GetColor(70, 45, 110), GetColor(70, 45, 110), TRUE);
-        }
+        // Ink projectiles are drawn by Fuyuu SquidInkJetFx nodes (emitted per frame in UpdateInkShots).
         SetUseLighting(TRUE);
     }
+    if (fx_) fx_->Draw();
 }
