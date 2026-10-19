@@ -10,6 +10,7 @@ class PlayerFish;
 class WhaleBoss;
 class SharkBoss;
 class SquidBoss;
+class TurtleBoss;
 
 struct Bullet
 {
@@ -30,7 +31,7 @@ class WeaponSystem
 public:
     void Init();
     void Reset();
-    void Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss = nullptr, SharkBoss* shark = nullptr, SquidBoss* squid = nullptr);
+    void Update(float dt, const PlayerFish& player, EnemyManager& enemies, EffectSystem& effects, WhaleBoss* boss = nullptr, SharkBoss* shark = nullptr, SquidBoss* squid = nullptr, TurtleBoss* turtle = nullptr);
     void Draw(const PlayerFish& player) const;
 
     // Render interpolation (#26)

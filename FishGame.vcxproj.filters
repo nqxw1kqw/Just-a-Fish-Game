@@ -72,6 +72,9 @@
     <ClInclude Include="SquidBoss.h">
       <Filter>Boss\Shark</Filter>
     </ClInclude>
+    <ClInclude Include="TurtleBoss.h">
+      <Filter>Boss\Shark</Filter>
+    </ClInclude>
     <ClInclude Include="Boss.h">
       <Filter>Boss\Whale</Filter>
     </ClInclude>
@@ -255,6 +258,9 @@
       <Filter>Boss\Shark</Filter>
     </ClCompile>
     <ClCompile Include="SquidBoss.cpp">
+      <Filter>Boss\Shark</Filter>
+    </ClCompile>
+    <ClCompile Include="TurtleBoss.cpp">
       <Filter>Boss\Shark</Filter>
     </ClCompile>
     <ClCompile Include="Boss.cpp">

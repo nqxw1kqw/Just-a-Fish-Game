@@ -7,6 +7,7 @@
 #include "Boss.h"
 #include "SharkBoss.h"
 #include "SquidBoss.h"
+#include "TurtleBoss.h"
 #include "DebugController.h"
 #include "GodRays.h"
 #include "ResultScreen.h"
@@ -129,6 +130,7 @@ private:
     void SkipToBoss();
     void SkipToSharkBoss();   // Debug: nhảy thẳng tới Boss Cá Mập (Endless)
     void SkipToSquidBoss();   // Debug: nhảy thẳng tới Boss Mực (Endless)
+    void SkipToTurtleBoss();  // Debug: nhảy thẳng tới Boss Rùa Cổ (Endless)
     bool IsSharkFight() const { return sharkFight_; }
 
     void DrawArena() const;
@@ -160,8 +162,9 @@ private:
     WhaleBoss boss_;
     SharkBoss shark_;          // Boss Cá Mập (chỉ Endless)
     SquidBoss squid_;          // Boss #3: Giant Squid (chỉ Endless)
+    TurtleBoss turtle_;        // Boss #4: Ancient Turtle (chỉ Endless)
     bool sharkFight_ = false;  // Trận boss hiện tại là cá mập?
-    int bossKind_ = 0;         // 0 Whale, 1 Shark, 2 Squid
+    int bossKind_ = 0;         // 0 Whale, 1 Shark, 2 Squid, 3 Turtle
     void PrepareEndlessBoss(int bossIdx);
     PlayerStats playerStats_;
 

@@ -1,5 +1,6 @@
 ﻿#include "BattleHud.h"
 #include "SquidBoss.h"
+#include "TurtleBoss.h"
 #include "SharkBoss.h"
 #include "PlayerFish.h"
 #include "Boss.h"
@@ -178,6 +179,28 @@ void BattleHud::DrawBossBar(const SquidBoss& squid) const
 {
     const bool en = squid.IsEnraged();
     DrawBossBarCore(squid.IsActive(), squid.GetHp(), squid.GetMaxHp(), en, TR(L"GIANT SQUID"), en ? TR(L"ENRAGED - DOUBLE TENTACLES") : TR(L"RANGED THREAT"), GameConsts::SQUID_ENRAGE_HP_RATIO);
+}
+
+void BattleHud::DrawBossBar(const TurtleBoss& turtle) const
+{
+    const bool p2 = turtle.IsPhase2();
+    DrawBossBarCore(turtle.IsActive(), turtle.GetHp(), turtle.GetMaxHp(), p2, TR(L"ANCIENT TURTLE"),
+        turtle.IsShellBroken() ? TR(L"SHELL BROKEN") : TR(L"SHELL INTACT"),
+        GameConsts::TURTLE_PHASE2_HP_RATIO);
+    if (!turtle.IsActive() || turtle.IsShellBroken()) return;
+    // Shell HP mini-bar under the boss HP bar: slams crack it, bullets only chip it.
+    int sw = GameConsts::SCREEN_WIDTH;
+    int w = 640, h = 9;
+    int x = (sw - w) / 2, y = 70;
+    float ratio = (turtle.GetShellMaxHp() > 1.0f) ? turtle.GetShellHp() / turtle.GetShellMaxHp() : 0.0f;
+    if (ratio < 0.0f) ratio = 0.0f;
+    if (ratio > 1.0f) ratio = 1.0f;
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 170);
+    DrawBox(x - 2, y - 2, x + w + 2, y + h + 2, GetColor(8, 14, 24), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+    DrawBox(x, y, x + w, y + h, GetColor(30, 40, 30), TRUE);
+    DrawBox(x, y, x + static_cast<int>(w * ratio), y + h, GetColor(110, 175, 80), TRUE);
+    FontManager::Draw(x, y + h + 3, TR(L"SHELL"), GetColor(170, 220, 150), FontSize::Small);
 }
 
 void BattleHud::DrawBossBarCore(bool active, float hp, float maxHp, bool p2, const wchar_t* name, const wchar_t* phaseLabel, float markRatio) const

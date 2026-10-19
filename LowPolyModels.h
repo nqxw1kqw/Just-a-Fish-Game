@@ -17,6 +17,7 @@ enum class LowPolyId
     SharkBossTail,  // Đuôi tách riêng để vẫy (gốc = khớp đuôi)
     SquidBoss,      // Boss #3: Giant Squid
     SquidTentacle,  // Tentacle arm (slam/grab), posed by SquidBoss
+    TurtleBoss,     // Boss #4: Ancient Turtle
     Count
 };
 

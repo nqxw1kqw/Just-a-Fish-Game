@@ -3,6 +3,7 @@
 
 class GamePrototype;
 class WhaleBoss;
+class TurtleBoss;
 
 class UIRenderer
 {
@@ -11,7 +12,8 @@ public:
     void DrawBossHealthBar(const WhaleBoss& boss) const;
     void DrawBossHealthBar(const SharkBoss& shark) const;
     void DrawBossHealthBar(const SquidBoss& squid) const;
-    void DrawBossIntroScreen(int bossKind = 0) const; // 0 Whale, 1 Shark, 2 Squid
+    void DrawBossHealthBar(const TurtleBoss& turtle) const;
+    void DrawBossIntroScreen(int bossKind = 0) const; // 0 Whale, 1 Shark, 2 Squid, 3 Turtle
     void DrawLanguageSelectScreen(const GamePrototype& game) const;
     void DrawTitleScreen(const GamePrototype& game) const;
     void DrawVictoryScreen(const GamePrototype& game) const;

@@ -35,6 +35,11 @@ void UIRenderer::DrawBossHealthBar(const SquidBoss& squid) const
     battleHud_.DrawBossBar(squid);
 }
 
+void UIRenderer::DrawBossHealthBar(const TurtleBoss& turtle) const
+{
+    battleHud_.DrawBossBar(turtle);
+}
+
 void UIRenderer::DrawHUD(const GamePrototype& game) const
 {
     int sw = GameConsts::SCREEN_WIDTH;
@@ -394,7 +399,7 @@ void UIRenderer::DrawBossIntroScreen(int bossKind) const
     int midY = sh / 2;
 
     DrawCX(midX, midY - 60, TR(L"! WARNING: DEEP SEA ENERGY ANOMALY !"), GetColor(255, 60, 60), FontSize::Header);
-    DrawCX(midX, midY - 15, bossKind == 2 ? TR(L"BOSS: GIANT SQUID BLOCKS THE DEEP!") : bossKind == 1 ? TR(L"BOSS: GREAT SHARK IS HUNTING YOU!") : TR(L"FINAL BOSS: GIANT WHALE HAS APPEARED!"), GetColor(255, 215, 60), FontSize::Medium);
+    DrawCX(midX, midY - 15, bossKind == 3 ? TR(L"BOSS: ANCIENT TURTLE GUARDS THE REEF!") : bossKind == 2 ? TR(L"BOSS: GIANT SQUID BLOCKS THE DEEP!") : bossKind == 1 ? TR(L"BOSS: GREAT SHARK IS HUNTING YOU!") : TR(L"FINAL BOSS: GIANT WHALE HAS APPEARED!"), GetColor(255, 215, 60), FontSize::Medium);
     DrawCX(midX, midY + 40, TR(L"The battle for survival begins now..."), GetColor(240, 240, 240), FontSize::Body);
 }
 
