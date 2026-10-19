@@ -548,10 +548,10 @@ namespace GameConsts
     // Procedural animation (single-mesh model, no bones)
     constexpr float SQUID_ANIM_SWAY_SPEED = 2.2f;    // Tentacle sway speed (rad/s)
     constexpr float SQUID_ANIM_SWAY_AMP = 0.35f;     // Tentacle sway amplitude (rad per segment)
-    constexpr int   SQUID_ANIM_ARM_COUNT = 8;        // Extra model arms under/front of the body
+    constexpr int   SQUID_ANIM_ARM_COUNT = 2;        // Only the 2 main tentacles (extra model arms)
     constexpr int   SQUID_ANIM_ARM_SEGMENTS = 3;     // Chained segments per arm
-    constexpr float SQUID_ANIM_ARM_LENGTH = 130.0f;  // Total arm length (game units)
-    constexpr float SQUID_ANIM_ARM_THICK = 0.55f;    // Arm thickness x SQUID_SCALE
+    constexpr float SQUID_ANIM_ARM_LENGTH = 175.0f;  // Total arm length (game units)
+    constexpr float SQUID_ANIM_ARM_THICK = 1.15f;    // Arm thickness x SQUID_SCALE
     constexpr float SQUID_ANIM_CURL_IDLE = 0.50f;    // Extra bend per segment when idle
     constexpr float SQUID_ANIM_CURL_STREAM = 0.10f;  // Bend when streaming back (moving fast)
     constexpr float SQUID_ANIM_STREAM_SPEED = 120.0f;// Speed where arms start streaming back
@@ -572,7 +572,10 @@ namespace GameConsts
     constexpr float SQUID_INKJET_INTERVAL = 0.28f;
     constexpr float SQUID_INKJET_SPEED = 420.0f;
     constexpr float SQUID_INKJET_DAMAGE = 12.0f;
-    constexpr float SQUID_INKJET_RADIUS = 18.0f;
+    constexpr float SQUID_INKJET_RADIUS = 28.0f;   // Hit radius (balance: bigger, easier to be hit)
+    constexpr float SQUID_INK_JET_VISUAL_RADIUS = 30.0f; // Drawn ink blob core radius
+    constexpr float SQUID_INK_JET_GLOW_RADIUS = 44.0f;   // Translucent outer glow
+    constexpr int   SQUID_INK_JET_GLOW_ALPHA = 70;
     constexpr float SQUID_INKJET_LIFE = 3.0f;
     constexpr int   SQUID_INK_MAX_SHOTS = 24;
     constexpr float SQUID_GRAB_RANGE = 300.0f;

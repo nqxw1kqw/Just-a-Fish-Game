@@ -645,7 +645,17 @@ void SquidBoss::Draw() const
             HitFlash::DrawModel(handle, flash);
         }
         DrawArms();
-        // Ink projectiles are drawn by Fuyuu SquidInkJetFx nodes (emitted per frame in UpdateInkShots).
+        // Ink projectiles: Fuyuu trail nodes + a clearly visible dark blob core (visual ~ hit radius).
+        SetUseLighting(FALSE);
+        for (const auto& s : inkShots_)
+        {
+            if (!s.active) continue;
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, GameConsts::SQUID_INK_JET_GLOW_ALPHA);
+            DrawSphere3D(DxConv::ToVECTOR(s.pos), GameConsts::SQUID_INK_JET_GLOW_RADIUS, 12, GetColor(40, 25, 70), GetColor(40, 25, 70), TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+            DrawSphere3D(DxConv::ToVECTOR(s.pos), GameConsts::SQUID_INK_JET_VISUAL_RADIUS, 14, GetColor(10, 7, 20), GetColor(22, 15, 40), TRUE);
+            DrawSphere3D(DxConv::ToVECTOR(s.pos + Vec3{ -8.0f, 12.0f, 0.0f }), GameConsts::SQUID_INK_JET_VISUAL_RADIUS * 0.28f, 8, GetColor(230, 235, 255), GetColor(230, 235, 255), TRUE);
+        }
         SetUseLighting(TRUE);
     }
     if (fx_) fx_->Draw();
