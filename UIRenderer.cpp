@@ -195,93 +195,29 @@ void UIRenderer::DrawLanguageSelectScreen(const GamePrototype& game) const
 
 void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
 {
+    (void)game;
     int sw = GameConsts::SCREEN_WIDTH;
     int sh = GameConsts::SCREEN_HEIGHT;
 
-    // Lớp phủ nền tối đại dương
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 215);
-    DrawBox(0, 0, sw, sh, GetColor(8, 18, 32), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+    // Cover art full-screen (16:9, same as the screen). Lazy-loaded once.
+    static int s_cover = -2;
+    if (s_cover == -2) s_cover = LoadGraph(GameConsts::TITLE_COVER_PATH);
+    if (s_cover >= 0)
+        DrawExtendGraph(0, 0, sw, sh, s_cover, TRUE);
+    else
+        DrawBox(0, 0, sw, sh, GetColor(8, 18, 32), TRUE);
 
     int midX = sw / 2;
-    int midY = sh / 2;
+    // Translucent band at the bottom so the text stays readable over the art.
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+    DrawBox(0, sh - 190, sw, sh, GetColor(4, 10, 20), TRUE);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
-    // Khung viền phong cách Pixel Box biển sâu
-    int boxW = 820;
-    int boxH = 480;
-    int boxX = midX - boxW / 2;
-    int boxY = midY - boxH / 2 - 10;
-    DrawBox(boxX - 2, boxY - 2, boxX + boxW + 2, boxY + boxH + 2, GetColor(45, 95, 155), FALSE);
-    DrawBox(boxX - 4, boxY - 4, boxX + boxW + 4, boxY + boxH + 4, GetColor(20, 50, 90), FALSE);
-
-    // Tiêu đề game
-    DrawCX(midX, boxY + 28, TR(L"=== ODORU : JUST A FISH GAME ==="), GetColor(100, 220, 255), FontSize::Header);
-    DrawCX(midX, boxY + 65, TR(L"CORE MECHANIC: JUMP-TO-ATTACK"), GetColor(255, 215, 60), FontSize::Medium);
-
-    // Mô tả cách chơi
-    FontManager::Draw(boxX + 50, boxY + 105, TR(L"- Controls: [WASD] or Arrow Keys to swim smoothly in deep waters."), GetColor(220, 235, 255), FontSize::Body);
-    FontManager::Draw(boxX + 50, boxY + 130, TR(L"- Attack: Press [SPACE] to launch into the air and slam down!"), GetColor(220, 235, 255), FontSize::Body);
-    FontManager::Draw(boxX + 50, boxY + 155, TR(L"- Aerial Invincibility: While airborne, completely immune to damage."), GetColor(140, 240, 180), FontSize::Body);
-    FontManager::Draw(boxX + 50, boxY + 180, TR(L"- Landing Shockwave: Deals 40 damage, knocks back and breaks armor."), GetColor(255, 180, 120), FontSize::Body);
-
-    // Lựa chọn chế độ chơi (Task 10 T4a)
-    int mode1Y = boxY + 215;
-    int mode2Y = boxY + 262;
-    int mode3Y = boxY + 309;
-    bool isClassicSelected = (game.titleSelectedMode_ == 0);
-    bool isEndlessSelected = (game.titleSelectedMode_ == 1);
-    bool isHellSelected = (game.titleSelectedMode_ == 2);
-    const int modeBoxH = 40;
-
-    // Box Mode 1: Classic
-    int bgCol1 = isClassicSelected ? GetColor(25, 55, 95) : GetColor(15, 25, 40);
-    int edgeCol1 = isClassicSelected ? GetColor(255, 220, 80) : GetColor(60, 90, 130);
-    DrawBox(boxX + 50, mode1Y, boxX + boxW - 50, mode1Y + modeBoxH, bgCol1, TRUE);
-    DrawBox(boxX + 50, mode1Y, boxX + boxW - 50, mode1Y + modeBoxH, edgeCol1, FALSE);
-    const wchar_t* pfx1 = isClassicSelected ? TR(L"> [1] STORY MODE :") : TR(L"  [1] STORY MODE :");
-    FontManager::Draw(boxX + 65, mode1Y + 8, pfx1, isClassicSelected ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
-    FontManager::Draw(boxX + 270, mode1Y + 10, TR(L"Tutorial (3x15s) + Whale, then Normal / Hell"), GetColor(200, 220, 255), FontSize::Body);
-
-    // Box Mode 2: Endless
-    int bgCol2 = isEndlessSelected ? GetColor(25, 55, 95) : GetColor(15, 25, 40);
-    int edgeCol2 = isEndlessSelected ? GetColor(255, 220, 80) : GetColor(60, 90, 130);
-    DrawBox(boxX + 50, mode2Y, boxX + boxW - 50, mode2Y + modeBoxH, bgCol2, TRUE);
-    DrawBox(boxX + 50, mode2Y, boxX + boxW - 50, mode2Y + modeBoxH, edgeCol2, FALSE);
-    const wchar_t* pfx2 = isEndlessSelected ? TR(L"> [2] NORMAL MODE :") : TR(L"  [2] NORMAL MODE :");
-    FontManager::Draw(boxX + 65, mode2Y + 8, pfx2, isEndlessSelected ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
-    FontManager::Draw(boxX + 270, mode2Y + 10, TR(L"30 Stages (20s), Stacking Cards, Boss every 5"), GetColor(255, 180, 120), FontSize::Body);
-
-    // Box Mode 3: Hell
-    int bgCol3 = isHellSelected ? GetColor(70, 20, 20) : GetColor(15, 25, 40);
-    int edgeCol3 = isHellSelected ? GetColor(255, 90, 70) : GetColor(60, 90, 130);
-    DrawBox(boxX + 50, mode3Y, boxX + boxW - 50, mode3Y + modeBoxH, bgCol3, TRUE);
-    DrawBox(boxX + 50, mode3Y, boxX + boxW - 50, mode3Y + modeBoxH, edgeCol3, FALSE);
-    const wchar_t* pfx3 = isHellSelected ? TR(L"> [3] HELL MODE :") : TR(L"  [3] HELL MODE :");
-    FontManager::Draw(boxX + 65, mode3Y + 8, pfx3, isHellSelected ? GetColor(255, 140, 110) : GetColor(200, 220, 240), FontSize::Medium);
-    FontManager::Draw(boxX + 270, mode3Y + 10, TR(L"Dmg taken x1.5, Random Cards, No Wipe"), GetColor(255, 120, 100), FontSize::Body);
-
-    // Kỷ lục Endless Highscore (Task 10 T4e)
-    const auto& hs = game.GetHighscore();
-    if (hs.maxWave > 0)
-    {
-        int hsMin = static_cast<int>(hs.maxSurvivalTime) / 60;
-        int hsSec = static_cast<int>(hs.maxSurvivalTime) % 60;
-        FontManager::DrawFormat(boxX + 55, boxY + 352, GetColor(255, 215, 80), FontSize::Body,
-            TR(L"[NORMAL RECORD]: Max Stage %d  |  Kills: %d  |  Time: %02d:%02d  |  Score: %d"),
-            hs.maxWave, hs.maxKills, hsMin, hsSec, hs.maxScore);
-    }
-    const auto& hh = game.GetHellHighscore();
-    if (hh.maxWave > 0)
-    {
-        FontManager::DrawFormat(boxX + 55, boxY + 374, GetColor(255, 120, 100), FontSize::Body,
-            TR(L"[HELL RECORD]: Max Stage %d  |  Kills: %d  |  Score: %d"), hh.maxWave, hh.maxKills, hh.maxScore);
-    }
-
-    // Nút Bắt đầu
-    DrawCX(midX, boxY + 400, TR(L"Press [1] [2] [3], or [UP/DOWN] + [ENTER/SPACE] to START!"), GetColor(255, 255, 255), FontSize::Medium);
-    DrawCX(midX, boxY + 438, TR(L"[F1]: Toggle Debug HUD  |  [F2]: Toggle Camera Shake  |  [F11]: Panels  |  [L]: Language"), GetColor(140, 170, 200), FontSize::Body);
+    DrawCX(midX, sh - 168, TR(L"=== ODORU : JUST A FISH GAME ==="), GetColor(140, 230, 255), FontSize::Header);
+    if ((GetNowCount() / 530) % 2 == 0)
+        DrawCX(midX, sh - 118, TR(L"PRESS SPACE"), GetColor(255, 235, 120), FontSize::Medium);
+    DrawCX(midX, sh - 58, TR(L"[L]: Language"), GetColor(170, 195, 220), FontSize::Body);
 }
-
 void UIRenderer::DrawModeSelectScreen(const GamePrototype& game) const
 {
     modeSelectScreen_.Draw(game.modeSelectIdx_);

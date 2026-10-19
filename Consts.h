@@ -733,6 +733,7 @@ namespace GameConsts
     constexpr bool DEBUG_HUD_DEFAULT_VISIBLE = false;    // F1 Debug HUD (cheat keys) mặc định tắt
     constexpr int KEY_TOGGLE_PANELS = 0x57;              // KEY_INPUT_F11
     constexpr int KEY_LANGUAGE_SELECT = 0x26;            // KEY_INPUT_L (ở màn Title)
+    constexpr const wchar_t* TITLE_COVER_PATH = L"Data/UI/Title/title_cover.png"; // Ảnh bìa Title (16:9)
     constexpr const wchar_t* FONT_LATIN_PATH = L"Data/Font/Yabikoma-e9W16.otf";
     constexpr const wchar_t* FONT_LATIN_NAME = L"Yabikoma";
     constexpr const wchar_t* FONT_JP_PATH = L"Data/Font/MPLUSRounded1c-Bold.ttf"; // SIL OFL 1.1 (Data/Font/OFL.txt)

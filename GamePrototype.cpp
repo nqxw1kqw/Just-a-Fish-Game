@@ -449,8 +449,13 @@ void GamePrototype::AdvanceAfterCardPick()
     {
         if (currentWave_ >= GameConsts::TUTORIAL_WAVES)
         {
-            sharkFight_ = false; bossKind_ = 0; // Tutorial: luôn là Cá Voi
-            BeginBossIntro();
+            // Tutorial hoàn tất (không còn trận Boss Cá Voi): hồi máu -> màn chọn Normal / Hell.
+            player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
+            modeSelectIdx_ = 0;
+            state_ = GameState::ModeSelect;
+            SoundManager::Instance().PlayBGM(BgmId::Victory, true);
+            Input::Instance().Flush();
+            AppLogAdd(L"[FLOW] Tutorial complete -> ModeSelect (no tutorial boss)\n");
         }
         else
         {
@@ -1096,11 +1101,6 @@ void GamePrototype::Update(float dt)
     {
         SoundManager::Instance().PlayBGM(BgmId::Title, true);
 
-        bool upPressed = input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W);
-        bool downPressed = input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S);
-        bool k1Pressed = input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1);
-        bool k2Pressed = input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2);
-        bool k3Pressed = input.IsPressed(KEY_INPUT_3) || input.IsPressed(KEY_INPUT_NUMPAD3);
 
         // [L]: quay lại màn chọn ngôn ngữ
         if (input.IsPressed(GameConsts::KEY_LANGUAGE_SELECT))
@@ -1110,27 +1110,10 @@ void GamePrototype::Update(float dt)
             return;
         }
 
-        if (upPressed) titleSelectedMode_ = (titleSelectedMode_ + 2) % 3;
-        if (downPressed) titleSelectedMode_ = (titleSelectedMode_ + 1) % 3;
-        if (k3Pressed)
-        {
-            StartRun(GameMode::Hell);
-            return;
-        }
-
-        if (k1Pressed)
-        {
-            StartRun(GameMode::Classic);
-            return;
-        }
-        if (k2Pressed)
-        {
-            StartRun(GameMode::Endless);
-            return;
-        }
+        // SPACE (hoặc Enter): vào thẳng Tutorial; Normal/Hell chọn sau khi xong tutorial.
         if (input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
         {
-            StartRun((titleSelectedMode_ == 2) ? GameMode::Hell : (titleSelectedMode_ == 1) ? GameMode::Endless : GameMode::Classic);
+            StartRun(GameMode::Classic);
             return;
         }
 

@@ -89,6 +89,8 @@ namespace
         { L"ENRAGED - DOUBLE TENTACLES", L"怒り ― 触手2本" },
         { L"BOSS: ANCIENT TURTLE GUARDS THE REEF!", L"ボス: 古代ガメが岩礁を守る！" },
         { L"ANCIENT TURTLE", L"古代ガメ" },
+        { L"PRESS SPACE", L"SPACEを押してスタート" },
+        { L"[L]: Language", L"[L]: 言語 / Language" },
         { L"SHELL INTACT", L"甲羅で防御中" },
         { L"SHELL BROKEN", L"甲羅破壊！" },
         { L"SHELL", L"甲羅" },
