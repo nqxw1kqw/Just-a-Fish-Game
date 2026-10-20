@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "LayeredResultScreen.h"
+
 class Input;
 
 // =======================================================================
@@ -13,6 +15,8 @@ struct ResultStats
 {
     bool victory = false;
     bool endless = false;
+    bool hard = false;
+    bool retryTutorial = true;
     bool diedAtBoss = false;
     bool debugUsed = false;
     float time = 0.0f;
@@ -31,6 +35,9 @@ class ResultScreen
 public:
     enum class Action { None, Retry, Title };
 
+    void Init();
+    void Shutdown();
+
     // Gọi khi vừa chuyển sang GameOver / Victory
     void Enter(bool victory, bool diedAtBoss);
     Action Update(float dt, const Input& input);
@@ -40,10 +47,22 @@ public:
     static int ComputeScore(const ResultStats& s);
 
 private:
+    LayeredResultScreen layeredScreen_;
+    bool DrawIllustrated(const ResultStats& stats) const;
+    // [loss / victory][English / Japanese], with lettering baked into the PNGs.
+    int resultArtwork_[2][2] = { { -1, -1 }, { -1, -1 } };
+    int selectionArtwork_ = -1;
+    void DrawDefeat(const ResultStats& stats) const;
+    int defeatArtwork_ = -1;
     static constexpr float INPUT_DELAY = 0.6f;  // chặn phím đang giữ từ lúc chơi
     float timer_ = 0.0f;
     int selected_ = 0;   // 0 = Retry, 1 = Title
     bool victory_ = false;
     bool diedAtBoss_ = false;
     bool confirmPrev_ = true;
+    bool confirmReady_ = false;
+    int mouseX_ = -1, mouseY_ = -1;
+    bool mousePrev_ = true;
+    bool mouseReady_ = false;
+    int mousePressedItem_ = -1;
 };

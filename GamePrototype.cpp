@@ -241,12 +241,14 @@ void GamePrototype::Init()
     weapon_.Init();
     cardManager_.Init();
     uiRenderer_.Init();
+    resultScreen_.Init();
     boss_.Init();
     LoadHighscore();
     Reset();
     // Luôn bắt đầu từ màn chọn ngôn ngữ (lựa chọn đã lưu được chọn sẵn), sau đó tới Title
     state_ = GameState::LanguageSelect;
     langSelectIdx_ = (L10N::Get() == Language::Japanese) ? 1 : 0;
+    uiRenderer_.EnterLanguageSelect();
 }
 
 void GamePrototype::Shutdown()
@@ -257,6 +259,7 @@ void GamePrototype::Shutdown()
     enemies_.Shutdown();
     cardManager_.Shutdown();
     uiRenderer_.Shutdown();
+    resultScreen_.Shutdown();
     effects_.Shutdown();
     LowPolyModels::Release();
 }
@@ -341,6 +344,7 @@ void GamePrototype::StartRun(GameMode mode)
     mode_ = mode;
     runStartMode_ = mode;
     titleSelectedMode_ = (mode == GameMode::Hell) ? 2 : (mode == GameMode::Endless) ? 1 : 0;
+    uiRenderer_.LeavePause();
     paused_ = false;
     Reset();
     StartStage(1);
@@ -453,6 +457,7 @@ void GamePrototype::AdvanceAfterCardPick()
             player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
             modeSelectIdx_ = 0;
             state_ = GameState::ModeSelect;
+            uiRenderer_.EnterModeSelect();
             SoundManager::Instance().PlayBGM(BgmId::Victory, true);
             Input::Instance().Flush();
             AppLogAdd(L"[FLOW] Tutorial complete -> ModeSelect (no tutorial boss)\n");
@@ -487,7 +492,7 @@ void GamePrototype::EnterEndlessFromTutorial(GameMode mode)
     swordfish_.Reset();
     sharkFight_ = false;
     bossKind_ = 0;
-    // Hồi máu đã được cộng lúc hạ Cá Voi (trước màn chọn chế độ); thẻ được giữ nguyên
+    // Hồi máu sau tutorial đã được cộng trước màn chọn chế độ; thẻ được giữ nguyên.
     StartStage(1);
     Input::Instance().Flush();
 }
@@ -908,13 +913,14 @@ bool GamePrototype::UpdatePauseInput()
 {
     static bool escPrev = true, pPrev = true, upPrev = true, downPrev = true;
     static bool leftPrev = true, rightPrev = true, enterPrev = true;
+    static bool confirmReady = false;
     bool escNow = CheckHitKey(KEY_INPUT_ESCAPE) != 0;
     bool pNow = CheckHitKey(KEY_INPUT_P) != 0;
     bool upNow = (CheckHitKey(KEY_INPUT_UP) || CheckHitKey(KEY_INPUT_W)) != 0;
     bool downNow = (CheckHitKey(KEY_INPUT_DOWN) || CheckHitKey(KEY_INPUT_S)) != 0;
     bool leftNow = (CheckHitKey(KEY_INPUT_LEFT) || CheckHitKey(KEY_INPUT_A)) != 0;
     bool rightNow = (CheckHitKey(KEY_INPUT_RIGHT) || CheckHitKey(KEY_INPUT_D)) != 0;
-    bool enterNow = CheckHitKey(KEY_INPUT_RETURN) != 0;
+    bool enterNow = (CheckHitKey(KEY_INPUT_RETURN) || CheckHitKey(KEY_INPUT_SPACE)) != 0;
 
     bool escPressed = escNow && !escPrev;
     // Phím P cũng dùng để chỉnh scale model trong Debug HUD, nên chỉ dùng P khi Debug HUD tắt
@@ -923,8 +929,8 @@ bool GamePrototype::UpdatePauseInput()
     bool downPressed = downNow && !downPrev;
     bool leftPressed = leftNow && !leftPrev;
     bool rightPressed = rightNow && !rightPrev;
-    // Xác nhận khi NHẢ Enter, để Enter không "lọt" sang màn Title (Title đọc Enter đang giữ)
-    bool enterReleased = !enterNow && enterPrev;
+    // Chỉ nhận một lần nhấn mới sau khi đã nhả phím khi mở Pause.
+    bool enterReleased = !enterNow && enterPrev && confirmReady;
 
     escPrev = escNow; pPrev = pNow; upPrev = upNow; downPrev = downNow;
     leftPrev = leftNow; rightPrev = rightNow; enterPrev = enterNow;
@@ -936,7 +942,9 @@ bool GamePrototype::UpdatePauseInput()
         if (canPause && (escPressed || pPressed))
         {
             paused_ = true;
+            confirmReady = false;
             pauseSelected_ = PauseItem_Resume;
+            uiRenderer_.EnterPause();
             return true;
         }
         if (escPressed && !canPause)
@@ -948,15 +956,26 @@ bool GamePrototype::UpdatePauseInput()
 
     if (escPressed || pPressed)
     {
+        uiRenderer_.LeavePause();
         paused_ = false;
         Input::Instance().Flush();
         return true; // tick này vẫn bỏ qua để phím vừa nhấn không lọt vào game
     }
 
+    if (!enterNow) confirmReady = true;
+
+    const PauseMenuScreen::PointerResult pointer = uiRenderer_.UpdatePausePointer(pauseSelected_);
+
     if (upPressed) pauseSelected_ = (pauseSelected_ + PauseItem_Count - 1) % PauseItem_Count;
     if (downPressed) pauseSelected_ = (pauseSelected_ + 1) % PauseItem_Count;
 
     SoundManager& sound = SoundManager::Instance();
+    if (pointer.volumeItem == PauseItem_BgmVolume || pointer.volumeItem == PauseItem_SfxVolume)
+    {
+        const SoundChannel channel = pointer.volumeItem == PauseItem_BgmVolume ? SoundChannel::BGM : SoundChannel::SFX;
+        if (sound.GetVolume(channel) != pointer.volume) sound.SetVolume(channel, pointer.volume);
+        if (pointer.volumeReleased && channel == SoundChannel::SFX) sound.PlaySFX(SfxId::CardFlip);
+    }
     int volumeDelta = (rightPressed ? 5 : 0) - (leftPressed ? 5 : 0);
     if (volumeDelta != 0)
     {
@@ -971,21 +990,25 @@ bool GamePrototype::UpdatePauseInput()
         }
     }
 
-    bool toggleWindow = (pauseSelected_ == PauseItem_WindowMode) && (enterReleased || leftPressed || rightPressed);
+    const bool pointerConfirm = pointer.activated >= 0;
+    if (pointerConfirm) pauseSelected_ = pointer.activated;
+    bool toggleWindow = (pauseSelected_ == PauseItem_WindowMode) && (enterReleased || pointerConfirm || leftPressed || rightPressed);
     if (toggleWindow)
     {
         // Thực hiện ở main.cpp (ngoài vòng Update) vì ChangeWindowMode reset hệ thống đồ hoạ
         windowModeToggleRequested_ = true;
     }
-    else if (enterReleased)
+    else if (enterReleased || pointerConfirm)
     {
         if (pauseSelected_ == PauseItem_Resume)
         {
+            uiRenderer_.LeavePause();
             paused_ = false;
             Input::Instance().Flush();
         }
         else if (pauseSelected_ == PauseItem_Title)
         {
+            uiRenderer_.LeavePause();
             paused_ = false;
             Input::Instance().Flush();
             SaveHighscoreIfEndlessRun(); // Pause -> Title giữa ván Endless: không mất kỷ lục
@@ -1080,8 +1103,12 @@ void GamePrototype::Update(float dt)
         // (kể cả khi quay lại từ Title bằng [L]). BGM chỉ bắt đầu từ Title.
         if (SoundManager::Instance().GetCurrentBgm() != BgmId::Count)
             SoundManager::Instance().StopBGM(false);
-        if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) || input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S)
-            || input.IsPressed(KEY_INPUT_LEFT) || input.IsPressed(KEY_INPUT_RIGHT))
+        const bool pointerConfirmed = uiRenderer_.UpdateLanguagePointer(langSelectIdx_);
+        if (input.IsPressed(KEY_INPUT_LEFT) || input.IsPressed(KEY_INPUT_A))
+            langSelectIdx_ = 0;
+        else if (input.IsPressed(KEY_INPUT_RIGHT) || input.IsPressed(KEY_INPUT_D))
+            langSelectIdx_ = 1;
+        else if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) || input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S))
         {
             langSelectIdx_ = 1 - langSelectIdx_;
         }
@@ -1089,7 +1116,7 @@ void GamePrototype::Update(float dt)
         bool k2 = input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2);
         if (k1) langSelectIdx_ = 0;
         if (k2) langSelectIdx_ = 1;
-        if (k1 || k2 || input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
+        if (pointerConfirmed || k1 || k2 || input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
         {
             L10N::Set(langSelectIdx_ == 1 ? Language::Japanese : Language::English, true);
             FontManager::ApplyLanguage();
@@ -1111,6 +1138,9 @@ void GamePrototype::Update(float dt)
         {
             langSelectIdx_ = (L10N::Get() == Language::Japanese) ? 1 : 0;
             state_ = GameState::LanguageSelect;
+            uiRenderer_.EnterLanguageSelect();
+            SoundManager::Instance().StopBGM(false);
+            Input::Instance().Flush();
             return;
         }
 
@@ -1166,6 +1196,7 @@ void GamePrototype::Update(float dt)
     if (state_ == GameState::ModeSelect)
     {
         const int previousSelection = modeSelectIdx_;
+        const bool pointerConfirmed = uiRenderer_.UpdateModePointer(modeSelectIdx_);
         if (input.IsPressed(KEY_INPUT_LEFT) || input.IsPressed(KEY_INPUT_A))
             modeSelectIdx_ = 0;
         else if (input.IsPressed(KEY_INPUT_RIGHT) || input.IsPressed(KEY_INPUT_D))
@@ -1177,7 +1208,7 @@ void GamePrototype::Update(float dt)
         {
             SoundManager::Instance().PlaySFX(SfxId::UiHover);
         }
-        int choose = -1;
+        int choose = pointerConfirmed ? modeSelectIdx_ : -1;
         if (input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1)) choose = 0;
         if (input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2)) choose = 1;
         if (input.IsPressed(KEY_INPUT_RETURN) || input.IsPressed(KEY_INPUT_NUMPADENTER) || input.IsPressed(KEY_INPUT_SPACE)) choose = modeSelectIdx_;
@@ -1411,6 +1442,7 @@ void GamePrototype::Update(float dt)
                     player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
                     modeSelectIdx_ = 0;
                     state_ = GameState::ModeSelect;
+                    uiRenderer_.EnterModeSelect();
                     SoundManager::Instance().PlayBGM(BgmId::Victory, true);
                     Input::Instance().Flush();
                 }
@@ -1505,6 +1537,14 @@ void GamePrototype::DrawArena() const
 
 void GamePrototype::Draw() const
 {
+    if (state_ == GameState::GameOver || state_ == GameState::Victory)
+    {
+        SetFogEnable(FALSE);
+        if (state_ == GameState::Victory) uiRenderer_.DrawVictoryScreen(*this);
+        else uiRenderer_.DrawGameOverScreen(*this);
+        return;
+    }
+
     // The illustrated menu is a complete screen; combat HUD/tips must not cover it.
     if (state_ == GameState::ModeSelect)
     {
@@ -1624,6 +1664,8 @@ ResultStats GamePrototype::BuildResultStats() const
     ResultStats s;
     s.victory = (state_ == GameState::Victory);
     s.endless = IsEndlessLike();
+    s.hard = (mode_ == GameMode::Hell);
+    s.retryTutorial = (runStartMode_ == GameMode::Classic);
     s.diedAtBoss = resultScreen_.DiedAtBoss();
     s.debugUsed = debugController_.WasDebugUsed();
     s.time = gameTime_;

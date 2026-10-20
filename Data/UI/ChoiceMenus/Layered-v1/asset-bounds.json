@@ -1,0 +1,112 @@
+﻿[
+    {
+        "name":  "background",
+        "width":  1672,
+        "height":  941,
+        "x":  0,
+        "y":  0,
+        "w":  1672,
+        "h":  941,
+        "transparentPixels":  0
+    },
+    {
+        "name":  "confirm",
+        "width":  2172,
+        "height":  724,
+        "x":  37,
+        "y":  134,
+        "w":  2098,
+        "h":  483,
+        "transparentPixels":  630651
+    },
+    {
+        "name":  "header-language",
+        "width":  2172,
+        "height":  724,
+        "x":  55,
+        "y":  70,
+        "w":  2053,
+        "h":  595,
+        "transparentPixels":  631936
+    },
+    {
+        "name":  "header-mode-en",
+        "width":  2084,
+        "height":  755,
+        "x":  38,
+        "y":  81,
+        "w":  2007,
+        "h":  566,
+        "transparentPixels":  759359
+    },
+    {
+        "name":  "header-mode-ja",
+        "width":  2138,
+        "height":  736,
+        "x":  60,
+        "y":  70,
+        "w":  2014,
+        "h":  566,
+        "transparentPixels":  715300
+    },
+    {
+        "name":  "language-english",
+        "width":  1374,
+        "height":  1145,
+        "x":  78,
+        "y":  15,
+        "w":  1221,
+        "h":  1083,
+        "transparentPixels":  392021
+    },
+    {
+        "name":  "language-japanese",
+        "width":  1374,
+        "height":  1145,
+        "x":  106,
+        "y":  83,
+        "w":  1162,
+        "h":  996,
+        "transparentPixels":  504034
+    },
+    {
+        "name":  "mode-hard-en",
+        "width":  1374,
+        "height":  1145,
+        "x":  145,
+        "y":  56,
+        "w":  1084,
+        "h":  1032,
+        "transparentPixels":  533976
+    },
+    {
+        "name":  "mode-hard-ja",
+        "width":  1374,
+        "height":  1145,
+        "x":  137,
+        "y":  47,
+        "w":  1100,
+        "h":  1035,
+        "transparentPixels":  510907
+    },
+    {
+        "name":  "mode-normal-en",
+        "width":  1374,
+        "height":  1145,
+        "x":  129,
+        "y":  54,
+        "w":  1108,
+        "h":  1022,
+        "transparentPixels":  537081
+    },
+    {
+        "name":  "mode-normal-ja",
+        "width":  1374,
+        "height":  1145,
+        "x":  86,
+        "y":  19,
+        "w":  1201,
+        "h":  1099,
+        "transparentPixels":  365707
+    }
+]

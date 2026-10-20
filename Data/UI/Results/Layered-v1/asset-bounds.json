@@ -1,0 +1,122 @@
+﻿[
+    {
+        "name":  "board-en",
+        "width":  1499,
+        "height":  1049,
+        "x":  62,
+        "y":  56,
+        "w":  1375,
+        "h":  955,
+        "transparentPixels":  404476
+    },
+    {
+        "name":  "board-ja",
+        "width":  1484,
+        "height":  1060,
+        "x":  30,
+        "y":  24,
+        "w":  1447,
+        "h":  1000,
+        "transparentPixels":  293032
+    },
+    {
+        "name":  "button-retry-en",
+        "width":  2172,
+        "height":  724,
+        "x":  57,
+        "y":  162,
+        "w":  2059,
+        "h":  432,
+        "transparentPixels":  738829
+    },
+    {
+        "name":  "button-retry-ja",
+        "width":  2145,
+        "height":  733,
+        "x":  87,
+        "y":  169,
+        "w":  1972,
+        "h":  427,
+        "transparentPixels":  791620
+    },
+    {
+        "name":  "button-title-en",
+        "width":  2172,
+        "height":  724,
+        "x":  40,
+        "y":  159,
+        "w":  2092,
+        "h":  433,
+        "transparentPixels":  728812
+    },
+    {
+        "name":  "button-title-ja",
+        "width":  2172,
+        "height":  724,
+        "x":  43,
+        "y":  160,
+        "w":  2085,
+        "h":  422,
+        "transparentPixels":  746722
+    },
+    {
+        "name":  "fish-lose",
+        "width":  1254,
+        "height":  1254,
+        "x":  27,
+        "y":  278,
+        "w":  1203,
+        "h":  817,
+        "transparentPixels":  943365
+    },
+    {
+        "name":  "fish-win",
+        "width":  1254,
+        "height":  1254,
+        "x":  54,
+        "y":  160,
+        "w":  1153,
+        "h":  989,
+        "transparentPixels":  833200
+    },
+    {
+        "name":  "header-lose-en",
+        "width":  2172,
+        "height":  724,
+        "x":  84,
+        "y":  29,
+        "w":  2016,
+        "h":  690,
+        "transparentPixels":  521800
+    },
+    {
+        "name":  "header-lose-ja",
+        "width":  2012,
+        "height":  782,
+        "x":  75,
+        "y":  80,
+        "w":  1869,
+        "h":  648,
+        "transparentPixels":  625374
+    },
+    {
+        "name":  "header-win-en",
+        "width":  2172,
+        "height":  724,
+        "x":  97,
+        "y":  32,
+        "w":  1994,
+        "h":  665,
+        "transparentPixels":  547739
+    },
+    {
+        "name":  "header-win-ja",
+        "width":  2097,
+        "height":  750,
+        "x":  96,
+        "y":  39,
+        "w":  1922,
+        "h":  681,
+        "transparentPixels":  546233
+    }
+]

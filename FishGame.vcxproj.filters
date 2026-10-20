@@ -243,10 +243,25 @@
     <ClInclude Include="ResultScreen.h">
       <Filter>UI</Filter>
     </ClInclude>
+    <ClInclude Include="LayeredResultScreen.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="PauseMenuScreen.h">
+      <Filter>UI</Filter>
+    </ClInclude>
     <ClInclude Include="UIRenderer.h">
       <Filter>UI</Filter>
     </ClInclude>
+    <ClInclude Include="MenuStyle.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="IllustratedChoiceMenu.h">
+      <Filter>UI</Filter>
+    </ClInclude>
     <ClInclude Include="ModeSelectScreen.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="LanguageSelectScreen.h">
       <Filter>UI</Filter>
     </ClInclude>
     <ClInclude Include="CollisionUtil.h">
@@ -341,10 +356,22 @@
     <ClCompile Include="ResultScreen.cpp">
       <Filter>UI</Filter>
     </ClCompile>
+    <ClCompile Include="LayeredResultScreen.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="PauseMenuScreen.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
     <ClCompile Include="UIRenderer.cpp">
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="ModeSelectScreen.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="IllustratedChoiceMenu.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="LanguageSelectScreen.cpp">
       <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>

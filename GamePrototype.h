@@ -31,7 +31,7 @@ enum class GameState
 
 enum class GameMode
 {
-    Classic, // Chế độ Cổ điển: 5 wave + Boss Cá Voi (Gốc)
+    Classic, // Tutorial: 3 wave, sau đó chọn Normal / Hard.
     Endless, // NORMAL: 30 stage 20s, chọn thẻ, dọn quái giữa stage, Boss mỗi 5 stage
     Hell     // HELL (Phase 1 stub): sát thương nhận x1.5, thẻ ngẫu nhiên tự chọn, không dọn quái
 };

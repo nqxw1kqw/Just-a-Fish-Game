@@ -2,6 +2,7 @@
 #include "Consts.h"
 #include "FontManager.h"
 #include "Localization.h"
+#include "MenuStyle.h"
 #include <algorithm>
 #include <cmath>
 
@@ -9,21 +10,20 @@ namespace
 {
     void DrawCentered(int cx, int y, const wchar_t* text, unsigned int color, FontSize size)
     {
-        FontManager::Draw(cx - FontManager::GetWidth(text, size) / 2, y, text, color, size);
+        MenuStyle::Center(cx, y, text, color, size);
     }
 
     void DrawFitted(int x, int y, const wchar_t* text, unsigned int color,
                     FontSize size, float scale, int availableWidth)
     {
-        const int width = FontManager::GetWidth(text, size);
-        if (width > 0) scale = (std::min)(scale, static_cast<float>(availableWidth) / width);
-        DrawExtendStringToHandle(x, y, scale, scale, text, color, FontManager::GetHandle(size));
+        MenuStyle::Text(x, y, text, color, size, scale, availableWidth);
     }
 }
 
 void ModeSelectScreen::Init()
 {
     Shutdown();
+    illustratedMenu_.Init(L"Data/UI/ChoiceMenus/Illustrated-v1/mode-en.png", L"Data/UI/ChoiceMenus/Illustrated-v1/mode-ja.png", IllustratedChoiceMenu::Layout::Mode);
     artwork_[0] = LoadGraph(L"Data/UI/ModeSelect/normal-v1.png");
     artwork_[1] = LoadGraph(L"Data/UI/ModeSelect/hell-v1.png");
     for (int i = 0; i < 2; ++i)
@@ -35,6 +35,7 @@ void ModeSelectScreen::Init()
 
 void ModeSelectScreen::Shutdown()
 {
+    illustratedMenu_.Shutdown();
     for (int& handle : artwork_)
     {
         if (handle != -1) DeleteGraph(handle);
@@ -42,8 +43,14 @@ void ModeSelectScreen::Shutdown()
     }
 }
 
+bool ModeSelectScreen::UpdatePointer(int& selected)
+{
+    return illustratedMenu_.UpdatePointer(selected, L10N::Get() == Language::Japanese);
+}
+
 void ModeSelectScreen::Draw(int selected) const
 {
+    if (illustratedMenu_.Draw(selected, L10N::Get() == Language::Japanese)) return;
     const int sw = GameConsts::SCREEN_WIDTH;
     const int sh = GameConsts::SCREEN_HEIGHT;
     const int cardWidth = 520, cardHeight = 570, gap = 48;
@@ -56,15 +63,13 @@ void ModeSelectScreen::Draw(int selected) const
     GetDrawBlendMode(&previousBlend, &previousAlpha);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     SetDrawMode(DX_DRAWMODE_BILINEAR);
-    DrawBox(0, 0, sw, sh, GetColor(7, 15, 24), TRUE);
+    DrawBox(0, 0, sw, sh, MenuStyle::Background(), TRUE);
 
     const wchar_t* heading = TR(L"CHOOSE YOUR NEXT DIVE");
-    const float headingScale = 1.35f;
-    const int headingWidth = static_cast<int>(FontManager::GetWidth(heading, FontSize::Title) * headingScale);
-    DrawFitted((sw - headingWidth) / 2, 65, heading, GetColor(240, 237, 218), FontSize::Title, headingScale, sw - 120);
+    MenuStyle::Center(sw / 2, 65, heading, MenuStyle::Paper(), FontSize::Title, 1.3f, sw - 120);
     DrawCentered(sw / 2, 126, TR(L"Tutorial cleared. Your cards and recovery carry over."), GetColor(158, 181, 187), FontSize::Medium);
 
-    const wchar_t* names[2] = { TR(L"NORMAL"), TR(L"HELL") };
+    const wchar_t* names[2] = { TR(L"NORMAL"), TR(L"HARD") };
     const wchar_t* taglines[2] = { TR(L"Find your rhythm"), TR(L"Brave the depths") };
     const wchar_t* rules[2][3] = {
         { TR(L"Choose your upgrade after each stage"), TR(L"A fresh battlefield every stage"), TR(L"30 stages / Boss every 5 stages") },
@@ -121,7 +126,7 @@ void ModeSelectScreen::Draw(int selected) const
         DrawCentered(x + 43, y + 30, i == 0 ? L"1" : L"2", GetColor(240, 237, 218), FontSize::Header);
 
         DrawFitted(x + 30, y + 344, names[i], GetColor(247, 239, 222), FontSize::Title, 1.4f, cardWidth - 60);
-        FontManager::Draw(x + 30, y + 393, taglines[i], accent, FontSize::Medium);
+        MenuStyle::Text(x + 30, y + 393, taglines[i], accent, FontSize::Medium);
         for (int row = 0; row < 3; ++row)
             DrawFitted(x + 30, y + 437 + row * 27, rules[i][row], GetColor(196, 207, 210), FontSize::Medium, 1.0f, cardWidth - 60);
 
@@ -129,13 +134,13 @@ void ModeSelectScreen::Draw(int selected) const
         if (isSelected)
         {
             DrawCircle(x + 35, y + 550, 3, accent, TRUE);
-            FontManager::Draw(x + 48, y + 541, TR(L"SELECTED"), accent, FontSize::Body);
+            MenuStyle::Text(x + 48, y + 541, TR(L"SELECTED"), accent, FontSize::Body);
         }
     }
 
     const unsigned int accent = selected == 0 ? GetColor(139, 220, 202) : GetColor(239, 141, 113);
-    DrawCentered(sw / 2, 789, TR(L"ENTER / SPACE - DIVE IN"), accent, FontSize::Header);
-    DrawCentered(sw / 2, 836, TR(L"A / D or LEFT / RIGHT to choose     1 / 2 to start"), GetColor(139, 158, 170), FontSize::Body);
+    MenuStyle::Button(sw / 2 - 280, 783, 560, TR(L"ENTER / SPACE - DIVE IN"), true, accent);
+    DrawCentered(sw / 2, 848, TR(L"A / D or LEFT / RIGHT to choose     1 / 2 to start"), MenuStyle::Muted(), FontSize::Body);
     SetDrawMode(previousDrawMode);
     SetDrawBlendMode(previousBlend, previousAlpha);
 }

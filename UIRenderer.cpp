@@ -16,17 +16,26 @@ namespace
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CardFrame.h"
+#include "MenuStyle.h"
 #include <algorithm>
 #include <cwchar>
 
 void UIRenderer::Init()
 {
+    if (titleArtwork_ != -1) DeleteGraph(titleArtwork_);
+    titleArtwork_ = LoadGraph(GameConsts::TITLE_COVER_PATH);
     modeSelectScreen_.Init();
+    languageSelectScreen_.Init();
+    pauseMenuScreen_.Init();
 }
 
 void UIRenderer::Shutdown()
 {
+    if (titleArtwork_ != -1) DeleteGraph(titleArtwork_);
+    titleArtwork_ = -1;
     modeSelectScreen_.Shutdown();
+    languageSelectScreen_.Shutdown();
+    pauseMenuScreen_.Shutdown();
 }
 
 void UIRenderer::DrawBossHealthBar(const WhaleBoss& boss) const
@@ -78,7 +87,7 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
         }
         else if (game.mode_ == GameMode::Hell)
         {
-            FontManager::DrawFormat(sw / 2 - 140, 24, GetColor(255, 90, 70), FontSize::Header, TR(L"HELL STAGE %d / %d"), game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
+            FontManager::DrawFormat(sw / 2 - 140, 24, GetColor(255, 90, 70), FontSize::Header, TR(L"HARD STAGE %d / %d"), game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
         }
         else
         {
@@ -156,41 +165,7 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
 
 void UIRenderer::DrawLanguageSelectScreen(const GamePrototype& game) const
 {
-    // Màn đầu tiên: chọn ngôn ngữ (EN / 日本語). Chữ Nhật luôn vẽ bằng font JP.
-    int sw = GameConsts::SCREEN_WIDTH;
-    int sh = GameConsts::SCREEN_HEIGHT;
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 225);
-    DrawBox(0, 0, sw, sh, GetColor(8, 18, 32), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-
-    int midX = sw / 2;
-    int midY = sh / 2;
-    int boxW = 560, boxH = 330;
-    int boxX = midX - boxW / 2, boxY = midY - boxH / 2;
-    DrawBox(boxX, boxY, boxX + boxW, boxY + boxH, GetColor(12, 26, 46), TRUE);
-    DrawBox(boxX - 2, boxY - 2, boxX + boxW + 2, boxY + boxH + 2, GetColor(45, 95, 155), FALSE);
-    DrawBox(boxX - 4, boxY - 4, boxX + boxW + 4, boxY + boxH + 4, GetColor(20, 50, 90), FALSE);
-
-    auto drawJpCentered = [midX](int y, const wchar_t* text, unsigned int color, FontSize size)
-    {
-        int w = GetDrawStringWidthToHandle(text, static_cast<int>(wcslen(text)), FontManager::GetHandleJP(size));
-        FontManager::DrawJP(midX - w / 2, y, text, color, size);
-    };
-    drawJpCentered(boxY + 30, L"SELECT LANGUAGE / 言語を選択", GetColor(100, 220, 255), FontSize::Header);
-
-    const wchar_t* items[2] = { L"[1]  English", L"[2]  日本語 (Japanese)" };
-    for (int i = 0; i < 2; ++i)
-    {
-        bool sel = (game.langSelectIdx_ == i);
-        int y = boxY + 95 + i * 72;
-        DrawBox(boxX + 60, y, boxX + boxW - 60, y + 52, sel ? GetColor(25, 55, 95) : GetColor(15, 25, 40), TRUE);
-        DrawBox(boxX + 60, y, boxX + boxW - 60, y + 52, sel ? GetColor(255, 220, 80) : GetColor(60, 90, 130), FALSE);
-        if (sel) FontManager::DrawJP(boxX + 76, y + 14, L">", GetColor(255, 235, 100), FontSize::Medium);
-        FontManager::DrawJP(boxX + 104, y + 14, items[i], sel ? GetColor(255, 235, 100) : GetColor(200, 220, 240), FontSize::Medium);
-    }
-
-    drawJpCentered(boxY + boxH - 46, L"[W/S] [UP/DOWN] + [ENTER/SPACE]  /  [1] [2]", GetColor(140, 170, 200), FontSize::Small);
-    drawJpCentered(boxY + boxH - 26, L"Press [L] on the title to change  /  タイトルで [L] キーで変更", GetColor(120, 150, 180), FontSize::Small);
+    languageSelectScreen_.Draw(game.langSelectIdx_);
 }
 
 void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
@@ -199,11 +174,13 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
     int sw = GameConsts::SCREEN_WIDTH;
     int sh = GameConsts::SCREEN_HEIGHT;
 
-    // Cover art full-screen (16:9, same as the screen). Lazy-loaded once.
-    static int s_cover = -2;
-    if (s_cover == -2) s_cover = LoadGraph(GameConsts::TITLE_COVER_PATH);
-    if (s_cover >= 0)
-        DrawExtendGraph(0, 0, sw, sh, s_cover, TRUE);
+    const int previousDrawMode = GetDrawMode();
+    int previousBlend = DX_BLENDMODE_NOBLEND, previousAlpha = 255;
+    GetDrawBlendMode(&previousBlend, &previousAlpha);
+    SetDrawMode(DX_DRAWMODE_BILINEAR);
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+    if (titleArtwork_ >= 0)
+        DrawExtendGraph(0, 0, sw, sh, titleArtwork_, TRUE);
     else
         DrawBox(0, 0, sw, sh, GetColor(8, 18, 32), TRUE);
 
@@ -213,10 +190,11 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
     DrawBox(0, sh - 190, sw, sh, GetColor(4, 10, 20), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
-    DrawCX(midX, sh - 168, TR(L"=== ODORU : JUST A FISH GAME ==="), GetColor(140, 230, 255), FontSize::Header);
-    if ((GetNowCount() / 530) % 2 == 0)
-        DrawCX(midX, sh - 118, TR(L"PRESS SPACE"), GetColor(255, 235, 120), FontSize::Medium);
-    DrawCX(midX, sh - 58, TR(L"[L]: Language"), GetColor(170, 195, 220), FontSize::Body);
+    MenuStyle::Center(midX, sh - 168, TR(L"ODORU : JUST A FISH GAME"), MenuStyle::Paper(), FontSize::Header);
+    MenuStyle::Button(midX - 280, sh - 121, 560, TR(L"SPACE / ENTER - START"), true, MenuStyle::Accent());
+    MenuStyle::Center(midX, sh - 48, TR(L"[L]: Language"), MenuStyle::Muted(), FontSize::Body);
+    SetDrawMode(previousDrawMode);
+    SetDrawBlendMode(previousBlend, previousAlpha);
 }
 void UIRenderer::DrawModeSelectScreen(const GamePrototype& game) const
 {
@@ -250,7 +228,7 @@ void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const
         const bool fading = game.rouletteLanded_ && ft > GameConsts::HELL_ROULETTE_HOLD_TIME;
         if (!fading)
         {
-            FontManager::Draw(x0, y0 - 22, game.rouletteLanded_ ? TR(L"HELL CARD GET!") : TR(L"HELL ROULETTE..."), GetColor(255, 140, 110), FontSize::Body);
+            FontManager::Draw(x0, y0 - 22, game.rouletteLanded_ ? TR(L"HARD CARD GET!") : TR(L"HARD ROULETTE..."), GetColor(255, 140, 110), FontSize::Body);
             for (int i = 0; i < n; ++i)
             {
                 const Card& c = game.rouletteCards_[i];
@@ -340,6 +318,10 @@ void UIRenderer::DrawGameOverScreen(const GamePrototype& game) const
 
 void UIRenderer::DrawPauseScreen(const GamePrototype& game) const
 {
+    const SoundManager& pauseSound = SoundManager::Instance();
+    if (pauseMenuScreen_.Draw(game.pauseSelected_, pauseSound.GetVolume(SoundChannel::BGM),
+        pauseSound.GetVolume(SoundChannel::SFX), GetWindowModeFlag() == TRUE)) return;
+    const MenuStyle::DrawState drawState;
     int sw = GameConsts::SCREEN_WIDTH;
     int sh = GameConsts::SCREEN_HEIGHT;
 
@@ -349,17 +331,17 @@ void UIRenderer::DrawPauseScreen(const GamePrototype& game) const
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
     int midX = sw / 2;
-    int boxW = 460;
-    int boxH = 330;
+    int boxW = 680;
+    int boxH = 530;
     int boxX = midX - boxW / 2;
     int boxY = (sh - boxH) / 2;
 
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, 220);
-    DrawBox(boxX, boxY, boxX + boxW, boxY + boxH, GetColor(12, 28, 48), TRUE);
+    DrawBox(boxX, boxY, boxX + boxW, boxY + boxH, MenuStyle::Background(), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-    DrawBox(boxX, boxY, boxX + boxW, boxY + boxH, GetColor(80, 180, 255), FALSE);
+    DrawBox(boxX, boxY, boxX + boxW, boxY + boxH, GetColor(47, 69, 85), FALSE);
 
-    DrawCX(midX, boxY + 22, TR(L"PAUSED"), GetColor(255, 225, 60), FontSize::Header);
+    MenuStyle::Center(midX, boxY + 28, TR(L"PAUSED"), MenuStyle::Paper(), FontSize::Title, 1.3f);
 
     const SoundManager& sound = SoundManager::Instance();
     wchar_t labels[GamePrototype::PauseItem_Count][64] = {};
@@ -369,18 +351,14 @@ void UIRenderer::DrawPauseScreen(const GamePrototype& game) const
     swprintf_s(labels[GamePrototype::PauseItem_WindowMode], TR(L"Screen:  < %s >"), GetWindowModeFlag() == TRUE ? TR(L"Window") : TR(L"Fullscreen"));
     swprintf_s(labels[GamePrototype::PauseItem_Title], TR(L"Return to Title"));
 
-    int itemY = boxY + 80;
+    int itemY = boxY + 106;
     for (int i = 0; i < GamePrototype::PauseItem_Count; ++i)
     {
         bool selected = (i == game.pauseSelected_);
-        unsigned int color = selected ? GetColor(255, 225, 60) : GetColor(200, 215, 235);
-        if (selected)
-        {
-            FontManager::Draw(boxX + 40, itemY, L">", color, FontSize::Medium);
-        }
-        FontManager::Draw(boxX + 70, itemY, labels[i], color, FontSize::Medium);
-        itemY += 40;
+        MenuStyle::Button(boxX + 40, itemY, boxW - 80, labels[i], selected, MenuStyle::Accent());
+        itemY += 64;
     }
 
-    FontManager::Draw(boxX + 30, boxY + boxH - 40, TR(L"[W/S]: Select  [A/D]: Adjust  [Enter]: OK  [ESC/P]: Resume"), GetColor(140, 170, 200), FontSize::Small);
+    MenuStyle::Center(midX, boxY + 445, TR(L"W/S or UP/DOWN: Select   ENTER/SPACE: Confirm"), MenuStyle::Muted(), FontSize::Body, 1.0f, boxW - 60);
+    MenuStyle::Center(midX, boxY + 480, TR(L"A/D: Adjust   ESC/P: Resume"), MenuStyle::Muted(), FontSize::Body);
 }

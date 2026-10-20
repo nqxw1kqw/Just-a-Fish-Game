@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "BattleHud.h"
 #include "ModeSelectScreen.h"
+#include "LanguageSelectScreen.h"
+#include "PauseMenuScreen.h"
 
 class GamePrototype;
 class WhaleBoss;
@@ -12,6 +14,13 @@ class UIRenderer
 public:
     void Init();
     void Shutdown();
+    void EnterLanguageSelect() { languageSelectScreen_.Enter(); }
+    void EnterModeSelect() { modeSelectScreen_.Enter(); }
+    void EnterPause() { pauseMenuScreen_.Enter(); }
+    void LeavePause() { pauseMenuScreen_.Leave(); }
+    PauseMenuScreen::PointerResult UpdatePausePointer(int& selected) { return pauseMenuScreen_.UpdatePointer(selected); }
+    bool UpdateLanguagePointer(int& selected) { return languageSelectScreen_.UpdatePointer(selected); }
+    bool UpdateModePointer(int& selected) { return modeSelectScreen_.UpdatePointer(selected); }
     void DrawHUD(const GamePrototype& game) const;
     void DrawBossHealthBar(const WhaleBoss& boss) const;
     void DrawBossHealthBar(const SharkBoss& shark) const;
@@ -28,6 +37,9 @@ public:
     void DrawFlowOverlay(const GamePrototype& game) const; // gợi ý tutorial + thẻ Hell
 
 private:
+    int titleArtwork_ = -1;
     ModeSelectScreen modeSelectScreen_;
+    LanguageSelectScreen languageSelectScreen_;
+    PauseMenuScreen pauseMenuScreen_;
     BattleHud battleHud_; // 戦闘HUD
 };
