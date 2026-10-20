@@ -11,6 +11,7 @@
 #include "RenderInterp.h"
 #include "Render3DUtil.h"
 #include "CollisionUtil.h"
+#include "MapObstacles.h"
 #include "DxConv.h"
 #include "LowPolyModels.h"
 #include "SoundManager.h"
@@ -227,7 +228,7 @@ void SquidBoss::UpdateHover(float dt, const PlayerFish& player, float speedMul)
     Vec3 side{ -radial.z, 0.0f, radial.x };
     vel += side * (strafeSign_ * GameConsts::SQUID_STRAFE_SPEED / GameConsts::SQUID_MOVE_SPEED);
     if (vel.LengthSq() > 1.0f) vel = vel.Normalized();
-    pos_ += vel * (GameConsts::SQUID_MOVE_SPEED * speedMul * dt);
+    pos_ = MapObstacles::Move(pos_, vel * (GameConsts::SQUID_MOVE_SPEED * speedMul * dt), GameConsts::SQUID_HITBOX_RADIUS);
     float targetY = GameConsts::SQUID_HOVER_HEIGHT + std::sin(hoverPhase_) * GameConsts::SQUID_HOVER_BOB_AMP;
     pos_.y += (targetY - pos_.y) * (std::min)(1.0f, dt * 3.0f);
     float lim = ArenaLimit();

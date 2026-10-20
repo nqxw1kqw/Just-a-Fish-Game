@@ -6,6 +6,7 @@
 #include <cmath>
 #include "PlayerFish.h"
 #include "CollisionUtil.h"
+#include "MapObstacles.h"
 #include "Effects/Hit/HitFeedback.h"
 #include "RenderInterp.h"
 #include "Effects.h"
@@ -352,6 +353,7 @@ void PlayerFish::StartJump(const Vec3& inputDir)
 void PlayerFish::OnLand(EffectSystem& effects)
 {
     pos_.y = 0.0f;
+    pos_ = MapObstacles::Resolve(pos_, pos_, GetHitboxRadius());
     jumpPhase_ = 0.0f;
     isJumping_ = false;
     justLanded_ = true;
@@ -398,8 +400,9 @@ void PlayerFish::Update(float dt, EffectSystem& effects)
     if (externalPull_.LengthSq() > 0.01f)
     {
         float lim = GameConsts::ARENA_HALF_SIZE - 25.0f;
-        pos_.x = std::clamp(pos_.x + externalPull_.x * dt, -lim, lim);
-        pos_.z = std::clamp(pos_.z + externalPull_.z * dt, -lim, lim);
+        pos_ = MapObstacles::Move(pos_, externalPull_ * dt, GetHitboxRadius());
+        pos_.x = std::clamp(pos_.x, -lim, lim);
+        pos_.z = std::clamp(pos_.z, -lim, lim);
     }
     externalPull_ = Vec3{ 0.0f, 0.0f, 0.0f };
 
@@ -432,8 +435,7 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
     // Áp dụng lực giật nảy knockback lên cá và tiêu giảm dần
     if (knockback_.LengthSq() > 0.1f)
     {
-        pos_.x += knockback_.x * dt;
-        pos_.z += knockback_.z * dt;
+        pos_ = MapObstacles::Move(pos_, Vec3{ knockback_.x * dt, 0, knockback_.z * dt }, GetHitboxRadius());
         knockback_ = knockback_ * (std::max)(0.0f, 1.0f - dt * 8.5f);
         pos_.x = std::clamp(pos_.x, -arenaLimit, arenaLimit);
         pos_.z = std::clamp(pos_.z, -arenaLimit, arenaLimit);
@@ -474,8 +476,7 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
             moveDir_ = inputDir.Normalized();
             yaw_ = std::atan2(moveDir_.x, moveDir_.z);
 
-            pos_.x += moveDir_.x * speed_ * dt;
-            pos_.z += moveDir_.z * speed_ * dt;
+            pos_ = MapObstacles::Move(pos_, Vec3{ moveDir_.x * speed_ * dt, 0, moveDir_.z * speed_ * dt }, GetHitboxRadius());
 
             swimTimer_ += dt;
 
@@ -537,14 +538,12 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
             {
                 moveDir_ = inputDir.Normalized();
                 yaw_ = std::atan2(moveDir_.x, moveDir_.z);
-                pos_.x += moveDir_.x * speed_ * dt;
-                pos_.z += moveDir_.z * speed_ * dt;
+                pos_ = MapObstacles::Move(pos_, Vec3{ moveDir_.x * speed_ * dt, 0, moveDir_.z * speed_ * dt }, GetHitboxRadius());
                 swimTimer_ += dt;
             }
             else
             {
-                pos_.x += airVel_.x * 0.4f * dt;
-                pos_.z += airVel_.z * 0.4f * dt;
+                pos_ = MapObstacles::Move(pos_, Vec3{ airVel_.x * 0.4f * dt, 0, airVel_.z * 0.4f * dt }, GetHitboxRadius());
             }
             pos_.x = std::clamp(pos_.x, -arenaLimit, arenaLimit);
             pos_.z = std::clamp(pos_.z, -arenaLimit, arenaLimit);
@@ -559,8 +558,7 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
             Vec3 targetAirVel = (hasMoveInput ? inputDir.Normalized() : moveDir_) * (speed_ * airSpeedMul_);
             airVel_ = airVel_ * 0.88f + targetAirVel * 0.12f;
 
-            pos_.x += airVel_.x * dt;
-            pos_.z += airVel_.z * dt;
+            pos_ = MapObstacles::Move(pos_, Vec3{ airVel_.x * dt, 0, airVel_.z * dt }, GetHitboxRadius());
 
             pos_.x = std::clamp(pos_.x, -arenaLimit, arenaLimit);
             pos_.z = std::clamp(pos_.z, -arenaLimit, arenaLimit);
@@ -577,6 +575,7 @@ void PlayerFish::UpdateCore(float dt, EffectSystem& effects)
             predictedLandPos_.x = std::clamp(pos_.x + airVel_.x * timeRemaining, -arenaLimit, arenaLimit);
             predictedLandPos_.y = 0.5f;
             predictedLandPos_.z = std::clamp(pos_.z + airVel_.z * timeRemaining, -arenaLimit, arenaLimit);
+            predictedLandPos_ = MapObstacles::Resolve(predictedLandPos_, predictedLandPos_, GetHitboxRadius());
         }
     }
 

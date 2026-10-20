@@ -63,6 +63,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MapObstacles.h"><Filter>Core</Filter></ClInclude>
+    <ClInclude Include="MapLayout.generated.h"><Filter>Core</Filter></ClInclude>
     <ClInclude Include="SoundManager.h">
       <Filter>Audio</Filter>
     </ClInclude>
@@ -272,6 +274,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="MapObstacles.cpp"><Filter>Core</Filter></ClCompile>
     <ClCompile Include="SoundManager.cpp">
       <Filter>Audio</Filter>
     </ClCompile>

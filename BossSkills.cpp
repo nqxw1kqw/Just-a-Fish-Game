@@ -13,6 +13,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
+#include "MapObstacles.h"
 #include "Render3DUtil.h"
 #include "DxConv.h"
 #include "Effects/Whale/WhaleFxSet.h"
@@ -53,6 +54,7 @@ void WhaleBoss::StartBreach(PlayerFish& player)
     telegraphFxTimer_ = 0.0f;
     slamTarget_ = player.GetPosition();
     slamTarget_.y = 0.0f;
+    slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
     RecordActionHistory(L"Breach Slam");
 }
 
@@ -62,6 +64,7 @@ void WhaleBoss::UpdateBreachTelegraph(float dt, float duration, PlayerFish& play
     if (trackPlayer)
     {
         slamTarget_ = PredictPlayerPos(player, GameConsts::AIM_BREACH_LEAD); // AI pacing: đón đầu
+        slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
     }
     // Lặn xuống dần
     pos_.y = -GameConsts::BREACH_SINK_DEPTH * ratio;
@@ -81,8 +84,10 @@ void WhaleBoss::UpdateBreachTelegraph(float dt, float duration, PlayerFish& play
 
 void WhaleBoss::LandBreach(PlayerFish& player, EffectSystem& effects, float innerDamage, float outerDamage, float innerRadius, float outerRadius)
 {
+    slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
     pos_ = slamTarget_;
     pos_.y = 0.0f;
+    pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
     effects.AddTrauma(0.55f);
     effects.SpawnShockwave(pos_, outerRadius);
     effects.SpawnWaterSplash(pos_, outerRadius, 2.2f);
@@ -143,6 +148,7 @@ void WhaleBoss::Stun(float duration, float damageMul)
 {
     if (!active_ || hp_ <= 0.0f) return;
     pos_.y = 0.0f;
+    pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
     action_ = BossAction::Stunned;
     actionTimer_ = 0.0f;
     stunTimer_ = duration;
@@ -264,6 +270,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         {
             // Kết thúc: Breach từ dưới lên ngay giữa lưới
             pos_.y = 0.0f;
+            pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
             StartBreach(player);
             slamTarget_ = netCenter_;
             netBreachPending_ = true; // LandBreach -> net.Surface()
@@ -359,8 +366,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
     }
     case BossAction::PerformDive:
     {
-        pos_.x += diveDir_.x * GameConsts::DIVE_SPEED * dt;
-        pos_.z += diveDir_.z * GameConsts::DIVE_SPEED * dt;
+        pos_ = MapObstacles::Move(pos_, Vec3{ diveDir_.x * GameConsts::DIVE_SPEED * dt, 0, diveDir_.z * GameConsts::DIVE_SPEED * dt }, 60.0f);
         Fx().dive.SetBoss(DxConv::ToVECTOR(Vec3{ pos_.x, 0.0f, pos_.z }), DxConv::ToVECTOR(diveDir_));
 
         if (!diveHit_ && !player.IsAirborne() &&
@@ -373,7 +379,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         }
 
         float lim = GameConsts::ARENA_HALF_SIZE - 60.0f;
-        bool hitWall = std::fabs(pos_.x) > lim || std::fabs(pos_.z) > lim;
+        bool hitWall = std::fabs(pos_.x) >= lim-1.0f || std::fabs(pos_.z) >= lim-1.0f;
         if (hitWall)
         {
             // Pháp tuyến thành: hướng vào trong đấu trường theo trục bị vượt nhiều hơn
@@ -392,6 +398,7 @@ bool WhaleBoss::UpdateExtendedAction(float dt, PlayerFish& player, EnemyManager&
         if (actionTimer_ >= GameConsts::DIVE_MAX_TIME)
         {
             pos_.y = 0.0f;
+            pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
             effects.SpawnWaterSplash(pos_, 100.0f, 1.6f);
             Fx().dive.Stop();
             action_ = BossAction::Idle;
@@ -450,6 +457,7 @@ void WhaleBoss::StartInhale(PlayerFish& player)
     Vec3 to = Collision::FlatDiff(player.GetPosition(), pos_);
     if (to.LengthSq() > 1.0f) yaw_ = std::atan2(to.x, to.z);
     pos_.y = 0.0f;
+    pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
     action_ = BossAction::TelegraphInhale;
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
@@ -543,6 +551,7 @@ void WhaleBoss::ForcePack(PlayerFish& player)
 {
     EnsureActiveForDebug();
     pos_.y = 0.0f;
+    pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
     NoteSkill(BossSkill::Minions);
     StartPackTelegraph(player);
     RecordActionHistory(L"Call the Pack (debug)");
@@ -566,6 +575,7 @@ void WhaleBoss::ForceDive(PlayerFish& player)
 {
     EnsureActiveForDebug();
     pos_.y = 0.0f;
+    pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
     StartDive(player);
 }
 

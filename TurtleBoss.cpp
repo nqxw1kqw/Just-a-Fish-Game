@@ -11,6 +11,7 @@
 #include "RenderInterp.h"
 #include "Render3DUtil.h"
 #include "CollisionUtil.h"
+#include "MapObstacles.h"
 #include "DxConv.h"
 #include "LowPolyModels.h"
 #include "Effects/Hit/HitFeedback.h"
@@ -224,13 +225,13 @@ void TurtleBoss::UpdateAdvance(float dt, const PlayerFish& player, float speedMu
 {
     Vec3 toPlayer = Collision::FlatDiff(player.GetPosition(), pos_);
     float dist = toPlayer.Length();
-    Vec3 radial = (dist > 1.0f) ? toPlayer / dist : Fwd();
+    Vec3 radial = (dist > 1.0f) ? MapObstacles::ChaseDirection(pos_, player.GetPosition(), GameConsts::TURTLE_HITBOX_RADIUS) : Fwd();
     TurnToward(YawOf(radial), GameConsts::TURTLE_TURN_RATE, dt);
     float speed = GameConsts::TURTLE_MOVE_SPEED * (phase2_ ? GameConsts::TURTLE_PHASE2_SPEED_MUL : 1.0f) * speedMul;
     if (dist > GameConsts::TURTLE_PREFERRED_RANGE + GameConsts::TURTLE_RANGE_TOLERANCE)
-        pos_ += radial * (speed * dt);
+        pos_ = MapObstacles::Move(pos_, radial * (speed * dt), GameConsts::TURTLE_HITBOX_RADIUS);
     else if (dist < GameConsts::TURTLE_PREFERRED_RANGE - GameConsts::TURTLE_RANGE_TOLERANCE)
-        pos_ -= radial * (speed * 0.7f * dt);
+        pos_ = MapObstacles::Move(pos_, -(radial * (speed * 0.7f * dt)), GameConsts::TURTLE_HITBOX_RADIUS);
     float lim = ArenaLimit();
     pos_.x = std::clamp(pos_.x, -lim, lim);
     pos_.z = std::clamp(pos_.z, -lim, lim);
@@ -273,7 +274,9 @@ void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     case TurtleAction::Rolling:
     {
         float speed = RollSpeed();
-        pos_ += rollDir_ * (speed * dt);
+        const Vec3 requestedRoll = pos_ + rollDir_ * (speed * dt);
+        pos_ = MapObstacles::Move(pos_, rollDir_ * (speed * dt), GameConsts::TURTLE_HITBOX_RADIUS);
+        const bool hitReef = Collision::DistSqXZ(pos_, requestedRoll) > 0.25f;
         rollTravel_ += speed * dt;
         // Fuyuu roll trail (crowd-lightened by particleScale like Shark sand)
         if (fx_ && (effects.particleScale_ >= 1.0f || Rand01() <= effects.particleScale_))
@@ -293,7 +296,7 @@ void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         }
         if ((static_cast<int>(rollTravel_ / 90.0f) != static_cast<int>((rollTravel_ - speed * dt) / 90.0f)))
             effects.SpawnWaterSplash(Vec3{ pos_.x, 0.0f, pos_.z }, 60.0f, 0.7f);
-        if (rollTravel_ >= rollDist_ || hitWall)
+        if (rollTravel_ >= rollDist_ || hitWall || hitReef)
         {
             effects.SpawnShockwave(Vec3{ pos_.x, 0.0f, pos_.z }, 130.0f);
             effects.SpawnWaterSplash(Vec3{ pos_.x, 0.0f, pos_.z }, 90.0f, 1.0f);
@@ -340,7 +343,7 @@ void TurtleBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         break;
     case TurtleAction::BiteLunge:
     {
-        pos_ += biteDir_ * (GameConsts::TURTLE_BITE_LUNGE_SPEED * dt);
+        pos_ = MapObstacles::Move(pos_, biteDir_ * (GameConsts::TURTLE_BITE_LUNGE_SPEED * dt), GameConsts::TURTLE_HITBOX_RADIUS);
         float lim = ArenaLimit();
         pos_.x = std::clamp(pos_.x, -lim, lim);
         pos_.z = std::clamp(pos_.z, -lim, lim);

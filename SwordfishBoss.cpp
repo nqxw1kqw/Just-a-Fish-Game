@@ -11,6 +11,7 @@
 #include "RenderInterp.h"
 #include "Render3DUtil.h"
 #include "CollisionUtil.h"
+#include "MapObstacles.h"
 #include "DxConv.h"
 #include "LowPolyModels.h"
 #include "Effects/Hit/HitFeedback.h"
@@ -209,17 +210,17 @@ void SwordfishBoss::UpdateSwim(float dt, const PlayerFish& player, float speedMu
 {
     Vec3 toPlayer = Collision::FlatDiff(player.GetPosition(), pos_);
     float dist = toPlayer.Length();
-    Vec3 radial = (dist > 1.0f) ? toPlayer / dist : Fwd();
+    Vec3 radial = (dist > 1.0f) ? MapObstacles::ChaseDirection(pos_, player.GetPosition(), GameConsts::SWORDFISH_HITBOX_RADIUS) : Fwd();
     TurnToward(YawOf(radial), GameConsts::SWORDFISH_TURN_RATE, dt);
     float speed = GameConsts::SWORDFISH_MOVE_SPEED * speedMul;
     if (dist > GameConsts::SWORDFISH_PREFERRED_RANGE + GameConsts::SWORDFISH_RANGE_TOLERANCE)
-        pos_ += radial * (speed * dt);
+        pos_ = MapObstacles::Move(pos_, radial * (speed * dt), GameConsts::SWORDFISH_HITBOX_RADIUS);
     else if (dist < GameConsts::SWORDFISH_PREFERRED_RANGE - GameConsts::SWORDFISH_RANGE_TOLERANCE)
-        pos_ -= radial * (speed * 0.7f * dt);
+        pos_ = MapObstacles::Move(pos_, -(radial * (speed * 0.7f * dt)), GameConsts::SWORDFISH_HITBOX_RADIUS);
     else
     {
         Vec3 side{ -radial.z, 0.0f, radial.x };
-        pos_ += side * (speed * 0.45f * dt); // fast circling at range
+        pos_ = MapObstacles::Move(pos_, side * (speed * 0.45f * dt), GameConsts::SWORDFISH_HITBOX_RADIUS); // fast circling at range
     }
     float targetY = GameConsts::SWORDFISH_HOVER_HEIGHT + std::sin(animTime_ * 1.7f) * 5.0f;
     pos_.y += (targetY - pos_.y) * (std::min)(1.0f, dt * 3.0f);
@@ -291,7 +292,9 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     case SwordfishAction::Dashing:
     {
         float step = GameConsts::SWORDFISH_DASH_SPEED * dt;
-        pos_ += dashDir_ * step;
+        const Vec3 requestedDash = pos_ + dashDir_ * step;
+        pos_ = MapObstacles::Move(pos_, dashDir_ * step, GameConsts::SWORDFISH_HITBOX_RADIUS);
+        const bool hitReef = Collision::DistSqXZ(pos_, requestedDash) > 0.25f;
         dashTravel_ += step;
         yaw_ = YawOf(dashDir_);
         // Fuyuu dash streak (crowd-lightened by particleScale like Shark sand)
@@ -316,7 +319,7 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             player.TakeDamage(GameConsts::SWORDFISH_DASH_DAMAGE, effects, &pos_);
             effects.AddTrauma(0.25f);
         }
-        if (dashTravel_ >= dashDist_)
+        if (dashTravel_ >= dashDist_ || hitReef)
         {
             if (dashPass_ < GameConsts::SWORDFISH_DASH_PASSES)
             {
@@ -353,7 +356,7 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         if (swordFx_) swordFx_->spinVortex.SetBody(DxConv::ToVECTOR(pos_ + Vec3{ 0.0f, 26.0f, 0.0f }));
         Vec3 toP = Collision::FlatDiff(player.GetPosition(), pos_);
         float d = toP.Length();
-        if (d > 1.0f) pos_ += (toP / d) * (GameConsts::SWORDFISH_SPIN_ADVANCE * dt);
+        if (d > 1.0f) pos_ = MapObstacles::Move(pos_, (toP / d) * (GameConsts::SWORDFISH_SPIN_ADVANCE * dt), GameConsts::SWORDFISH_HITBOX_RADIUS);
         yaw_ = YawOf((d > 1.0f) ? toP : Fwd());
         float lim = ArenaLimit();
         pos_.x = std::clamp(pos_.x, -lim, lim);
@@ -375,7 +378,7 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         break;
     }
     case SwordfishAction::SpinDrift:
-        pos_ += Fwd() * (GameConsts::SWORDFISH_SPIN_ADVANCE * 0.8f * dt);
+        pos_ = MapObstacles::Move(pos_, Fwd() * (GameConsts::SWORDFISH_SPIN_ADVANCE * 0.8f * dt), GameConsts::SWORDFISH_HITBOX_RADIUS);
         visualYaw_ *= (std::max)(0.0f, 1.0f - dt * 4.0f);
         actionTimer_ += dt;
         if (actionTimer_ >= GameConsts::SWORDFISH_SPIN_DRIFT_TIME) { action_ = SwordfishAction::SpinStagger; actionTimer_ = 0.0f; visualYaw_ = 0.0f; }
@@ -419,7 +422,7 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         Vec3 side{ -radial.z, 0.0f, radial.x };
         Vec3 vel = radial * ((d > GameConsts::SWORDFISH_SAND_ORBIT_RANGE) ? 1.0f : 0.15f) + side * 0.8f;
         if (vel.LengthSq() > 1.0f) vel = vel.Normalized();
-        pos_ += vel * (GameConsts::SWORDFISH_SAND_SPEED * dt);
+        pos_ += vel * (GameConsts::SWORDFISH_SAND_SPEED * dt); // Burrowing passes below reefs.
         if (sandFx_ && (effects.particleScale_ >= 1.0f || Rand01() <= effects.particleScale_))
             sandFx_->SandFinTrail(DxConv::ToVECTOR(Vec3{ pos_.x, 2.0f, pos_.z }), DxConv::ToVECTOR(vel * GameConsts::SWORDFISH_SAND_SPEED));
         yaw_ = YawOf(vel);
@@ -441,6 +444,7 @@ void SwordfishBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             sandTarget_.x = std::clamp(sandTarget_.x, -lim, lim);
             sandTarget_.z = std::clamp(sandTarget_.z, -lim, lim);
             sandTarget_.y = 0.0f;
+            sandTarget_ = MapObstacles::Resolve(sandTarget_, sandTarget_, GameConsts::SWORDFISH_HITBOX_RADIUS);
             if (sandFx_) sandFx_->LockRingDust(DxConv::ToVECTOR(sandTarget_), GameConsts::SWORDFISH_STAB_HIT_RADIUS, GameConsts::SWORDFISH_STAB_TELEGRAPH);
             action_ = SwordfishAction::SandTelegraph;
             actionTimer_ = 0.0f;

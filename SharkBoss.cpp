@@ -11,6 +11,7 @@
 #include "RenderInterp.h"
 #include "Render3DUtil.h"
 #include "CollisionUtil.h"
+#include "MapObstacles.h"
 #include "DxConv.h"
 #include "LowPolyModels.h"
 #include "SoundManager.h"
@@ -246,6 +247,7 @@ void SharkBoss::EndHunt(PlayerFish* player)
     grabbedPlayer_ = nullptr;
     Fx().fin.Stop();
     pos_.y = 0.0f;
+    pos_ = MapObstacles::Resolve(pos_, pos_, GameConsts::SHARK_HITBOX_RADIUS);
     huntPose_ = 0.0f;
     EndSkill();
 }
@@ -268,7 +270,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
     {
         actionTimer_ += dt;
         float t = std::clamp(actionTimer_ / GameConsts::SHARK_HUNT_LEAP_TIME, 0.0f, 1.0f);
-        pos_ += Fwd() * (GameConsts::SHARK_HUNT_LEAP_FWD_SPEED * dt);
+        pos_ = MapObstacles::Move(pos_, Fwd() * (GameConsts::SHARK_HUNT_LEAP_FWD_SPEED * dt), GameConsts::SHARK_HITBOX_RADIUS);
         pos_.y = GameConsts::SHARK_HUNT_LEAP_HEIGHT * std::sin(PI * t) - GameConsts::SHARK_HUNT_BURROW_DEPTH * t * t;
         huntPose_ = (t < 0.5f) ? -0.5f : 0.7f; // ngóc lên rồi chúi xuống
         tailSpeedMul_ = 2.5f;
@@ -296,7 +298,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         float d = to.Length();
         float spd = (std::min)(GameConsts::SHARK_HUNT_TRACK_SPEED, d / (std::max)(dt, 0.0001f));
         Vec3 old = pos_;
-        pos_ += Fwd() * (spd * dt);
+        pos_ = MapObstacles::Move(pos_, Fwd() * (spd * dt), GameConsts::SHARK_HITBOX_RADIUS);
         pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
         Vec3 vel = (pos_ - old) * (1.0f / (std::max)(dt, 0.0001f));
         // Vây nhô khỏi cát + vệt nước/bọt + vệt cát (Fuyuu SandFinTrail, Hell đông quái -> bớt)
@@ -356,7 +358,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         float step = huntDashSpeed_ * dt;
         Vec3 old = pos_;
         bool arrived = (d <= step) || actionTimer_ >= GameConsts::SHARK_HUNT_DASH_TIME * 2.0f;
-        if (!arrived) pos_ += to * (step / d);
+        if (!arrived) pos_ = MapObstacles::Move(pos_, to * (step / d), GameConsts::SHARK_HITBOX_RADIUS);
         pos_.y = -GameConsts::SHARK_HUNT_BURROW_DEPTH;
         tailSpeedMul_ = 4.0f;
         Vec3 dashVel = (pos_ - old) * (1.0f / (std::max)(dt, 0.0001f));
@@ -398,6 +400,7 @@ void SharkBoss::UpdateHunt(float dt, PlayerFish& player, EffectSystem& effects)
         if (t >= 1.0f)
         {
             pos_.y = 0.0f;
+            pos_ = MapObstacles::Resolve(pos_, pos_, GameConsts::SHARK_HITBOX_RADIUS);
             actionTimer_ = 0.0f;
             if (grabbedPlayer_)
             {
@@ -554,7 +557,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         float pull = std::clamp((distPlayer - GameConsts::SHARK_PREFERRED_DIST) / 150.0f, -1.0f, 1.0f);
         Vec3 desire = tangent + radial * pull;
         TurnToward(YawOf(desire), GameConsts::SHARK_TURN_RATE * (rest ? 0.5f : 1.0f), dt);
-        pos_ += Fwd() * (speed * dt);
+        pos_ = MapObstacles::Move(pos_, Fwd() * (speed * dt), GameConsts::SHARK_HITBOX_RADIUS);
         tailSpeedMul_ = rest ? 0.45f : 1.0f;
         if (rest)
         {
@@ -579,7 +582,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             if (to.LengthSq() > 1.0f) lungeDir_ = to * (1.0f / to.Length());
         }
         TurnToward(YawOf(lungeDir_), GameConsts::SHARK_TURN_RATE * 3.0f, dt);
-        pos_ -= lungeDir_ * (25.0f * dt); // lùi nhẹ lấy đà
+        pos_ = MapObstacles::Move(pos_, -(lungeDir_ * (25.0f * dt)), GameConsts::SHARK_HITBOX_RADIUS); // lùi nhẹ lấy đà
         tailSpeedMul_ = 2.5f;
         Fx().bite.SetShark(DxConv::ToVECTOR(pos_), DxConv::ToVECTOR(lungeDir_));
         if (actionTimer_ >= biteTelegraph_)
@@ -593,7 +596,9 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     case SharkAction::BiteLunge:
     {
         float step = GameConsts::SHARK_BITE_SPEED * dt;
-        pos_ += lungeDir_ * step;
+        const Vec3 requestedLunge = pos_ + lungeDir_ * step;
+        pos_ = MapObstacles::Move(pos_, lungeDir_ * step, GameConsts::SHARK_HITBOX_RADIUS);
+        const bool hitReef = Collision::DistSqXZ(pos_, requestedLunge) > 0.25f;
         lungeTraveled_ += step;
         tailSpeedMul_ = 3.0f;
         Fx().bite.SetShark(DxConv::ToVECTOR(pos_), DxConv::ToVECTOR(lungeDir_));
@@ -609,7 +614,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
             }
         }
         float lim = ArenaLimit();
-        if (std::fabs(pos_.x) > lim || std::fabs(pos_.z) > lim)
+        if (hitReef || std::fabs(pos_.x) >= lim || std::fabs(pos_.z) >= lim)
         {
             pos_.x = std::clamp(pos_.x, -lim, lim);
             pos_.z = std::clamp(pos_.z, -lim, lim);
@@ -636,7 +641,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
     }
     case SharkAction::BiteRecover:
         actionTimer_ += dt;
-        pos_ += Fwd() * (GameConsts::SHARK_SWIM_SPEED * 0.4f * dt);
+        pos_ = MapObstacles::Move(pos_, Fwd() * (GameConsts::SHARK_SWIM_SPEED * 0.4f * dt), GameConsts::SHARK_HITBOX_RADIUS);
         if (actionTimer_ >= GameConsts::SHARK_BITE_RECOVER) EndSkill();
         break;
     case SharkAction::Strafe:
@@ -649,7 +654,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         Vec3 oldPos = pos_;
         float maxStep = (GameConsts::SHARK_STRAFE_RADIUS * ang + 200.0f) * dt;
         float dl = delta.Length();
-        pos_ += (dl > maxStep) ? delta * (maxStep / dl) : delta;
+        pos_ = MapObstacles::Move(pos_, (dl > maxStep) ? delta * (maxStep / dl) : delta, GameConsts::SHARK_HITBOX_RADIUS);
         Vec3 vel = (pos_ - oldPos) * (1.0f / (std::max)(dt, 0.0001f));
         if (vel.LengthSq() > 1.0f) TurnToward(YawOf(vel), GameConsts::SHARK_TURN_RATE * 2.0f, dt);
         targetBank = -0.3f * strafeSign_;

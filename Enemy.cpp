@@ -14,6 +14,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
+#include "MapObstacles.h"
 #include "LowPolyModels.h"
 
 namespace
@@ -375,6 +376,7 @@ bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
             e.radius = tc.radius;
             e.damage = tc.baseDamage * dmgMultiplier_;
             if (tc.setSpawnY) e.pos.y = tc.spawnY;
+            e.pos = MapObstacles::Resolve(e.pos, e.pos, e.radius);
 
             // Trạng thái riêng theo loại
             switch (type)
@@ -515,6 +517,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
 
     const Vec3 playerPos = player.GetPosition();
     const float playerHitRadius = player.GetHitboxRadius();
+    MapObstacles::UpdateNavigation(playerPos, dt);
 
     // 1. Cập nhật vị trí và hành vi quái
     for (size_t i = 0; i < enemies_.size(); ++i)
@@ -526,7 +529,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
             e.deathTimer += dt;
             if (e.hitFlashTimer > 0.0f) e.hitFlashTimer -= dt;
             e.deathVel.y -= GameConsts::ENEMY_DEATH_GRAVITY * dt;
-            e.pos += e.deathVel * dt;
+            e.pos = MapObstacles::Move(e.pos, e.deathVel * dt, e.radius);
             if (e.pos.y < 0.0f)
             {
                 e.pos.y = 0.0f;
@@ -547,6 +550,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
             continue;
         }
         if (!e.active) continue;
+        const Vec3 previousMapPosition = e.pos;
 
         if (e.hitFlashTimer > 0.0f) e.hitFlashTimer -= dt;
 
@@ -572,7 +576,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                 {
                     if (distToPlayer > 0.1f)
                     {
-                        Vec3 moveDir = toPlayer / distToPlayer;
+                        Vec3 moveDir = MapObstacles::ChaseDirection(e.pos, playerPos, e.radius);
                         e.yaw = std::atan2(moveDir.x, moveDir.z);
                         e.pos.x += moveDir.x * e.speed * dt;
                         e.pos.z += moveDir.z * e.speed * dt;
@@ -640,7 +644,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                 // Quái thường Minion, Hopper, Tanker, Float
                 if (distToPlayer > 0.1f)
                 {
-                    Vec3 moveDir = toPlayer / distToPlayer;
+                    Vec3 moveDir = MapObstacles::ChaseDirection(e.pos, playerPos, e.radius);
                     e.yaw = std::atan2(moveDir.x, moveDir.z);
 
                     // Di chuyển
@@ -717,6 +721,15 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
             e.pos.y = 0.0f;
         }
 
+        const Vec3 requestedMapPosition = e.pos;
+        e.pos = MapObstacles::Resolve(previousMapPosition, e.pos, e.radius);
+        if (e.type == EnemyType::Charge && e.chargeState == 2 &&
+            Collision::DistSqXZ(requestedMapPosition, e.pos) > 0.25f)
+        {
+            e.chargeState = 3;
+            e.chargeTimer = 0.9f;
+        }
+
         // Giới hạn trong sàn đấu
         float limit = GameConsts::ARENA_HALF_SIZE - e.radius;
         e.pos.x = std::clamp(e.pos.x, -limit, limit);
@@ -739,8 +752,11 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                 e.pos.z += push.z;
                 other.pos.x -= push.x;
                 other.pos.z -= push.z;
+                other.pos = MapObstacles::Resolve(other.pos, other.pos, other.radius);
             }
         }
+
+        e.pos = MapObstacles::Resolve(e.pos, e.pos, e.radius);
 
         // 2. Va chạm với cá (Gây sát thương nếu cá không ở trên không - J4)
         Vec3 toPlayer = Collision::FlatDiff(playerPos, e.pos);
@@ -759,7 +775,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
             {
                 // Khi cá ở dưới đất nhưng đang trong thời gian I-Frame: đẩy nhẹ tách hitbox để không lồng vào nhau
                 float overlap = (totalRad - distToPlayer) * 0.5f;
-                e.pos -= pushDir * overlap;
+                e.pos = MapObstacles::Move(e.pos, -pushDir * overlap, e.radius);
             }
         }
 

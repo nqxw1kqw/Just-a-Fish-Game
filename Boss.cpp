@@ -16,6 +16,7 @@
 #include "SoundManager.h"
 #include "DxLib.h"
 #include "CollisionUtil.h"
+#include "MapObstacles.h"
 #include "LowPolyModels.h"
 
 namespace
@@ -255,6 +256,7 @@ void WhaleBoss::ForceDoubleSlam(PlayerFish& player)
     actionTimer_ = 0.0f;
     slamTarget_ = player.GetPosition();
     slamTarget_.y = 0.0f;
+    slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
     slamCount_ = 0;
     RecordActionHistory(L"Đập kép (F7)");
 }
@@ -617,12 +619,12 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
                 Vec3 tangent{ radial.z, 0.0f, -radial.x };
                 float radialSpd = std::clamp((distToPlayer - GameConsts::REST_PREFERRED_DIST) * 0.5f,
                                              -GameConsts::REST_DRIFT_SPEED, GameConsts::REST_DRIFT_SPEED);
-                pos_.x += (tangent.x * GameConsts::REST_DRIFT_SPEED + radial.x * radialSpd) * dt;
-                pos_.z += (tangent.z * GameConsts::REST_DRIFT_SPEED + radial.z * radialSpd) * dt;
+                pos_ = MapObstacles::Move(pos_, Vec3{ (tangent.x * GameConsts::REST_DRIFT_SPEED + radial.x * radialSpd) * dt, 0, (tangent.z * GameConsts::REST_DRIFT_SPEED + radial.z * radialSpd) * dt }, 60.0f);
                 float lim = GameConsts::ARENA_HALF_SIZE - 60.0f;
                 pos_.x = std::clamp(pos_.x, -lim, lim);
                 pos_.z = std::clamp(pos_.z, -lim, lim);
                 pos_.y = 0.0f;
+                pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
             }
             if (restTimer_ <= 0.0f)
             {
@@ -636,9 +638,9 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         if (distToPlayer > 200.0f)
         {
             Vec3 moveDir = toPlayer * (1.0f / distToPlayer);
-            pos_.x += moveDir.x * GameConsts::BOSS_WALK_SPEED * dt;
-            pos_.z += moveDir.z * GameConsts::BOSS_WALK_SPEED * dt;
+            pos_ = MapObstacles::Move(pos_, Vec3{ moveDir.x * GameConsts::BOSS_WALK_SPEED * dt, 0, moveDir.z * GameConsts::BOSS_WALK_SPEED * dt }, 60.0f);
             pos_.y = 0.0f;
+            pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
 
             waterFxTimer_ += dt;
             if (waterFxTimer_ >= 0.22f)
@@ -656,6 +658,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
                 PickNextAction(player, enemies);
                 slamTarget_ = player.GetPosition();
                 slamTarget_.y = 0.0f;
+                slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
             }
             break;
         }
@@ -675,6 +678,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             PickNextAction(player, enemies);
             slamTarget_ = player.GetPosition();
             slamTarget_.y = 0.0f;
+            slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
         }
         break;
     }
@@ -701,6 +705,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         if ((1.0f - slamProgress_) * jumpDuration > GameConsts::BREACH_LOCK_TIME)
         {
             slamTarget_ = PredictPlayerPos(player, GameConsts::AIM_BREACH_LEAD); // AI pacing: đón đầu
+            slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
         }
         if (slamProgress_ >= 1.0f)
         {
@@ -713,8 +718,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         {
             float t = slamProgress_;
             pos_.y = 4.0f * GameConsts::BREACH_JUMP_HEIGHT * t * (1.0f - t);
-            pos_.x += (slamTarget_.x - pos_.x) * (dt * 5.0f);
-            pos_.z += (slamTarget_.z - pos_.z) * (dt * 5.0f);
+            pos_ = MapObstacles::Move(pos_, Vec3{ (slamTarget_.x - pos_.x) * (dt * 5.0f), 0, (slamTarget_.z - pos_.z) * (dt * 5.0f) }, 60.0f);
         }
         break;
     }
@@ -771,6 +775,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
                 actionTimer_ = 0.0f;
                 slamTarget_ = player.GetPosition();
                 slamTarget_.y = 0.0f;
+                slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
             }
             else
             {
@@ -783,8 +788,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         {
             float t = slamProgress_;
             pos_.y = 4.0f * GameConsts::TRIPLE_JUMP_HEIGHT * t * (1.0f - t);
-            pos_.x += (slamTarget_.x - pos_.x) * (dt * 6.0f);
-            pos_.z += (slamTarget_.z - pos_.z) * (dt * 6.0f);
+            pos_ = MapObstacles::Move(pos_, Vec3{ (slamTarget_.x - pos_.x) * (dt * 6.0f), 0, (slamTarget_.z - pos_.z) * (dt * 6.0f) }, 60.0f);
         }
         break;
     }

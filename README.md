@@ -65,7 +65,11 @@ C++17 と DxLib で制作した、魚が主役の 3D アリーナ型サバイバ
 - `Consts.h` の `FLOOR_USE_MODEL` でモデル表示を切り替えます。
 - `FLOOR_MODEL_Y=-6` で起伏のある砂を水面より下へ置き、水面との交差を防ぎます。
 - `FLOOR_MODEL_TINT_R/G/B` でゲーム内照明に合わせた色味を調整します。
-- 移動・着地の地面は Y=0 です。岩やサンゴは装飾で、移動を遮る当たり判定はありません。
+- 中央の戦闘空間、四隅のサンゴ礁、左右の岩場、南北の崩れた石柱で構成しています。
+- 14 個の岩・石柱に高さ付きの円柱判定があります。泳ぎ、ノックバック、通常敵、地上のボス移動に適用し、高さを超えるジャンプでは飛び越えられます。
+- 移動・着地の地面は Y=0 のままです。岩の上には乗らず、岩に重なって着地すると縁へ押し出されます。サンゴの柔らかい枝、貝殻、海草は装飾です。
+- 通常敵は共有の経路マップで岩を迂回します。突進する敵、カメ、カジキは障害物に当たると突進を終了し、サメの噛みつき突進は衝突でスタンします。潜砂・空中移動は高さに応じて通過します。
+- 弾、衝撃波、ボスの範囲攻撃は従来どおり地形を通過します。岩は移動用の障害物です。
 - モデルの読込・描画に失敗した場合は砂テクスチャ、次に箱とグリッドへ切り替えます。
 
 [海底モデルの再生成方法](Tools/LowPolyModels/README_floor.md)を参照してください。Python の標準ライブラリのみで生成できます。
@@ -106,6 +110,7 @@ msbuild FishGame.vcxproj /p:Configuration=Debug /p:Platform=x64
 | `CardManager.cpp`、`CardDatabase.h` | カードの抽選、取得、能力反映 |
 | `IllustratedChoiceMenu.cpp`、`LayeredResultScreen.cpp`、`PauseMenuScreen.cpp` | 分離画像の UI |
 | `LowPolyModels.cpp`、`SeabedFloor.cpp` | モデルの管理、代替の床 |
+| `MapObstacles.cpp/.h`、`MapLayout.generated.h` | 海底の移動判定、通常敵の経路、生成した障害物データ |
 | `Effects.cpp`、`WaterSplash.cpp`、`GodRays.cpp` | 衝撃波、粒子、水面、光 |
 | `CameraController.cpp` | カメラの追従、振動、補間 |
 
