@@ -11,6 +11,8 @@ namespace GameConsts
     // Sàn đấu (Arena)
     constexpr float ARENA_SIZE = 1400.0f;
     constexpr float ARENA_HALF_SIZE = ARENA_SIZE * 0.5f;
+    constexpr bool FLOOR_USE_MODEL = true;      // true: sàn = model 3D (Data/Model/LowPoly/Floor.x); false: sàn code cũ (SeabedFloor/hộp+lưới)
+    constexpr float FLOOR_MODEL_Y = 0.0f;       // Model sàn chỉ để hiển thị; logic mặt đất vẫn y=0
 
     // Chế độ Debug (Phần D)
 #ifdef _DEBUG
