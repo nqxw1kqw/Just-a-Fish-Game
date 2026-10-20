@@ -79,7 +79,7 @@ int WINAPI WinMain(
 
     // Cấu hình DxLib
     ChangeWindowMode(TRUE);
-    SetMainWindowText(L"Odoru - Just a Fish Game");
+    SetMainWindowText(L"オドル ― おさかなサバイバル");
     SetGraphMode(GameConsts::SCREEN_WIDTH, GameConsts::SCREEN_HEIGHT, 32);
     SetBackgroundColor(16, 24, 38);
 
@@ -89,7 +89,7 @@ int WINAPI WinMain(
     }
 
     // Ngôn ngữ đã lưu (Data/settings.ini) -> chọn bộ font EN (Yabikoma) / JP (Rounded M+ 1c)
-    L10N::Init();
+
     FontManager::Init();
 
     // Khởi tạo Module Âm thanh (SoundManager)

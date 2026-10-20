@@ -107,10 +107,10 @@ const wchar_t* SharkBoss::SkillName(SharkSkill s)
 {
     switch (s)
     {
-    case SharkSkill::Bite: return L"Bite";
-    case SharkSkill::Strafe: return L"Strafe";
-    case SharkSkill::Vortex: return L"Vortex";
-    case SharkSkill::Hunt: return L"Hunt";
+    case SharkSkill::Bite: return L"噛みつき";
+    case SharkSkill::Strafe: return L"旋回攻撃";
+    case SharkSkill::Vortex: return L"渦潮";
+    case SharkSkill::Hunt: return L"狩り";
     default: return L"-";
     }
 }
@@ -555,7 +555,7 @@ void SharkBoss::Update(float dt, PlayerFish& player, EffectSystem& effects)
         Vec3 radial = (distPlayer > 1.0f) ? toPlayer * (1.0f / distPlayer) : Fwd();
         Vec3 tangent{ radial.z, 0.0f, -radial.x };
         float pull = std::clamp((distPlayer - GameConsts::SHARK_PREFERRED_DIST) / 150.0f, -1.0f, 1.0f);
-        Vec3 desire = tangent + radial * pull;
+        Vec3 desire = MapObstacles::SteerDirection(pos_, tangent + radial * pull, GameConsts::SHARK_HITBOX_RADIUS);
         TurnToward(YawOf(desire), GameConsts::SHARK_TURN_RATE * (rest ? 0.5f : 1.0f), dt);
         pos_ = MapObstacles::Move(pos_, Fwd() * (speed * dt), GameConsts::SHARK_HITBOX_RADIUS);
         tailSpeedMul_ = rest ? 0.45f : 1.0f;

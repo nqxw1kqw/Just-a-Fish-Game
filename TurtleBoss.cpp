@@ -96,9 +96,9 @@ const wchar_t* TurtleBoss::SkillName(TurtleSkill s)
 {
     switch (s)
     {
-    case TurtleSkill::Roll: return L"RollCharge";
-    case TurtleSkill::Bite: return L"Bite";
-    case TurtleSkill::Tail: return L"TailSweep";
+    case TurtleSkill::Roll: return L"回転突進";
+    case TurtleSkill::Bite: return L"噛みつき";
+    case TurtleSkill::Tail: return L"尾の薙ぎ払い";
     default: return L"-";
     }
 }

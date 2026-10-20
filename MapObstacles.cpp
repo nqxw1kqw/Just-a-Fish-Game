@@ -95,8 +95,9 @@ namespace
     constexpr int side = 41, cells = side*side;
     constexpr float step = 34.0f, origin = -680.0f;
     constexpr unsigned short unreachable = 65535;
-    std::array<bool,cells> blocked{};
-    std::array<unsigned short,cells> distanceField{};
+    constexpr std::array<float,4> clearance = {24.0f,55.0f,75.0f,100.0f};
+    std::array<std::array<bool,cells>,4> blockedBySize{};
+    std::array<std::array<unsigned short,cells>,4> fieldsBySize{};
     std::array<int,cells> queue{};
     bool initialized = false;
     float refresh = 0;
@@ -171,33 +172,39 @@ void MapObstacles::UpdateNavigation(const Vec3& target, float dt)
     if (!Enabled()) { initialized=false; refresh=0; return; }
     if (!initialized)
     {
-        for (int i=0;i<cells;++i) blocked[i]=Overlaps(Cell(i),49.0f);
+        for (size_t size=0;size<clearance.size();++size)
+            for (int i=0;i<cells;++i) blockedBySize[size][i]=Overlaps(Cell(i),clearance[size]+25.0f);
         initialized=true;
     }
     refresh-=dt;
     if (refresh>0) return;
     refresh=0.2f;
-    int goal=Index(target);
-    if (blocked[goal])
+    for (size_t size=0;size<clearance.size();++size)
     {
-        float closest=std::numeric_limits<float>::max();
-        for (int i=0;i<cells;++i) if (!blocked[i])
+        const auto& blocked=blockedBySize[size];
+        auto& distanceField=fieldsBySize[size];
+        int goal=Index(target);
+        if (blocked[goal])
         {
-            const float d=Flat(Cell(i)-target).LengthSq();
-            if (d<closest) { closest=d; goal=i; }
+            float closest=std::numeric_limits<float>::max();
+            for (int i=0;i<cells;++i) if (!blocked[i])
+            {
+                const float d=Flat(Cell(i)-target).LengthSq();
+                if (d<closest) { closest=d; goal=i; }
+            }
         }
-    }
-    distanceField.fill(unreachable);
-    int head=0,tail=0;
-    queue[tail++]=goal; distanceField[goal]=0;
-    while (head<tail)
-    {
-        const int i=queue[head++], x=i%side, z=i/side;
-        const int neighbours[]={x>0?i-1:-1,x<side-1?i+1:-1,z>0?i-side:-1,z<side-1?i+side:-1};
-        for (int n:neighbours) if (n>=0 && !blocked[n] && distanceField[n]==unreachable)
+        distanceField.fill(unreachable);
+        int head=0,tail=0;
+        queue[tail++]=goal; distanceField[goal]=0;
+        while (head<tail)
         {
-            distanceField[n]=static_cast<unsigned short>(distanceField[i]+1);
-            queue[tail++]=n;
+            const int i=queue[head++], x=i%side, z=i/side;
+            const int neighbours[]={x>0?i-1:-1,x<side-1?i+1:-1,z>0?i-side:-1,z<side-1?i+side:-1};
+            for (int n:neighbours) if (n>=0 && !blocked[n] && distanceField[n]==unreachable)
+            {
+                distanceField[n]=static_cast<unsigned short>(distanceField[i]+1);
+                queue[tail++]=n;
+            }
         }
     }
 }
@@ -206,6 +213,10 @@ Vec3 MapObstacles::ChaseDirection(const Vec3& p, const Vec3& target, float radiu
 {
     const Vec3 direct=Flat(target-p).Normalized();
     if (!Enabled() || !initialized || ClearSegment(p,target,radius+2)) return direct;
+    size_t size=0;
+    while (size+1<clearance.size() && radius>clearance[size]) ++size;
+    const auto& blocked=blockedBySize[size];
+    const auto& distanceField=fieldsBySize[size];
     const int index=Index(p), cx=index%side, cz=index/side;
     float best=std::numeric_limits<float>::max();
     Vec3 waypoint=p;
@@ -222,4 +233,22 @@ Vec3 MapObstacles::ChaseDirection(const Vec3& p, const Vec3& target, float radiu
             if (score<best) { best=score; waypoint=candidate; }
         }
     return best<std::numeric_limits<float>::max() ? Flat(waypoint-p).Normalized() : direct;
+}
+
+Vec3 MapObstacles::SteerDirection(const Vec3& p, const Vec3& desired, float radius)
+{
+    const Vec3 direct=Flat(desired).Normalized();
+    const float lookAhead=radius+55.0f;
+    if (!Enabled() || ClearSegment(p,p+direct*lookAhead,radius+2)) return direct;
+    Vec3 best=direct;
+    float bestScore=-2.0f;
+    for (float angle : {0.6f,-0.6f,1.1f,-1.1f,1.7f,-1.7f,2.3f,-2.3f})
+    {
+        const float c=std::cos(angle),sn=std::sin(angle);
+        const Vec3 candidate{direct.x*c-direct.z*sn,0,direct.x*sn+direct.z*c};
+        if (!ClearSegment(p,p+candidate*lookAhead,radius+2)) continue;
+        const float score=Vec3::Dot(candidate,direct);
+        if (score>bestScore) {bestScore=score;best=candidate;}
+    }
+    return best;
 }

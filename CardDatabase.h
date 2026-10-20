@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Card.h"
 #include "DxLib.h"
 #include <vector>
@@ -13,8 +13,8 @@ public:
             // 1. Deep Trench (Common, modifier)
             {
                 "vucsau",
-                L"Deep Trench",
-                L"+ Slam Radius +25%",
+                L"深海の溝",
+                L"+ スラム範囲 +25%",
                 L"",
                 CardRarity::Common,
                 false,
@@ -27,8 +27,8 @@ public:
             // 2. Heavy Slam (Common, modifier)
             {
                 "cudam",
-                L"Heavy Slam",
-                L"+ Slam Damage +40%",
+                L"ヘビースラム",
+                L"+ スラムダメージ +40%",
                 L"",
                 CardRarity::Common,
                 false,
@@ -41,8 +41,8 @@ public:
             // 3. Nimble Leap (Common, modifier)
             {
                 "nhaygon",
-                L"Nimble Leap",
-                L"+ Jump Cooldown x0.8",
+                L"身軽なジャンプ",
+                L"+ ジャンプ待ち時間 x0.8",
                 L"",
                 CardRarity::Common,
                 false,
@@ -55,8 +55,8 @@ public:
             // 4. Swift Fins (Common, modifier)
             {
                 "vaynhanh",
-                L"Swift Fins",
-                L"+ Swim Speed +15%",
+                L"疾風のヒレ",
+                L"+ 泳ぐ速さ +15%",
                 L"",
                 CardRarity::Common,
                 false,
@@ -69,8 +69,8 @@ public:
             // 5. Thick Scales (Common, modifier)
             {
                 "daday",
-                L"Thick Scales",
-                L"+ Max HP +30%",
+                L"分厚いウロコ",
+                L"+ 最大体力 +30%",
                 L"",
                 CardRarity::Common,
                 false,
@@ -83,8 +83,8 @@ public:
             // 6. Echo Wave (Rare, modifier)
             {
                 "songdoi",
-                L"Echo Wave",
-                L"+ Slam Radius +35%, Push +30%",
+                L"エコーウェーブ",
+                L"+ スラム範囲 +35%、押し出し +30%",
                 L"",
                 CardRarity::Rare,
                 false,
@@ -98,8 +98,8 @@ public:
             // 7. Puffer Needles (Rare, hook OnHit taken)
             {
                 "canoc",
-                L"Puffer Needles",
-                L"+ Counter 8 Spikes on Hit",
+                L"フグの針",
+                L"+ 被弾時にトゲ8本で反撃",
                 L"",
                 CardRarity::Rare,
                 false,
@@ -111,8 +111,8 @@ public:
             // 8. Crushing Impact (Epic, modifier)
             {
                 "cudapnang",
-                L"Crushing Impact",
-                L"+ Knockback +100%, DMG +30%",
+                L"粉砕インパクト",
+                L"+ ノックバック +100%、ダメージ +30%",
                 L"",
                 CardRarity::Epic,
                 false,

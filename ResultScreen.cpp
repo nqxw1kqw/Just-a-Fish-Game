@@ -57,17 +57,16 @@ void ResultScreen::Init()
 {
     Shutdown();
     layeredScreen_.Init();
-    const wchar_t* paths[2][2] = {
-        { L"Data/UI/Results/Illustrated-v1/lose-en.png", L"Data/UI/Results/Illustrated-v1/lose-ja.png" },
-        { L"Data/UI/Results/Illustrated-v1/win-en.png", L"Data/UI/Results/Illustrated-v1/win-ja.png" }
+    const wchar_t* paths[2] = {
+        L"Data/UI/Results/Illustrated-v1/lose-ja.png",
+        L"Data/UI/Results/Illustrated-v1/win-ja.png"
     };
     for (int outcome = 0; outcome < 2; ++outcome)
-        for (int language = 0; language < 2; ++language)
-        {
-            resultArtwork_[outcome][language] = LoadGraph(paths[outcome][language]);
-            if (resultArtwork_[outcome][language] == -1)
-                AppLogAdd(L"[RESULT_UI] Missing %s; using the legacy result screen.\n", paths[outcome][language]);
-        }
+    {
+        resultArtwork_[outcome][1] = LoadGraph(paths[outcome]);
+        if (resultArtwork_[outcome][1] == -1)
+            AppLogAdd(L"[RESULT_UI] 日本語画像を読み込めません: %s\n", paths[outcome]);
+    }
     selectionArtwork_ = LoadGraph(L"Data/UI/Results/Illustrated-v1/selection-arrow.png");
     defeatArtwork_ = LoadGraph(L"Data/UI/Results/defeat-v2-simple.png");
     if (defeatArtwork_ == -1)
@@ -128,7 +127,7 @@ ResultScreen::Action ResultScreen::Update(float dt, const Input& input)
     mouseX_ = mouseX; mouseY_ = mouseY; mousePrev_ = mouseNow;
     if (timer_ < INPUT_DELAY) return Action::None;
 
-    const int language = L10N::Get() == Language::Japanese ? 1 : 0;
+    const int language = 1;
     const bool layered = layeredScreen_.Ready(victory_, language == 1);
     if (layered || resultArtwork_[victory_ ? 1 : 0][language] != -1)
     {
@@ -175,7 +174,7 @@ ResultScreen::Action ResultScreen::Update(float dt, const Input& input)
 
 bool ResultScreen::DrawIllustrated(const ResultStats& s) const
 {
-    const int language = L10N::Get() == Language::Japanese ? 1 : 0;
+    const int language = 1;
     const int artwork = resultArtwork_[s.victory ? 1 : 0][language];
     if (artwork == -1) return false;
 
@@ -200,21 +199,21 @@ bool ResultScreen::DrawIllustrated(const ResultStats& s) const
     }
 
     // This mode and the record vary per run, unlike the baked score-board labels.
-    const wchar_t* mode = s.endless ? (s.hard ? TR(L"HARD") : TR(L"NORMAL")) : TR(L"TUTORIAL");
+    const wchar_t* mode = s.endless ? (s.hard ? TR(L"ハード") : TR(L"ノーマル")) : TR(L"チュートリアル");
     DrawRunNote(ScreenX(470), ScreenY(334), mode, ink);
     if (s.retryTutorial)
-        DrawRunNote(ScreenX(465), ScreenY(846), TR(L"Retry from tutorial"), ink);
+        DrawRunNote(ScreenX(465), ScreenY(846), TR(L"チュートリアルから再挑戦"), ink);
     if (s.endless)
     {
         wchar_t best[128] = {};
         const int bestSeconds = static_cast<int>(s.bestTime);
-        swprintf_s(best, TR(L"Best: Stage %d  |  Kills %d  |  %02d:%02d  |  Score %d"),
+        swprintf_s(best, TR(L"ベスト: ステージ %d  |  撃破 %d  |  %02d:%02d  |  スコア %d"),
                    s.bestWave, s.bestKills, bestSeconds / 60, bestSeconds % 60, s.bestScore);
         DrawRunNote(ScreenX(465), ScreenY(880), best, ink);
     }
-    DrawRunNote(ScreenX(465), ScreenY(910), TR(L"R: Retry   T: Title"), ink);
+    DrawRunNote(ScreenX(465), ScreenY(910), TR(L"R: リトライ   T: タイトルへ"), ink);
     if (s.debugUsed)
-        DrawRunNote(ScreenX(465), ScreenY(808), s.endless ? TR(L"[DEBUG MODE USED - RECORD NOT SAVED]") : TR(L"[DEBUG MODE USED]"), GetColor(151, 39, 44));
+        DrawRunNote(ScreenX(465), ScreenY(808), s.endless ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(151, 39, 44));
 
     if (timer_ >= INPUT_DELAY)
     {
@@ -275,11 +274,11 @@ void ResultScreen::Draw(const ResultStats& s) const
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     if (t < 0.25f) return;
 
-    const wchar_t* modeName = s.endless ? (s.hard ? TR(L"HARD") : TR(L"NORMAL")) : TR(L"TUTORIAL");
+    const wchar_t* modeName = s.endless ? (s.hard ? TR(L"ハード") : TR(L"ノーマル")) : TR(L"チュートリアル");
     DrawCentered(cx, 96, modeName, MenuStyle::Muted(), FontSize::Body);
 
     // 2. Tiêu đề: rơi xuống + nhún, từng chữ lượn sóng
-    const wchar_t* title = s.victory ? TR(L"VICTORY!") : TR(L"GAME OVER");
+    const wchar_t* title = s.victory ? TR(L"勝利！") : TR(L"ゲームオーバー");
     unsigned int titleCol = s.victory ? GetColor(255, 225, 70) : GetColor(255, 70, 70);
     float drop = Ease((t - 0.25f) / 0.6f);
     int baseY = static_cast<int>(150.0f - 90.0f * (1.0f - drop));
@@ -305,8 +304,8 @@ void ResultScreen::Draw(const ResultStats& s) const
         }
         x += cw;
     }
-    const wchar_t* sub = s.victory ? TR(L"All 30 stages cleared!")
-                       : (s.diedAtBoss ? TR(L"Fell before the Giant Whale...") : TR(L"Your fish was stranded..."));
+    const wchar_t* sub = s.victory ? TR(L"全30ステージクリア！")
+                       : (s.diedAtBoss ? TR(L"巨大クジラの前に力尽きた…") : TR(L"お魚は打ち上げられてしまった…"));
     DrawCentered(cx, baseY + 82, sub, GetColor(220, 235, 255), FontSize::Medium);
 
     // 3. Bảng thống kê (trượt vào lần lượt)
@@ -325,10 +324,10 @@ void ResultScreen::Draw(const ResultStats& s) const
     swprintf_s(rows[0], L"%02d:%02d", min, sec);
     swprintf_s(rows[1], L"%d", static_cast<int>(s.kills * countT + 0.5f));
     swprintf_s(rows[2], L"Lv.%d", s.level);
-    if (s.endless) swprintf_s(rows[3], s.victory ? TR(L"%d / %d  CLEAR") : TR(L"Stage %d"), s.wave, GameConsts::ENDLESS_MAX_STAGE);
-    else swprintf_s(rows[3], TR(L"Tutorial %d / %d"), s.wave, GameConsts::TUTORIAL_WAVES);
+    if (s.endless) swprintf_s(rows[3], s.victory ? TR(L"%d / %d  クリア") : TR(L"ステージ %d"), s.wave, GameConsts::ENDLESS_MAX_STAGE);
+    else swprintf_s(rows[3], TR(L"チュートリアル %d / %d"), s.wave, GameConsts::TUTORIAL_WAVES);
     swprintf_s(rows[4], L"%d", static_cast<int>(score * countT + 0.5f));
-    const wchar_t* labels[5] = { TR(L"TIME"), TR(L"KILLS"), TR(L"LEVEL"), s.endless ? TR(L"STAGE") : TR(L"TUTORIAL"), TR(L"SCORE") };
+    const wchar_t* labels[5] = { TR(L"時間"), TR(L"撃破"), TR(L"レベル"), s.endless ? TR(L"ステージ") : TR(L"チュートリアル"), TR(L"スコア") };
     for (int i = 0; i < 5; ++i)
     {
         float ra = Ease((t - 0.7f - i * 0.1f) / 0.3f);
@@ -347,27 +346,27 @@ void ResultScreen::Draw(const ResultStats& s) const
     {
         int bm = static_cast<int>(s.bestTime) / 60, bs = static_cast<int>(s.bestTime) % 60;
         wchar_t best[96];
-        swprintf_s(best, TR(L"Best: Stage %d  |  Kills %d  |  %02d:%02d  |  Score %d"), s.bestWave, s.bestKills, bm, bs, s.bestScore);
+        swprintf_s(best, TR(L"ベスト: ステージ %d  |  撃破 %d  |  %02d:%02d  |  スコア %d"), s.bestWave, s.bestKills, bm, bs, s.bestScore);
         DrawCentered(cx, extraY, best, GetColor(255, 215, 80), FontSize::Body);
         extraY += 22;
     }
     if (s.debugUsed)
     {
-        DrawCentered(cx, extraY, s.endless ? TR(L"[DEBUG MODE USED - RECORD NOT SAVED]") : TR(L"[DEBUG MODE USED]"), GetColor(255, 90, 90), FontSize::Body);
+        DrawCentered(cx, extraY, s.endless ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(255, 90, 90), FontSize::Body);
     }
 
     // 4. Menu Retry / Title
     float ma = Ease((t - 1.2f) / 0.4f);
     if (ma <= 0.0f) return;
-    const wchar_t* items[2] = { s.retryTutorial ? TR(L"Retry from tutorial") : TR(L"Play Again"), TR(L"Return to Title") };
+    const wchar_t* items[2] = { s.retryTutorial ? TR(L"チュートリアルから再挑戦") : TR(L"もう一度遊ぶ"), TR(L"タイトルへ戻る") };
     for (int i = 0; i < 2; ++i)
     {
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * ma));
         MenuStyle::Button(cx - 280, 650 + i * 66, 560, items[i], selected_ == i, MenuStyle::Accent());
     }
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-    DrawCentered(cx, 802, TR(L"W/S or UP/DOWN: Select   ENTER/SPACE: Confirm"), MenuStyle::Muted(), FontSize::Body);
-    DrawCentered(cx, 833, TR(L"R: Retry   T: Title"), MenuStyle::Muted(), FontSize::Body);
+    DrawCentered(cx, 802, TR(L"W/S・上下キーで選択   ENTER/SPACEで決定"), MenuStyle::Muted(), FontSize::Body);
+    DrawCentered(cx, 833, TR(L"R: リトライ   T: タイトルへ"), MenuStyle::Muted(), FontSize::Body);
 }
 
 void ResultScreen::DrawDefeat(const ResultStats& s) const
@@ -393,24 +392,24 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
         DrawExtendGraph(artX, artY, artX + artSize, artY + artSize, defeatArtwork_, TRUE);
     // Keep the simple drawing on a plain paper-like card, with no image effects.
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * fade));
-    const wchar_t* caption = TR(L"A little rest. Then another dive.");
+    const wchar_t* caption = TR(L"ひと休みしたら、また泳ごう。");
     const float captionScale = (std::min)(1.0f, static_cast<float>(artSize - 36) / (std::max)(1, TextWidth(caption, FontSize::Medium)));
     DrawFitted(artX + (artSize - static_cast<int>(TextWidth(caption, FontSize::Medium) * captionScale)) / 2,
                731, caption, muted, FontSize::Medium, artSize - 36);
 
-    const wchar_t* modeName = s.endless ? (s.hard ? TR(L"HARD") : TR(L"NORMAL")) : TR(L"TUTORIAL");
+    const wchar_t* modeName = s.endless ? (s.hard ? TR(L"ハード") : TR(L"ノーマル")) : TR(L"チュートリアル");
     wchar_t summary[96] = {};
-    swprintf_s(summary, L"%s / %s", TR(L"DIVE SUMMARY"), modeName);
+    swprintf_s(summary, L"%s / %s", TR(L"今回の記録"), modeName);
     DrawFitted(panelX, 100, summary, muted, FontSize::Body, panelW);
-    DrawFitted(panelX, 132, TR(L"GAME OVER"), paper, FontSize::Title, panelW, 1.55f);
-    DrawFitted(panelX, 198, s.diedAtBoss ? TR(L"Defeated during a boss fight.") : TR(L"End of this dive."),
+    DrawFitted(panelX, 132, TR(L"ゲームオーバー"), paper, FontSize::Title, panelW, 1.55f);
+    DrawFitted(panelX, 198, s.diedAtBoss ? TR(L"ボスとの戦いで力尽きた。") : TR(L"今回の冒険はここまで。"),
                muted, FontSize::Medium, panelW);
 
     // The existing score formula is shared with highscore persistence.
     const float count = Ease((timer_ - 0.45f) / 0.85f);
     wchar_t score[32] = {};
     swprintf_s(score, L"%d", static_cast<int>(ComputeScore(s) * count + 0.5f));
-    DrawFitted(panelX, 258, TR(L"SCORE"), accent, FontSize::Body, panelW);
+    DrawFitted(panelX, 258, TR(L"スコア"), accent, FontSize::Body, panelW);
     DrawFitted(panelX - 2, 282, score, paper, FontSize::Title, panelW, 2.05f);
     DrawLine(panelX, 365, panelX + panelW, 365, GetColor(52, 75, 91));
 
@@ -421,7 +420,7 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
     swprintf_s(values[2], L"Lv. %d", s.level);
     if (s.endless) swprintf_s(values[3], L"%d / %d", s.wave, GameConsts::ENDLESS_MAX_STAGE);
     else swprintf_s(values[3], L"%d / %d", s.wave, GameConsts::TUTORIAL_WAVES);
-    const wchar_t* labels[4] = { TR(L"TIME"), TR(L"KILLS"), TR(L"LEVEL"), s.endless ? TR(L"STAGE") : TR(L"TUTORIAL") };
+    const wchar_t* labels[4] = { TR(L"時間"), TR(L"撃破"), TR(L"レベル"), s.endless ? TR(L"ステージ") : TR(L"チュートリアル") };
     for (int i = 0; i < 4; ++i)
     {
         const int x = panelX + (i % 2) * 340;
@@ -434,16 +433,16 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
     {
         wchar_t best[128] = {};
         const int bestMinutes = static_cast<int>(s.bestTime) / 60, bestSeconds = static_cast<int>(s.bestTime) % 60;
-        swprintf_s(best, TR(L"Best: Stage %d  |  Kills %d  |  %02d:%02d  |  Score %d"),
+        swprintf_s(best, TR(L"ベスト: ステージ %d  |  撃破 %d  |  %02d:%02d  |  スコア %d"),
                    s.bestWave, s.bestKills, bestMinutes, bestSeconds, s.bestScore);
         DrawFitted(panelX, 568, best, accent, FontSize::Body, panelW);
     }
     if (s.debugUsed)
-        DrawFitted(panelX, 600, s.endless ? TR(L"[DEBUG MODE USED - RECORD NOT SAVED]") : TR(L"[DEBUG MODE USED]"),
+        DrawFitted(panelX, 600, s.endless ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"),
                    GetColor(239, 151, 142), FontSize::Body, panelW);
 
     const float menuFade = Ease((timer_ - INPUT_DELAY) / 0.3f);
-    const wchar_t* items[2] = { s.retryTutorial ? TR(L"Retry from tutorial") : TR(L"Retry"), TR(L"Return to Title") };
+    const wchar_t* items[2] = { s.retryTutorial ? TR(L"チュートリアルから再挑戦") : TR(L"リトライ"), TR(L"タイトルへ戻る") };
     for (int i = 0; i < 2; ++i)
     {
         const bool active = selected_ == i;
@@ -451,8 +450,8 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * menuFade));
         MenuStyle::Button(panelX, y, panelW, items[i], active, accent);
     }
-    DrawCentered(panelX + panelW / 2, 802, TR(L"W/S or UP/DOWN: Select   ENTER/SPACE: Confirm"), muted, FontSize::Body);
-    DrawCentered(panelX + panelW / 2, 833, TR(L"R: Retry   T: Title"), muted, FontSize::Body);
+    DrawCentered(panelX + panelW / 2, 802, TR(L"W/S・上下キーで選択   ENTER/SPACEで決定"), muted, FontSize::Body);
+    DrawCentered(panelX + panelW / 2, 833, TR(L"R: リトライ   T: タイトルへ"), muted, FontSize::Body);
     SetDrawMode(previousDrawMode);
     SetDrawBlendMode(previousBlend, previousAlpha);
 }

@@ -40,12 +40,10 @@ void PauseMenuScreen::Load(Sprite& sprite, const wchar_t* name, const wchar_t* s
 void PauseMenuScreen::Init()
 {
     Shutdown();
-    Load(panel_, L"panel"); Load(headers_[0], L"header-en"); Load(headers_[1], L"header-ja");
-    Load(resume_[0], L"resume-en"); Load(resume_[1], L"resume-ja");
-    Load(title_[0], L"button-title-en", L"Data/UI/Results/Layered-v1/button-title-en.png");
+    Load(panel_, L"panel"); Load(headers_[1], L"header-ja");
+    Load(resume_[1], L"resume-ja");
     Load(title_[1], L"button-title-ja", L"Data/UI/Results/Layered-v1/button-title-ja.png");
-    Load(rows_[0], L"row-bgm"); Load(rows_[1], L"row-sfx"); Load(rows_[2], L"row-display");
-    Load(modes_[0][0], L"window-en"); Load(modes_[0][1], L"fullscreen-en");
+    Load(rows_[0], L"row-music-ja"); Load(rows_[1], L"row-sfx-ja"); Load(rows_[2], L"row-display");
     Load(modes_[1][0], L"window-ja"); Load(modes_[1][1], L"fullscreen-ja");
     Load(track_, L"slider-track"); Load(knob_, L"slider-knob");
     Load(cursor_, L"selection-arrow", L"Data/UI/Results/Illustrated-v1/selection-arrow.png");
@@ -109,7 +107,7 @@ void PauseMenuScreen::Leave()
 
 bool PauseMenuScreen::Ready() const
 {
-    const int locale = L10N::Get() == Language::Japanese ? 1 : 0;
+    const int locale = 1;
     return panel_.handle != -1 && headers_[locale].handle != -1 && resume_[locale].handle != -1 &&
         title_[locale].handle != -1 && rows_[0].handle != -1 && rows_[1].handle != -1 && rows_[2].handle != -1 &&
         modes_[locale][0].handle != -1 && modes_[locale][1].handle != -1 && track_.handle != -1 && knob_.handle != -1;
@@ -134,7 +132,7 @@ void PauseMenuScreen::Part(const Sprite& s, Rect r)
 }
 const PauseMenuScreen::Sprite& PauseMenuScreen::Item(int i) const
 {
-    const int locale = L10N::Get() == Language::Japanese ? 1 : 0;
+    const int locale = 1;
     return i == 0 ? resume_[locale] : i == 4 ? title_[locale] : rows_[i - 1];
 }
 PauseMenuScreen::Rect PauseMenuScreen::ItemRect(int i, int selected) const
@@ -207,7 +205,7 @@ bool PauseMenuScreen::Draw(int selected, int bgm, int sfx, bool windowed) const
     DrawBox(0, 0, GameConsts::SCREEN_WIDTH, GameConsts::SCREEN_HEIGHT, GetColor(6, 14, 26), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     Part(panel_, Fit(panel_, panelBox_));
-    const int locale = L10N::Get() == Language::Japanese ? 1 : 0;
+    const int locale = 1;
     Part(headers_[locale], Fit(headers_[locale], headerBox_));
     const unsigned int ink = GetColor(15, 35, 64);
     for (int i = 0; i < 5; ++i) {
@@ -241,7 +239,7 @@ bool PauseMenuScreen::Draw(int selected, int bgm, int sfx, bool windowed) const
         const int bob = static_cast<int>(std::sin((GetNowCount() - enteredAt_) * 0.005f) * 3.0f);
         Part(cursor_, { row.x - 135 + bob, row.y + row.h / 2 - 65, 130, 130 });
     }
-    MenuStyle::Center(800, helpY_, TR(L"W/S or UP/DOWN: Select   ENTER/SPACE: Confirm"), ink, FontSize::Body, 0.9f, 690);
-    MenuStyle::Center(800, helpY_ + 24, TR(L"A/D: Adjust   ESC/P: Resume"), ink, FontSize::Body, 0.9f, 690);
+    MenuStyle::Center(800, helpY_, TR(L"W/S・上下キーで選択   ENTER/SPACEで決定"), ink, FontSize::Body, 0.9f, 690);
+    MenuStyle::Center(800, helpY_ + 24, TR(L"A/D: 調整   ESC/P: 再開"), ink, FontSize::Body, 0.9f, 690);
     return true;
 }

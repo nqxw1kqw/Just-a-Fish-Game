@@ -85,3 +85,8 @@ Use case: ui-mockup. Production standalone 2D game UI PNG asset, genuine transpa
 ```text
 Use case: ui-mockup. Production standalone 2D game UI PNG asset, genuine transparent alpha background. Image 1 (cream result board) and Image 2 (teal retry button) are STYLE REFERENCES ONLY, not edit targets. Match their clean hand-drawn anime/cartoon seaside style: confident thick dark navy outlines, warm honey wood and rope, ivory paper, turquoise accents, restrained shell/leaf details, simple tidy cel shading, easy to redraw by hand. No photorealism, no fine noisy texture, no excessive tiny details, no scene, no checkerboard, no mockup canvas. Keep complete silhouette centered with generous safe transparent margins. Create ONE standalone text-only UI label on genuine transparent background. Exact text: "フルスクリーン". A SINGLE horizontal line, chunky rounded clean hand-lettered navy glyphs with a very thin warm ivory outer keyline, matching the style of the BGM label from the reference but only typography, all characters legible. No sign, no board, no frame, no icon, no arrows, no background. Do not add other words. Keep safe transparent margin around the entire text. This label is overlaid in a cream settings row.
 ```
+
+
+## 日本語専用の音量行
+
+既存の row-bgm.png と row-sfx.png をそれぞれ参照。「BGM」を「音楽」、「SFX」を「効果音」に変更。木枠、ロープ、クリーム色の背景、左側のアイコン、透過背景を保持。右側のスライダー用空白を残し、元と同じ手描き風の太い紺色文字を使用。各行を個別の透過 PNG として出力。

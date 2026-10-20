@@ -36,11 +36,11 @@ struct EnemyTypeConfig
 // Thứ tự phải khớp enum EnemyType
 inline constexpr std::array<EnemyTypeConfig, ENEMY_TYPE_COUNT> kEnemyTypeConfigs = { {
     //  name        HP      Speed   Radius  Dmg    Cost                            setY   Y      bounceH bounceT
-    { L"Minion",  26.0f,  110.0f, 13.0f,  5.0f,  GameConsts::ENEMY_COST_MINION, true,  0.0f,  0.0f,  0.0f  },
-    { L"Hopper",  38.0f,  135.0f, 15.0f,  7.0f,  GameConsts::ENEMY_COST_HOPPER, false, 0.0f,  28.0f, 0.36f },
-    { L"Tanker", 130.0f,   52.0f, 24.0f, 12.0f,  GameConsts::ENEMY_COST_TANKER, true,  0.0f,  0.0f,  0.0f  },
-    { L"Float",   32.0f,   60.0f, 16.0f,  7.0f,  GameConsts::ENEMY_COST_FLOAT,  true,  16.0f, 0.0f,  0.0f  },
-    { L"Charge",  45.0f,   92.0f, 17.0f, 12.0f,  GameConsts::ENEMY_COST_CHARGE, true,  0.0f,  0.0f,  0.0f  },
+    { L"小魚",  26.0f,  110.0f, 13.0f,  5.0f,  GameConsts::ENEMY_COST_MINION, true,  0.0f,  0.0f,  0.0f  },
+    { L"カニ",  38.0f,  135.0f, 15.0f,  7.0f,  GameConsts::ENEMY_COST_HOPPER, false, 0.0f,  28.0f, 0.36f },
+    { L"カメ", 130.0f,   52.0f, 24.0f, 12.0f,  GameConsts::ENEMY_COST_TANKER, true,  0.0f,  0.0f,  0.0f  },
+    { L"クラゲ",   32.0f,   60.0f, 16.0f,  7.0f,  GameConsts::ENEMY_COST_FLOAT,  true,  16.0f, 0.0f,  0.0f  },
+    { L"突進ザメ",  45.0f,   92.0f, 17.0f, 12.0f,  GameConsts::ENEMY_COST_CHARGE, true,  0.0f,  0.0f,  0.0f  },
 } };
 
 inline const EnemyTypeConfig* GetEnemyTypeConfig(EnemyType type)

@@ -55,7 +55,7 @@ void WhaleBoss::StartBreach(PlayerFish& player)
     slamTarget_ = player.GetPosition();
     slamTarget_.y = 0.0f;
     slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
-    RecordActionHistory(L"Breach Slam");
+    RecordActionHistory(L"飛び込みスラム");
 }
 
 void WhaleBoss::UpdateBreachTelegraph(float dt, float duration, PlayerFish& player, EffectSystem& effects, bool trackPlayer)
@@ -130,7 +130,7 @@ void WhaleBoss::StartTail()
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
     tailCooldown_ = GameConsts::TAIL_COOLDOWN;
-    RecordActionHistory(L"Tail Slap");
+    RecordActionHistory(L"尾の叩きつけ");
     // PR E: nón nước phía sau. Fuyuu dùng góc TOÀN PHẦN -> 2 x 70° = 140°
     float dur = (phase_ == BossPhase::Phase1) ? GameConsts::TAIL_TELEGRAPH_P1 : GameConsts::TAIL_TELEGRAPH_P2;
     Fx().tail.Start(DxConv::ToVECTOR(TailPos()), DxConv::ToVECTOR(Forward(yaw_)), dur,
@@ -154,7 +154,7 @@ void WhaleBoss::Stun(float duration, float damageMul)
     stunTimer_ = duration;
     stunDamageMul_ = damageMul;
     telegraphFxTimer_ = 0.0f;
-    RecordActionHistory(L"Stunned");
+    RecordActionHistory(L"気絶");
     Fx().stun.Start(DxConv::ToVECTOR(HeadPos()), duration);
     SoundManager::Instance().StopSFX(SfxId::BossInhaleLoop);
     SoundManager::Instance().PlaySFX(SfxId::BossStun);
@@ -423,7 +423,7 @@ void WhaleBoss::ForceTsunamiDouble(PlayerFish& player)
     secondRingDelay_ = GameConsts::TSUNAMI_DOUBLE_DELAY;
     secondRingGapDeg_ = GameConsts::TSUNAMI_GAP_DEG_P2;
     StartTsunamiTelegraph(player, 0.0f);
-    RecordActionHistory(L"Tsunami Double (debug)");
+    RecordActionHistory(L"二重の大波（動作確認）");
 }
 
 // ---------------- PR C: Bubble Net / Inhale ----------------
@@ -443,7 +443,7 @@ void WhaleBoss::StartBubbleNet(PlayerFish& player)
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
     bubbleNetCooldown_ = GameConsts::BUBBLENET_COOLDOWN;
-    RecordActionHistory(L"Bubble Net");
+    RecordActionHistory(L"泡の網");
 }
 
 void WhaleBoss::ForceBubbleNet(PlayerFish& player)
@@ -465,7 +465,7 @@ void WhaleBoss::StartInhale(PlayerFish& player)
     // PR E: chạy suốt telegraph + hút. Fuyuu dùng góc TOÀN PHẦN -> 2 x 60° = 120°
     Fx().inhale.Start(DxConv::ToVECTOR(MouthPos()), DxConv::ToVECTOR(Forward(yaw_)),
                       GameConsts::INHALE_TELEGRAPH + GameConsts::INHALE_DURATION, GameConsts::INHALE_RANGE, GameConsts::INHALE_CONE_HALF_DEG * 2.0f);
-    RecordActionHistory(L"Inhale");
+    RecordActionHistory(L"吸い込み");
 }
 
 void WhaleBoss::ForceInhale(PlayerFish& player)
@@ -554,7 +554,7 @@ void WhaleBoss::ForcePack(PlayerFish& player)
     pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);
     NoteSkill(BossSkill::Minions);
     StartPackTelegraph(player);
-    RecordActionHistory(L"Call the Pack (debug)");
+    RecordActionHistory(L"群れ召喚（動作確認）");
 }
 
 void WhaleBoss::StartDive(PlayerFish& player)
@@ -568,7 +568,7 @@ void WhaleBoss::StartDive(PlayerFish& player)
     actionTimer_ = 0.0f;
     telegraphFxTimer_ = 0.0f;
     diveCooldown_ = GameConsts::DIVE_COOLDOWN;
-    RecordActionHistory(L"Dive Charge");
+    RecordActionHistory(L"潜行突進");
 }
 
 void WhaleBoss::ForceDive(PlayerFish& player)
@@ -658,14 +658,14 @@ const wchar_t* WhaleBoss::SkillName(BossSkill s)
 {
     switch (s)
     {
-    case BossSkill::Slam: return L"Breach";
-    case BossSkill::DoubleSlam: return L"Triple";
-    case BossSkill::Minions: return L"Pack";
-    case BossSkill::Tsunami: return L"Tsunami";
-    case BossSkill::Tail: return L"Tail";
-    case BossSkill::BubbleNet: return L"BubbleNet";
-    case BossSkill::Inhale: return L"Inhale";
-    case BossSkill::Dive: return L"Dive";
+    case BossSkill::Slam: return L"飛び込み";
+    case BossSkill::DoubleSlam: return L"三連スラム";
+    case BossSkill::Minions: return L"群れ召喚";
+    case BossSkill::Tsunami: return L"大波";
+    case BossSkill::Tail: return L"尾撃";
+    case BossSkill::BubbleNet: return L"泡の網";
+    case BossSkill::Inhale: return L"吸い込み";
+    case BossSkill::Dive: return L"潜行突進";
     default: return L"-";
     }
 }

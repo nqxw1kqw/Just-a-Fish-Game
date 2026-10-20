@@ -25,7 +25,6 @@ void UIRenderer::Init()
     if (titleArtwork_ != -1) DeleteGraph(titleArtwork_);
     titleArtwork_ = LoadGraph(GameConsts::TITLE_COVER_PATH);
     modeSelectScreen_.Init();
-    languageSelectScreen_.Init();
     pauseMenuScreen_.Init();
 }
 
@@ -34,7 +33,6 @@ void UIRenderer::Shutdown()
     if (titleArtwork_ != -1) DeleteGraph(titleArtwork_);
     titleArtwork_ = -1;
     modeSelectScreen_.Shutdown();
-    languageSelectScreen_.Shutdown();
     pauseMenuScreen_.Shutdown();
 }
 
@@ -83,18 +81,18 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
         int waveSecLeft = (std::max)(0, static_cast<int>(game.waveDuration_ - game.waveTimer_));
         if (game.mode_ == GameMode::Endless)
         {
-            FontManager::DrawFormat(sw / 2 - 150, 24, GetColor(100, 220, 255), FontSize::Header, TR(L"NORMAL STAGE %d / %d"), game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
+            FontManager::DrawFormat(sw / 2 - 150, 24, GetColor(100, 220, 255), FontSize::Header, TR(L"ノーマル ステージ %d / %d"), game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
         }
         else if (game.mode_ == GameMode::Hell)
         {
-            FontManager::DrawFormat(sw / 2 - 140, 24, GetColor(255, 90, 70), FontSize::Header, TR(L"HARD STAGE %d / %d"), game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
+            FontManager::DrawFormat(sw / 2 - 140, 24, GetColor(255, 90, 70), FontSize::Header, TR(L"ハード ステージ %d / %d"), game.currentWave_, GameConsts::ENDLESS_MAX_STAGE);
         }
         else
         {
-            FontManager::DrawFormat(sw / 2 - 120, 24, GetColor(100, 220, 255), FontSize::Header, TR(L"TUTORIAL %d / %d"), game.currentWave_, GameConsts::TUTORIAL_WAVES);
+            FontManager::DrawFormat(sw / 2 - 120, 24, GetColor(100, 220, 255), FontSize::Header, TR(L"チュートリアル %d / %d"), game.currentWave_, GameConsts::TUTORIAL_WAVES);
         }
-        FontManager::DrawFormat(sw / 2 - 95, 52, GetColor(255, 220, 100), FontSize::Body, TR(L"TIME LEFT: %02ds"), waveSecLeft);
-        FontManager::DrawFormat(sw / 2 - 110, 74, GetColor(255, 180, 80), FontSize::Body, TR(L"ENEMIES: %d | KILLS: %d"), game.enemies_.GetActiveCount(), game.enemies_.GetTotalKills());
+        FontManager::DrawFormat(sw / 2 - 95, 52, GetColor(255, 220, 100), FontSize::Body, TR(L"残り時間: %02d秒"), waveSecLeft);
+        FontManager::DrawFormat(sw / 2 - 110, 74, GetColor(255, 180, 80), FontSize::Body, TR(L"敵: %d | 撃破: %d"), game.enemies_.GetActiveCount(), game.enemies_.GetTotalKills());
     }
 
     // 4. Danh sách các Thẻ đã sở hữu ở góc trái dưới
@@ -103,7 +101,7 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
     // F11: ẩn/hiện toàn bộ bảng thông tin (stats, thẻ, debug, hướng dẫn phím)
     if (!game.panelsVisible_)
     {
-        FontManager::Draw(hpX, sh - 30, TR(L"[F11] Show panels"), GetColor(140, 170, 200), FontSize::Small);
+        FontManager::Draw(hpX, sh - 30, TR(L"[F11] パネル表示"), GetColor(140, 170, 200), FontSize::Small);
         return;
     }
 
@@ -116,18 +114,18 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
         const float def = (std::min)(GameConsts::LV_DEF_MAX, GameConsts::LV_DEF_PCT * lv[GamePrototype::LS_Def]);
         int y = cardListY;
         DrawBox(hpX - 4, y - 2, hpX + 270, y + 6 * 16 + 4, hell ? GetColor(20, 10, 14) : GetColor(10, 18, 30), TRUE);
-        FontManager::DrawFormat(hpX, y, hell ? GetColor(255, 140, 110) : GetColor(120, 210, 255), FontSize::Small, TR(L"[STATS]  Lv %d  EXP %d/%d"), game.player_.GetLevel(), game.player_.GetExp(), game.player_.GetExpNext()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"ATK +%d   SLAM %.0f  BULLET %.0f"), lv[0], st.slamDamage.GetValue(), st.bulletDamage.GetValue()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"DEF +%d   -%d%% dmg taken   HP %.0f"), lv[1], (int)(def * 100.0f + 0.5f), st.maxHp.GetValue()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"SPD +%d   %.0f"), lv[2], st.moveSpeed.GetValue()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"CD  +%d   jump %.2fs"), lv[3], st.jumpCooldown.GetValue()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"LUCK +%d  rarity +%d"), lv[4], lv[4] * GameConsts::LV_LUCK_RARITY_SHIFT); y += 16;
+        FontManager::DrawFormat(hpX, y, hell ? GetColor(255, 140, 110) : GetColor(120, 210, 255), FontSize::Small, TR(L"[ステータス]  レベル %d  経験値 %d/%d"), game.player_.GetLevel(), game.player_.GetExp(), game.player_.GetExpNext()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"攻撃 +%d   スラム %.0f  弾 %.0f"), lv[0], st.slamDamage.GetValue(), st.bulletDamage.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"防御 +%d   被ダメ -%d%%   体力 %.0f"), lv[1], (int)(def * 100.0f + 0.5f), st.maxHp.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"速度 +%d   %.0f"), lv[2], st.moveSpeed.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"待ち時間  +%d   ジャンプ %.2f秒"), lv[3], st.jumpCooldown.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"運 +%d  レア度 +%d"), lv[4], lv[4] * GameConsts::LV_LUCK_RARITY_SHIFT); y += 16;
         cardListY = y + 8;
     }
     const auto& cards = game.cardManager_.GetActiveCards();
     if (!cards.empty())
     {
-        FontManager::Draw(hpX, cardListY, TR(L"[ACTIVE CARDS]:"), GetColor(220, 230, 245), FontSize::Body);
+        FontManager::Draw(hpX, cardListY, TR(L"[所持カード]:"), GetColor(220, 230, 245), FontSize::Body);
         cardListY += 18;
         if (game.mode_ == GameMode::Hell)
         {
@@ -160,13 +158,10 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
 
     // 6. Hướng dẫn điều khiển góc dưới
     int guideY = sh - 45;
-    FontManager::Draw(40, guideY, TR(L"[WASD]: Swim  |  [SPACE]: Jump Slam  |  [A/D+Enter / 1,2,3]: Pick Cards  |  [R]: Reset  |  [F1]: Debug  |  [F2]: Shake Cam  |  [F11]: Panels"), GetColor(200, 215, 235), FontSize::Body);
+    FontManager::Draw(40, guideY, TR(L"[WASD]: 泳ぐ  |  [SPACE]: ジャンプスラム  |  [A/D+Enter / 1,2,3]: カード選択  |  [R]: リセット  |  [F1]: デバッグ  |  [F2]: 画面揺れ  |  [F11]: パネル"), GetColor(200, 215, 235), FontSize::Body);
 }
 
-void UIRenderer::DrawLanguageSelectScreen(const GamePrototype& game) const
-{
-    languageSelectScreen_.Draw(game.langSelectIdx_);
-}
+
 
 void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
 {
@@ -190,9 +185,8 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
     DrawBox(0, sh - 190, sw, sh, GetColor(4, 10, 20), TRUE);
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
 
-    MenuStyle::Center(midX, sh - 168, TR(L"ODORU : JUST A FISH GAME"), MenuStyle::Paper(), FontSize::Header);
-    MenuStyle::Button(midX - 280, sh - 121, 560, TR(L"SPACE / ENTER - START"), true, MenuStyle::Accent());
-    MenuStyle::Center(midX, sh - 48, TR(L"[L]: Language"), MenuStyle::Muted(), FontSize::Body);
+    MenuStyle::Center(midX, sh - 168, TR(L"オドル : ジャスト・ア・フィッシュ・ゲーム"), MenuStyle::Paper(), FontSize::Header);
+    MenuStyle::Button(midX - 280, sh - 121, 560, TR(L"SPACE / ENTER   スタート"), true, MenuStyle::Accent());
     SetDrawMode(previousDrawMode);
     SetDrawBlendMode(previousBlend, previousAlpha);
 }
@@ -206,14 +200,14 @@ void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const
     int sw = GameConsts::SCREEN_WIDTH;
     if (game.levelUpBannerTimer_ > 0.0f && game.IsEndlessLike())
     {
-        static const wchar_t* kStat[GamePrototype::LS_Count] = { L"+1 ATTACK", L"+1 DEFENSE", L"+1 SPEED", L"+1 COOLDOWN", L"+1 LUCK" };
+        static const wchar_t* kStat[GamePrototype::LS_Count] = { L"攻撃 +1", L"防御 +1", L"速度 +1", L"クールダウン +1", L"運 +1" };
         float k = (std::min)(1.0f, game.levelUpBannerTimer_ / 0.4f); // mờ dần 0.4s cuối
         int by = GameConsts::SCREEN_HEIGHT / 2 - 150;
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(200 * k));
         DrawBox(sw / 2 - 170, by, sw / 2 + 170, by + 70, GetColor(10, 30, 50), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * k));
         DrawBox(sw / 2 - 170, by, sw / 2 + 170, by + 70, GetColor(120, 230, 255), FALSE);
-        FontManager::DrawFormat(sw / 2 - 120, by + 8, GetColor(255, 255, 255), FontSize::Header, TR(L"LEVEL UP!  Lv %d"), game.player_.GetLevel());
+        FontManager::DrawFormat(sw / 2 - 120, by + 8, GetColor(255, 255, 255), FontSize::Header, TR(L"レベルアップ！  レベル %d"), game.player_.GetLevel());
         FontManager::Draw(sw / 2 - 70, by + 44, TR(kStat[game.levelUpStat_]), GetColor(120, 255, 180), FontSize::Medium);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     }
@@ -228,7 +222,7 @@ void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const
         const bool fading = game.rouletteLanded_ && ft > GameConsts::HELL_ROULETTE_HOLD_TIME;
         if (!fading)
         {
-            FontManager::Draw(x0, y0 - 22, game.rouletteLanded_ ? TR(L"HARD CARD GET!") : TR(L"HARD ROULETTE..."), GetColor(255, 140, 110), FontSize::Body);
+            FontManager::Draw(x0, y0 - 22, game.rouletteLanded_ ? TR(L"ハードカード獲得！") : TR(L"ハードルーレット…"), GetColor(255, 140, 110), FontSize::Body);
             for (int i = 0; i < n; ++i)
             {
                 const Card& c = game.rouletteCards_[i];
@@ -277,16 +271,16 @@ void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const
     if (game.activeTip_ < 0 || game.paused_) return;
 
     static const wchar_t* kTips[GamePrototype::Tip_Count] = {
-        L"MOVE: Swim with [WASD] / Arrow keys",
-        L"JUMP / SLAM: Press [SPACE] - airborne = invincible, landing hits",
-        L"ATTACK: Land a slam on an enemy to defeat it",
-        L"CARDS: Pick 1 upgrade - [A/D] + [ENTER] or [1] [2] [3]",
-        L"BOSS: Dodge its attacks in the air, slam it when it is open!" };
+        L"移動: [WASD] / 矢印キーで泳ぐ",
+        L"ジャンプ/スラム: [SPACE] ― 空中は無敵、着地で攻撃",
+        L"攻撃: 敵の上にスラムして倒そう",
+        L"カード: 強化を1枚選ぶ ― [A/D]+[ENTER] または [1][2][3]",
+        L"ボス: 空中で攻撃をかわし、スキを見てスラム！" };
     int y = (game.state_ == GameState::CardPick) ? 150 : 104;
     DrawBox(sw / 2 - 340, y, sw / 2 + 340, y + 52, GetColor(15, 40, 70), TRUE);
     DrawBox(sw / 2 - 340, y, sw / 2 + 340, y + 52, GetColor(255, 220, 80), FALSE);
     FontManager::Draw(sw / 2 - 325, y + 6, TR(kTips[game.activeTip_]), GetColor(255, 235, 120), FontSize::Medium);
-    FontManager::Draw(sw / 2 - 325, y + 32, TR(L"[TAB] Skip tips"), GetColor(170, 190, 215), FontSize::Small);
+    FontManager::Draw(sw / 2 - 325, y + 32, TR(L"[TAB] ヒントをスキップ"), GetColor(170, 190, 215), FontSize::Small);
 }
 
 void UIRenderer::DrawBossIntroScreen(int bossKind) const
@@ -301,9 +295,9 @@ void UIRenderer::DrawBossIntroScreen(int bossKind) const
     int midX = sw / 2;
     int midY = sh / 2;
 
-    DrawCX(midX, midY - 60, TR(L"! WARNING: DEEP SEA ENERGY ANOMALY !"), GetColor(255, 60, 60), FontSize::Header);
-    DrawCX(midX, midY - 15, bossKind == 4 ? TR(L"BOSS: SWORDFISH SLASHES IN!") : bossKind == 3 ? TR(L"BOSS: ANCIENT TURTLE GUARDS THE REEF!") : bossKind == 2 ? TR(L"BOSS: GIANT SQUID BLOCKS THE DEEP!") : bossKind == 1 ? TR(L"BOSS: GREAT SHARK IS HUNTING YOU!") : TR(L"FINAL BOSS: GIANT WHALE HAS APPEARED!"), GetColor(255, 215, 60), FontSize::Medium);
-    DrawCX(midX, midY + 40, TR(L"The battle for survival begins now..."), GetColor(240, 240, 240), FontSize::Body);
+    DrawCX(midX, midY - 60, TR(L"！ 警告: 深海エネルギー異常 ！"), GetColor(255, 60, 60), FontSize::Header);
+    DrawCX(midX, midY - 15, bossKind == 4 ? TR(L"ボス: カジキが斬り込んでくる！") : bossKind == 3 ? TR(L"ボス: 古代ガメが岩礁を守る！") : bossKind == 2 ? TR(L"ボス: 巨大イカが深海を塞ぐ！") : bossKind == 1 ? TR(L"ボス: 巨大ザメが狙っている！") : TR(L"ラスボス: 巨大クジラが現れた！"), GetColor(255, 215, 60), FontSize::Medium);
+    DrawCX(midX, midY + 40, TR(L"生き残りをかけた戦いが今始まる…"), GetColor(240, 240, 240), FontSize::Body);
 }
 
 void UIRenderer::DrawVictoryScreen(const GamePrototype& game) const
@@ -341,15 +335,15 @@ void UIRenderer::DrawPauseScreen(const GamePrototype& game) const
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     DrawBox(boxX, boxY, boxX + boxW, boxY + boxH, GetColor(47, 69, 85), FALSE);
 
-    MenuStyle::Center(midX, boxY + 28, TR(L"PAUSED"), MenuStyle::Paper(), FontSize::Title, 1.3f);
+    MenuStyle::Center(midX, boxY + 28, TR(L"一時停止"), MenuStyle::Paper(), FontSize::Title, 1.3f);
 
     const SoundManager& sound = SoundManager::Instance();
     wchar_t labels[GamePrototype::PauseItem_Count][64] = {};
-    swprintf_s(labels[GamePrototype::PauseItem_Resume], TR(L"Resume"));
-    swprintf_s(labels[GamePrototype::PauseItem_BgmVolume], TR(L"BGM Volume:  < %3d >"), sound.GetVolume(SoundChannel::BGM));
-    swprintf_s(labels[GamePrototype::PauseItem_SfxVolume], TR(L"SFX Volume:  < %3d >"), sound.GetVolume(SoundChannel::SFX));
-    swprintf_s(labels[GamePrototype::PauseItem_WindowMode], TR(L"Screen:  < %s >"), GetWindowModeFlag() == TRUE ? TR(L"Window") : TR(L"Fullscreen"));
-    swprintf_s(labels[GamePrototype::PauseItem_Title], TR(L"Return to Title"));
+    swprintf_s(labels[GamePrototype::PauseItem_Resume], TR(L"再開"));
+    swprintf_s(labels[GamePrototype::PauseItem_BgmVolume], TR(L"音楽音量:  < %3d >"), sound.GetVolume(SoundChannel::BGM));
+    swprintf_s(labels[GamePrototype::PauseItem_SfxVolume], TR(L"効果音量:  < %3d >"), sound.GetVolume(SoundChannel::SFX));
+    swprintf_s(labels[GamePrototype::PauseItem_WindowMode], TR(L"画面:  < %s >"), GetWindowModeFlag() == TRUE ? TR(L"ウィンドウ") : TR(L"フルスクリーン"));
+    swprintf_s(labels[GamePrototype::PauseItem_Title], TR(L"タイトルへ戻る"));
 
     int itemY = boxY + 106;
     for (int i = 0; i < GamePrototype::PauseItem_Count; ++i)
@@ -359,6 +353,6 @@ void UIRenderer::DrawPauseScreen(const GamePrototype& game) const
         itemY += 64;
     }
 
-    MenuStyle::Center(midX, boxY + 445, TR(L"W/S or UP/DOWN: Select   ENTER/SPACE: Confirm"), MenuStyle::Muted(), FontSize::Body, 1.0f, boxW - 60);
-    MenuStyle::Center(midX, boxY + 480, TR(L"A/D: Adjust   ESC/P: Resume"), MenuStyle::Muted(), FontSize::Body);
+    MenuStyle::Center(midX, boxY + 445, TR(L"W/S・上下キーで選択   ENTER/SPACEで決定"), MenuStyle::Muted(), FontSize::Body, 1.0f, boxW - 60);
+    MenuStyle::Center(midX, boxY + 480, TR(L"A/D: 調整   ESC/P: 再開"), MenuStyle::Muted(), FontSize::Body);
 }

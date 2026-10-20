@@ -8,6 +8,9 @@ namespace GameConsts
     constexpr int SCREEN_HEIGHT = 900;
     constexpr float FIXED_TIMESTEP = 1.0f / 120.0f; // 120Hz logic loop
 
+    constexpr float CHARGE_TELEGRAPH_TIME = 0.65f;
+    constexpr float CHARGE_DASH_TIME = 0.65f;
+
     // Sàn đấu (Arena)
     constexpr float ARENA_SIZE = 1400.0f;
     constexpr float ARENA_HALF_SIZE = ARENA_SIZE * 0.5f;
@@ -739,10 +742,7 @@ namespace GameConsts
     constexpr bool INFO_PANELS_DEFAULT_VISIBLE = true;   // F11 bật/tắt bảng stats/thẻ/debug/hướng dẫn
     constexpr bool DEBUG_HUD_DEFAULT_VISIBLE = false;    // F1 Debug HUD (cheat keys) mặc định tắt
     constexpr int KEY_TOGGLE_PANELS = 0x57;              // KEY_INPUT_F11
-    constexpr int KEY_LANGUAGE_SELECT = 0x26;            // KEY_INPUT_L (ở màn Title)
     constexpr const wchar_t* TITLE_COVER_PATH = L"Data/UI/Title/title_cover.png"; // Ảnh bìa Title (16:9)
-    constexpr const wchar_t* FONT_LATIN_PATH = L"Data/Font/Yabikoma-e9W16.otf";
-    constexpr const wchar_t* FONT_LATIN_NAME = L"Yabikoma";
     constexpr const wchar_t* FONT_JP_PATH = L"Data/Font/MPLUSRounded1c-Bold.ttf"; // SIL OFL 1.1 (Data/Font/OFL.txt)
     constexpr const wchar_t* FONT_JP_NAME = L"Rounded Mplus 1c Bold";
     constexpr const wchar_t* FONT_JP_FALLBACK_NAME = L"Meiryo";

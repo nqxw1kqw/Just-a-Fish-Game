@@ -95,10 +95,10 @@ const wchar_t* SquidBoss::SkillName(SquidSkill s)
 {
     switch (s)
     {
-    case SquidSkill::TentacleSlam: return L"TentacleSlam";
-    case SquidSkill::InkSpray: return L"InkSpray";
-    case SquidSkill::InkJet: return L"InkJet";
-    case SquidSkill::Grab: return L"Grab";
+    case SquidSkill::TentacleSlam: return L"触手叩き";
+    case SquidSkill::InkSpray: return L"墨の散布";
+    case SquidSkill::InkJet: return L"墨弾";
+    case SquidSkill::Grab: return L"捕獲";
     default: return L"-";
     }
 }
@@ -228,6 +228,8 @@ void SquidBoss::UpdateHover(float dt, const PlayerFish& player, float speedMul)
     Vec3 side{ -radial.z, 0.0f, radial.x };
     vel += side * (strafeSign_ * GameConsts::SQUID_STRAFE_SPEED / GameConsts::SQUID_MOVE_SPEED);
     if (vel.LengthSq() > 1.0f) vel = vel.Normalized();
+    const float moveStrength = vel.Length();
+    vel = MapObstacles::SteerDirection(pos_, vel, GameConsts::SQUID_HITBOX_RADIUS) * moveStrength;
     pos_ = MapObstacles::Move(pos_, vel * (GameConsts::SQUID_MOVE_SPEED * speedMul * dt), GameConsts::SQUID_HITBOX_RADIUS);
     float targetY = GameConsts::SQUID_HOVER_HEIGHT + std::sin(hoverPhase_) * GameConsts::SQUID_HOVER_BOB_AMP;
     pos_.y += (targetY - pos_.y) * (std::min)(1.0f, dt * 3.0f);

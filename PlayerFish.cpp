@@ -42,7 +42,7 @@ void PlayerFish::Init()
         {
             // Không còn khối hộp dự phòng: báo lỗi rõ ràng, cá người chơi sẽ không được vẽ
             AppLogAdd(L"[FISH_MODEL] ERROR: failed to load player fish model (Data/Model/Main/r-fish.mv1, Data/Model/Main/fish.mv1, Data/Model/fish.mv1)\n");
-            printfDx(L"ERROR: player fish model failed to load (Data/Model/Main/r-fish.mv1)\n");
+            printfDx(L"魚のモデルを読み込めません (Data/Model/Main/r-fish.mv1)\n");
             OutputDebugStringW(L"[FISH_MODEL] ERROR: failed to load player fish model\n");
         }
 

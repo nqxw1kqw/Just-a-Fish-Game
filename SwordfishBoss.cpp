@@ -96,9 +96,9 @@ const wchar_t* SwordfishBoss::SkillName(SwordfishSkill s)
 {
     switch (s)
     {
-    case SwordfishSkill::Dash: return L"SwordDash";
-    case SwordfishSkill::Spin: return L"Spin";
-    case SwordfishSkill::Rage: return L"RageDive";
+    case SwordfishSkill::Dash: return L"剣先突進";
+    case SwordfishSkill::Spin: return L"回転斬り";
+    case SwordfishSkill::Rage: return L"怒りの潜砂";
     default: return L"-";
     }
 }
@@ -184,9 +184,8 @@ void SwordfishBoss::PickNext(PlayerFish& player, EffectSystem& effects)
     const SwordfishSkill skills[3] = { SwordfishSkill::Dash, SwordfishSkill::Spin, SwordfishSkill::Rage };
     float w[3] = {
         GameConsts::SWORDFISH_WEIGHT_DASH,
-        GameConsts::SWORDFISH_WEIGHT_SPIN,
+        (dist <= GameConsts::SWORDFISH_SPIN_HIT_RADIUS + GameConsts::SWORDFISH_SPIN_ADVANCE * GameConsts::SWORDFISH_SPIN_TIME + player.GetHitboxRadius()) ? GameConsts::SWORDFISH_WEIGHT_SPIN : 0.0f,
         (raged_ && rageCooldown_ <= 0.0f) ? GameConsts::SWORDFISH_WEIGHT_RAGE : 0.0f };
-    (void)dist;
     float total = 0.0f;
     for (int i = 0; i < 3; ++i)
     {

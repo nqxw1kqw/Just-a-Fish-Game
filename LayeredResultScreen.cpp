@@ -62,11 +62,11 @@ void LayeredResultScreen::Init()
     Shutdown();
     scenery_ = LoadGraph(L"Data/UI/ChoiceMenus/Layered-v1/background.png");
     Load(fish_[0], L"fish-lose"); Load(fish_[1], L"fish-win");
-    Load(headers_[0][0], L"header-lose-en"); Load(headers_[0][1], L"header-lose-ja");
-    Load(headers_[1][0], L"header-win-en"); Load(headers_[1][1], L"header-win-ja");
-    Load(boards_[0], L"board-en"); Load(boards_[1], L"board-ja");
-    Load(buttons_[0][0], L"button-retry-en"); Load(buttons_[0][1], L"button-retry-ja");
-    Load(buttons_[1][0], L"button-title-en"); Load(buttons_[1][1], L"button-title-ja");
+    Load(headers_[0][1], L"header-lose-ja");
+    Load(headers_[1][1], L"header-win-ja");
+    Load(boards_[1], L"board-ja");
+    Load(buttons_[0][1], L"button-retry-ja");
+    Load(buttons_[1][1], L"button-title-ja");
     ReadLayout();
 }
 
@@ -121,9 +121,9 @@ void LayeredResultScreen::ReadLayout()
     modeY_ = std::clamp(value(L"Result", L"ModeY", 300), 0, GameConsts::SCREEN_HEIGHT - 20);
     notesX_ = std::clamp(value(L"Result", L"NotesX", 440), 0, GameConsts::SCREEN_WIDTH);
     notesY_ = std::clamp(value(L"Result", L"NotesY", 810), 30, GameConsts::SCREEN_HEIGHT - 80);
-    for (int locale = 0; locale < 2; ++locale)
+    for (int locale = 1; locale < 2; ++locale)
     {
-        const wchar_t* section = locale == 0 ? L"ValuesEN" : L"ValuesJP";
+        const wchar_t* section = L"ValuesJP";
         values_[locale] = ValueLayout{};
         values_[locale].x = value(section, L"X", 1000);
         values_[locale].width = std::clamp(value(section, L"Width", 600), 32, 2000);
@@ -186,7 +186,7 @@ int LayeredResultScreen::ButtonAt(int x, int y, int selected, bool held, int pre
 
 bool LayeredResultScreen::Draw(const ResultStats& s, float timer, int selected, bool held, int pressed, int cursor) const
 {
-    const bool japanese = L10N::Get() == Language::Japanese;
+    const bool japanese = true;
     if (!Ready(s.victory, japanese)) return false;
     const MenuStyle::DrawState drawState;
     const int locale = japanese ? 1 : 0, outcome = s.victory ? 1 : 0;
@@ -221,19 +221,19 @@ bool LayeredResultScreen::Draw(const ResultStats& s, float timer, int selected, 
                           (std::max)(32, static_cast<int>(values_[locale].width * sx)));
     }
 
-    const wchar_t* mode = s.endless ? (s.hard ? TR(L"HARD") : TR(L"NORMAL")) : TR(L"TUTORIAL");
+    const wchar_t* mode = s.endless ? (s.hard ? TR(L"ハード") : TR(L"ノーマル")) : TR(L"チュートリアル");
     Note(modeX_, modeY_, mode, ink);
-    if (s.retryTutorial) Note(notesX_, notesY_, TR(L"Retry from tutorial"), ink);
+    if (s.retryTutorial) Note(notesX_, notesY_, TR(L"チュートリアルから再挑戦"), ink);
     if (s.endless)
     {
         wchar_t best[128];
         const int bestSeconds = static_cast<int>(s.bestTime);
-        swprintf_s(best, TR(L"Best: Stage %d  |  Kills %d  |  %02d:%02d  |  Score %d"),
+        swprintf_s(best, TR(L"ベスト: ステージ %d  |  撃破 %d  |  %02d:%02d  |  スコア %d"),
                    s.bestWave, s.bestKills, bestSeconds / 60, bestSeconds % 60, s.bestScore);
         Note(notesX_, notesY_ + 30, best, ink);
     }
-    Note(notesX_, notesY_ + 60, TR(L"R: Retry   T: Title"), ink);
-    if (s.debugUsed) Note(notesX_, notesY_ - 30, s.endless ? TR(L"[DEBUG MODE USED - RECORD NOT SAVED]") : TR(L"[DEBUG MODE USED]"), GetColor(151, 39, 44));
+    Note(notesX_, notesY_ + 60, TR(L"R: リトライ   T: タイトルへ"), ink);
+    if (s.debugUsed) Note(notesX_, notesY_ - 30, s.endless ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(151, 39, 44));
 
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * Ease((timer - 0.6f) / 0.2f)));
     for (int i : { 1 - selected, selected }) DrawPart(buttons_[i][locale], ButtonRect(i, selected, held, pressed, japanese));

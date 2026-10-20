@@ -1,4 +1,4 @@
-#include "SoundManager.h"
+﻿#include "SoundManager.h"
 #include <algorithm>
 #include <cstdio>
 #include <windows.h>
@@ -525,13 +525,24 @@ const char* SoundManager::GetBgmName(BgmId id) const
 const wchar_t* SoundManager::GetSfxNameW(SfxId id) const
 {
     int idx = static_cast<int>(id);
-    if (idx >= 0 && idx < SFX_COUNT) return sfxList_[idx].wname;
-    return L"Unknown";
+    static const wchar_t* names[] = {
+        L"泳ぐ音", L"ジャンプ", L"着地スラム", L"被弾", L"敵の撃破", L"サメの予告", L"サメの突進",
+        L"サメの潜行", L"サメの浮上", L"サメの捕獲", L"サメの投げ", L"サメの旋回", L"渦潮",
+        L"サメの狂乱", L"サメの気絶", L"フグの針", L"経験値取得", L"クジラの声", L"大波の予告",
+        L"大波", L"ボスの着地", L"ボスの咆哮", L"尾撃", L"泡の網", L"潜行突進", L"吸い込み",
+        L"群れ召喚", L"気絶", L"敵への命中", L"敵への強打", L"敵の消滅", L"負傷", L"減速",
+        L"項目の選択", L"カードを開く", L"カードの決定"
+    };
+    static_assert(sizeof(names)/sizeof(names[0]) == SFX_COUNT);
+    if (idx >= 0 && idx < SFX_COUNT) return names[idx];
+    return L"不明";
 }
 
 const wchar_t* SoundManager::GetBgmNameW(BgmId id) const
 {
     int idx = static_cast<int>(id);
-    if (idx >= 0 && idx < BGM_COUNT) return bgmList_[idx].wname;
-    return L"None";
+    static const wchar_t* names[] = { L"タイトル", L"通常戦闘", L"ボス戦", L"勝利", L"敗北" };
+    static_assert(sizeof(names)/sizeof(names[0]) == BGM_COUNT);
+    if (idx >= 0 && idx < BGM_COUNT) return names[idx];
+    return L"なし";
 }

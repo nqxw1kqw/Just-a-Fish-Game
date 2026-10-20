@@ -13,5 +13,4 @@ public:
 
 private:
     IllustratedChoiceMenu illustratedMenu_;
-    int artwork_[2] = { -1, -1 };
 };

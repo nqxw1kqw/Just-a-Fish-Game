@@ -99,7 +99,7 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
     DrawRadial(bx, by, 36.0f, expRatio, GetColor(120, 230, 255));          // vòng EXP
     DrawCircleAA(bx, by, 29.0f, 48, GetColor(10, 30, 55), TRUE);
     DrawCircleAA(bx, by, 36.0f, 48, GetColor(140, 210, 255), FALSE, 2.0f);
-    FontManager::Draw(static_cast<int>(bx) - 11, static_cast<int>(by) - 22, L"Lv", GetColor(150, 200, 235), FontSize::Small);
+    FontManager::Draw(static_cast<int>(bx) - 20, static_cast<int>(by) - 22, L"レベル", GetColor(150, 200, 235), FontSize::Small);
     FontManager::DrawFormat(static_cast<int>(bx) - (player.GetLevel() >= 10 ? 13 : 7), static_cast<int>(by) - 6, GetColor(255, 255, 255), FontSize::Medium, L"%d", player.GetLevel());
 
     // Thanh HP (+ phần máu trễ màu trắng)
@@ -118,14 +118,14 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
         DrawBox(hx, hy, hx + fw, hy + hh, hpFill, TRUE);
         DrawBox(hx, hy, hx + fw, hy + 7, low ? GetColor(255, 160, 150) : GetColor(150, 255, 190), TRUE);
     }
-    FontManager::Draw(hx + 6, hy + 3, L"HP", GetColor(15, 30, 20), FontSize::Body);
+    FontManager::Draw(hx + 6, hy + 3, L"体力", GetColor(15, 30, 20), FontSize::Body);
     FontManager::DrawFormat(hx + hw - 81, hy + 4, GetColor(0, 0, 0), FontSize::Body, L"%3.0f / %3.0f", hp, maxHp);   // bóng chữ
     FontManager::DrawFormat(hx + hw - 82, hy + 3, GetColor(255, 255, 255), FontSize::Body, L"%3.0f / %3.0f", hp, maxHp);
 
     // Thanh EXP mảnh
     int ey = hy + hh + 8;
     DrawBar(hx, ey, hw, 8, expRatio, GetColor(18, 30, 50), GetColor(90, 200, 255), GetColor(170, 235, 255));
-    FontManager::DrawFormat(hx, ey + 11, GetColor(150, 200, 235), FontSize::Small, L"EXP %d / %d", player.GetExp(), player.GetExpNext());
+    FontManager::DrawFormat(hx, ey + 11, GetColor(150, 200, 235), FontSize::Small, L"経験値 %d / %d", player.GetExp(), player.GetExpNext());
 
     // Ô kỹ năng Slam (vòng hồi chiêu)
     float sx = static_cast<float>(hx + 22), sy = static_cast<float>(PANEL_Y + PANEL_H - 24);
@@ -134,65 +134,65 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
     if (player.IsAirborne())
     {
         DrawCircleAA(sx, sy, 17.0f, 36, GetColor(255, 215, 60), TRUE);
-        FontManager::Draw(textX, textY, TR(L"AIRBORNE  - INVINCIBLE"), GetColor(255, 225, 90), FontSize::Body);
+        FontManager::Draw(textX, textY, TR(L"空中 ― 無敵"), GetColor(255, 225, 90), FontSize::Body);
     }
     else if (player.GetLandRecoveryTimer() > 0.0f)
     {
         DrawRadial(sx, sy, 17.0f, 1.0f - player.GetLandRecoveryTimer() / GameConsts::LAND_RECOVERY, GetColor(230, 110, 50));
-        FontManager::Draw(textX, textY, TR(L"RECOVERING..."), GetColor(255, 170, 120), FontSize::Body);
+        FontManager::Draw(textX, textY, TR(L"回復中…"), GetColor(255, 170, 120), FontSize::Body);
     }
     else if (player.CanJump())
     {
         float glow = 0.5f + 0.5f * std::sin(pulse_ * 6.0f);
         DrawCircleAA(sx, sy, 17.0f, 36, GetColor(Lerp(40, 90, glow), Lerp(190, 255, glow), Lerp(120, 170, glow)), TRUE);
-        FontManager::Draw(textX, textY, TR(L"[SPACE] SLAM READY"), GetColor(140, 255, 190), FontSize::Body);
+        FontManager::Draw(textX, textY, TR(L"[SPACE] スラム準備完了"), GetColor(140, 255, 190), FontSize::Body);
     }
     else
     {
         float cdMax = (std::max)(0.01f, player.GetJumpCooldownMax());
         DrawRadial(sx, sy, 17.0f, 1.0f - player.GetJumpCooldownTimer() / cdMax, GetColor(80, 160, 230));
-        FontManager::DrawFormat(textX, textY, GetColor(190, 215, 240), FontSize::Body, TR(L"SLAM  %.1fs"), player.GetJumpCooldownTimer());
+        FontManager::DrawFormat(textX, textY, GetColor(190, 215, 240), FontSize::Body, TR(L"スラム  %.1f秒"), player.GetJumpCooldownTimer());
     }
     DrawCircleAA(sx, sy, 17.0f, 36, GetColor(200, 230, 255), FALSE, 2.0f);
-    FontManager::Draw(static_cast<int>(sx) - 4, static_cast<int>(sy) - 8, L"S", GetColor(10, 20, 30), FontSize::Body);
+    FontManager::Draw(static_cast<int>(sx) - 4, static_cast<int>(sy) - 8, L"跳", GetColor(10, 20, 30), FontSize::Body);
 
     // Combo
     if (player.GetComboCount() >= 2)
     {
         unsigned int cc = player.IsComboBuffActive() ? GetColor(255, 200, 60) : GetColor(220, 230, 245);
-        FontManager::DrawFormat(PANEL_X + PANEL_W - 110, textY, cc, FontSize::Body, player.IsComboBuffActive() ? TR(L"x%d COMBO!") : TR(L"x%d combo"), player.GetComboCount());
+        FontManager::DrawFormat(PANEL_X + PANEL_W - 110, textY, cc, FontSize::Body, player.IsComboBuffActive() ? TR(L"x%d コンボ！") : TR(L"x%d コンボ"), player.GetComboCount());
     }
 }
 
 void BattleHud::DrawBossBar(const WhaleBoss& boss) const
 {
     const bool p2 = boss.GetPhase() == BossPhase::Phase2;
-    DrawBossBarCore(boss.IsActive(), boss.GetHp(), boss.GetMaxHp(), p2, TR(L"GIANT WHALE"), p2 ? TR(L"PHASE 2 - ENRAGED") : TR(L"PHASE 1"), 0.5f);
+    DrawBossBarCore(boss.IsActive(), boss.GetHp(), boss.GetMaxHp(), p2, TR(L"巨大クジラ"), p2 ? TR(L"フェーズ2 ― 激怒") : TR(L"フェーズ1"), 0.5f);
 }
 
 void BattleHud::DrawBossBar(const SharkBoss& shark) const
 {
     const bool fr = shark.IsFrenzy();
-    DrawBossBarCore(shark.IsActive(), shark.GetHp(), shark.GetMaxHp(), fr, TR(L"GREAT SHARK"), fr ? TR(L"FRENZY") : TR(L"HUNTING"), GameConsts::SHARK_FRENZY_HP_RATIO);
+    DrawBossBarCore(shark.IsActive(), shark.GetHp(), shark.GetMaxHp(), fr, TR(L"巨大ザメ"), fr ? TR(L"狂乱") : TR(L"狩り中"), GameConsts::SHARK_FRENZY_HP_RATIO);
 }
 
 void BattleHud::DrawBossBar(const SquidBoss& squid) const
 {
     const bool en = squid.IsEnraged();
-    DrawBossBarCore(squid.IsActive(), squid.GetHp(), squid.GetMaxHp(), en, TR(L"GIANT SQUID"), en ? TR(L"ENRAGED - DOUBLE TENTACLES") : TR(L"RANGED THREAT"), GameConsts::SQUID_ENRAGE_HP_RATIO);
+    DrawBossBarCore(squid.IsActive(), squid.GetHp(), squid.GetMaxHp(), en, TR(L"巨大イカ"), en ? TR(L"怒り ― 触手2本") : TR(L"遠距離の脅威"), GameConsts::SQUID_ENRAGE_HP_RATIO);
 }
 
 void BattleHud::DrawBossBar(const SwordfishBoss& swordfish) const
 {
     const bool rage = swordfish.IsRaged();
-    DrawBossBarCore(swordfish.IsActive(), swordfish.GetHp(), swordfish.GetMaxHp(), rage, TR(L"SWORDFISH"), rage ? TR(L"RAGE - SAND AMBUSH") : TR(L"FAST DUELIST"), GameConsts::SWORDFISH_RAGE_HP_RATIO);
+    DrawBossBarCore(swordfish.IsActive(), swordfish.GetHp(), swordfish.GetMaxHp(), rage, TR(L"カジキ"), rage ? TR(L"怒り ― 砂中からの急襲") : TR(L"高速の決闘者"), GameConsts::SWORDFISH_RAGE_HP_RATIO);
 }
 
 void BattleHud::DrawBossBar(const TurtleBoss& turtle) const
 {
     const bool p2 = turtle.IsPhase2();
-    DrawBossBarCore(turtle.IsActive(), turtle.GetHp(), turtle.GetMaxHp(), p2, TR(L"ANCIENT TURTLE"),
-        turtle.IsShellBroken() ? TR(L"SHELL BROKEN") : TR(L"SHELL INTACT"),
+    DrawBossBarCore(turtle.IsActive(), turtle.GetHp(), turtle.GetMaxHp(), p2, TR(L"古代ガメ"),
+        turtle.IsShellBroken() ? TR(L"甲羅破壊！") : TR(L"甲羅で防御中"),
         GameConsts::TURTLE_PHASE2_HP_RATIO);
     if (!turtle.IsActive() || turtle.IsShellBroken()) return;
     // Shell HP mini-bar under the boss HP bar: slams crack it, bullets only chip it.
@@ -207,7 +207,7 @@ void BattleHud::DrawBossBar(const TurtleBoss& turtle) const
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     DrawBox(x, y, x + w, y + h, GetColor(30, 40, 30), TRUE);
     DrawBox(x, y, x + static_cast<int>(w * ratio), y + h, GetColor(110, 175, 80), TRUE);
-    FontManager::Draw(x, y + h + 3, TR(L"SHELL"), GetColor(170, 220, 150), FontSize::Small);
+    FontManager::Draw(x, y + h + 3, TR(L"甲羅"), GetColor(170, 220, 150), FontSize::Small);
 }
 
 void BattleHud::DrawBossBarCore(bool active, float hp, float maxHp, bool p2, const wchar_t* name, const wchar_t* phaseLabel, float markRatio) const

@@ -137,7 +137,6 @@
     <ClInclude Include="MenuStyle.h" />
     <ClInclude Include="IllustratedChoiceMenu.h" />
     <ClInclude Include="ModeSelectScreen.h" />
-    <ClInclude Include="LanguageSelectScreen.h" />
     <ClInclude Include="SeabedFloor.h" />
     <ClInclude Include="SoundManager.h" />
     <ClInclude Include="Input.h" />
@@ -188,13 +187,11 @@
     <ClCompile Include="SwordfishBoss.cpp" />
     <ClCompile Include="Boss.cpp" />
     <ClCompile Include="FontManager.cpp" />
-    <ClCompile Include="Localization.cpp" />
     <ClCompile Include="DebugController.cpp" />
     <ClCompile Include="CameraController.cpp" />
     <ClCompile Include="UIRenderer.cpp" />
     <ClCompile Include="ModeSelectScreen.cpp" />
     <ClCompile Include="IllustratedChoiceMenu.cpp" />
-    <ClCompile Include="LanguageSelectScreen.cpp" />
     <ClCompile Include="SeabedFloor.cpp" />
     <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="Input.cpp" />

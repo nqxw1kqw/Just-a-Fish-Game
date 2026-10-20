@@ -388,7 +388,7 @@ void DebugController::DrawHUD(const GamePrototype& game) const
         DrawBox(sw - 140, 10, sw - 20, 36, GetColor(180, 25, 25), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
         DrawBox(sw - 140, 10, sw - 20, 36, GetColor(255, 215, 60), FALSE);
-        FontManager::Draw(sw - 120, 14, L"[DEBUG]", GetColor(255, 255, 255), FontSize::Body);
+        FontManager::Draw(sw - 120, 14, L"[デバッグ]", GetColor(255, 255, 255), FontSize::Body);
     }
 
     // 5. Debug Panel góc phải (F1). F11 ẩn toàn bộ bảng thông tin
@@ -406,44 +406,44 @@ void DebugController::DrawHUD(const GamePrototype& game) const
 
         int textX = panX + 15;
         int textY = panY + 12;
-        FontManager::Draw(textX, textY, L"=== ODORU DEBUG (JUMP & SLAM) ===", GetColor(255, 220, 80), FontSize::Body);
+        FontManager::Draw(textX, textY, L"=== オドル 動作情報 ===", GetColor(255, 220, 80), FontSize::Body);
         textY += 22;
 
 #ifdef _DEBUG
         unsigned int allocCount = static_cast<unsigned int>(g_gameplayAllocCount.load());
         int allocColor = (allocCount == 0) ? GetColor(100, 255, 140) : GetColor(255, 90, 90);
-        FontManager::DrawFormat(textX, textY, allocColor, FontSize::Small, L"Heap Allocs (Game Loop - B3): %u", allocCount);
+        FontManager::DrawFormat(textX, textY, allocColor, FontSize::Small, L"動作中のメモリ確保: %u", allocCount);
         textY += 18;
 #endif
 
         // --- SỐ ĐO WAVE / BOSS THEO TASK 10 T1 ---
         if (game.state_ == GameState::Wave)
         {
-            FontManager::Draw(textX, textY, L"--- WAVE METRICS (TASK 10 T1) ---", GetColor(100, 220, 255), FontSize::Small);
+            FontManager::Draw(textX, textY, L"--- ウェーブ情報 ---", GetColor(100, 220, 255), FontSize::Small);
             textY += 17;
             FontManager::DrawFormat(textX, textY, GetColor(255, 230, 120), FontSize::Small,
-                L"Wave: %d | Time: %.1fs / %.1fs",
+                L"ウェーブ: %d | 時間: %.1f秒 / %.1f秒",
                 game.currentWave_, game.waveTimer_, game.waveDuration_);
             textY += 17;
             FontManager::DrawFormat(textX, textY, GetColor(200, 230, 255), FontSize::Small,
-                L"Alive: %d (Cost: %.1f) | Spawn: %d | Kill: %d",
+                L"生存: %d (コスト: %.1f) | 出現: %d | 撃破: %d",
                 game.enemies_.GetActiveCount(), game.enemies_.GetAliveCost(),
                 game.enemies_.GetSpawnedThisWave(), game.enemies_.GetKilledThisWave());
             textY += 17;
             FontManager::DrawFormat(textX, textY, GetColor(255, 140, 140), FontSize::Small,
-                L"Wave Dmg Taken: %.1f", game.player_.GetDamageTakenThisWave());
+                L"今回の被ダメージ: %.1f", game.player_.GetDamageTakenThisWave());
             textY += 18;
         }
         else if (game.state_ == GameState::Boss)
         {
-            FontManager::Draw(textX, textY, L"--- BOSS METRICS (TASK 10 T1) ---", GetColor(255, 120, 120), FontSize::Small);
+            FontManager::Draw(textX, textY, L"--- ボス情報 ---", GetColor(255, 120, 120), FontSize::Small);
             textY += 17;
             FontManager::DrawFormat(textX, textY, GetColor(255, 230, 120), FontSize::Small,
-                L"Boss Time: %.1fs | Phase: %s",
-                game.boss_.GetBossFightTimer(), (game.boss_.GetPhase() == BossPhase::Phase1) ? L"Phase 1" : L"Phase 2");
+                L"経過: %.1f秒 | 段階: %s",
+                game.boss_.GetBossFightTimer(), (game.boss_.GetPhase() == BossPhase::Phase1) ? L"第1段階" : L"第2段階");
             textY += 17;
             FontManager::DrawFormat(textX, textY, GetColor(255, 160, 140), FontSize::Small,
-                L"Boss HP: %.0f / %.0f (%.1f%%) | Wave Dmg: %.1f",
+                L"ボス体力: %.0f / %.0f (%.1f%%) | 被ダメ: %.1f",
                 game.boss_.GetHp(), game.boss_.GetMaxHp(),
                 (game.boss_.GetHp() / (std::max)(1.0f, game.boss_.GetMaxHp())) * 100.0f,
                 game.player_.GetDamageTakenThisWave());
@@ -454,7 +454,7 @@ void DebugController::DrawHUD(const GamePrototype& game) const
             int histCount = game.boss_.GetActionHistoryCount();
             if (histCount == 0)
             {
-                wcscpy_s(actBuf, L"Chưa có");
+                wcscpy_s(actBuf, L"なし");
             }
             else
             {
@@ -466,83 +466,83 @@ void DebugController::DrawHUD(const GamePrototype& game) const
                 }
             }
             FontManager::DrawFormat(textX, textY, GetColor(220, 240, 255), FontSize::Small,
-                L"Recent Actions: %s", actBuf);
+                L"最近の行動: %s", actBuf);
             textY += 18;
         }
 
-        FontManager::DrawFormat(textX, textY, GetColor(220, 220, 220), FontSize::Small, L"Airborne: %s", game.player_.IsAirborne() ? L"YES (INVINCIBLE)" : L"NO (GROUND)");
+        FontManager::DrawFormat(textX, textY, GetColor(220, 220, 220), FontSize::Small, L"空中: %s", game.player_.IsAirborne() ? L"はい（無敵）" : L"いいえ（地上）");
         textY += 18;
 
-        FontManager::DrawFormat(textX, textY, GetColor(220, 220, 220), FontSize::Small, L"Height (Y): %.1f / %.1f", game.player_.GetHeightY(), GameConsts::JUMP_HEIGHT);
+        FontManager::DrawFormat(textX, textY, GetColor(220, 220, 220), FontSize::Small, L"高さ: %.1f / %.1f", game.player_.GetHeightY(), GameConsts::JUMP_HEIGHT);
         textY += 18;
 
-        FontManager::DrawFormat(textX, textY, GetColor(100, 220, 255), FontSize::Small, L"Slam Damage: %.1f  |  Radius: %.0f", game.player_.GetSlamDamage(), game.player_.GetSlamRadius());
+        FontManager::DrawFormat(textX, textY, GetColor(100, 220, 255), FontSize::Small, L"スラム威力: %.1f | 範囲: %.0f", game.player_.GetSlamDamage(), game.player_.GetSlamRadius());
         textY += 18;
 
-        FontManager::DrawFormat(textX, textY, GetColor(120, 240, 180), FontSize::Small, L"Jump CD: %.2fs / %.2fs", game.player_.GetJumpCooldownTimer(), game.player_.GetJumpCooldownMax());
+        FontManager::DrawFormat(textX, textY, GetColor(120, 240, 180), FontSize::Small, L"ジャンプ待ち: %.2f秒 / %.2f秒", game.player_.GetJumpCooldownTimer(), game.player_.GetJumpCooldownMax());
         textY += 18;
 
         FontManager::DrawFormat(textX, textY, (game.player_.IsGodMode()) ? GetColor(255, 215, 60) : GetColor(180, 180, 180), FontSize::Small,
-            L"God Mode (F9): %s", game.player_.IsGodMode() ? L"ON (IMMUNE)" : L"OFF");
+            L"無敵設定 (F9): %s", game.player_.IsGodMode() ? L"有効（無敵）" : L"無効");
         textY += 18;
 
-        FontManager::DrawFormat(textX, textY, GetColor(120, 220, 255), FontSize::Small, L"Cam Pitch: %.0f deg  |  Dist: %.0f", game.cameraController_.GetPitchDeg(), game.cameraController_.GetDistance());
+        FontManager::DrawFormat(textX, textY, GetColor(120, 220, 255), FontSize::Small, L"カメラ角度: %.0f度 | 距離: %.0f", game.cameraController_.GetPitchDeg(), game.cameraController_.GetDistance());
         textY += 18;
 
         float shakeScale = game.cameraController_.GetShakeScale();
         FontManager::DrawFormat(textX, textY, (shakeScale > 0.0f) ? GetColor(100, 255, 150) : GetColor(255, 140, 100), FontSize::Small,
-            L"Cam Shake: %s (Scale: %.1f)", (shakeScale > 0.0f) ? L"ON" : L"OFF", shakeScale);
+            L"画面揺れ: %s (倍率: %.1f)", (shakeScale > 0.0f) ? L"有効" : L"無効", shakeScale);
         textY += 18;
 
-        const wchar_t* enemyTypeNames[5] = { L"Minion", L"Hopper", L"Tanker", L"Float", L"Charge" };
+        const wchar_t* enemyTypeNames[5] = { L"小魚", L"カニ", L"カメ", L"クラゲ", L"突進ザメ" };
         EnemyType curDebugEnemyType = static_cast<EnemyType>(debugEnemyTypeIdx_);
         FontManager::DrawFormat(textX, textY, GetColor(255, 185, 110), FontSize::Small,
-            L"Enemy 3D [%s]: Scale=%.2f (< / >) | RotY=%.0f deg (M) | Switch (N)",
+            L"敵 [%s]: 倍率 %.2f (< / >) | 向き %.0f度 (M) | 切替 (N)",
             enemyTypeNames[debugEnemyTypeIdx_], game.enemies_.GetModelScale(curDebugEnemyType), game.enemies_.GetModelRotYDeg(curDebugEnemyType));
         textY += 18;
 
         FontManager::DrawFormat(textX, textY, GetColor(100, 220, 255), FontSize::Small,
-            L"Fish 3D: Scale=%.2f (O / P) | RotY=%.0f deg (L)",
+            L"魚: 倍率 %.2f (O / P) | 向き %.0f度 (L)",
             game.player_.GetFishModelScale(), game.player_.GetFishModelRotYDeg());
         textY += 18;
 
         if (game.player_.IsComboBuffActive())
         {
-            FontManager::Draw(textX, textY, L"Combo Buff: [+50% DMG (CHAIN BOUNCE)]", GetColor(255, 200, 50), FontSize::Small);
+            FontManager::Draw(textX, textY, L"連続着地強化: ダメージ +50%", GetColor(255, 200, 50), FontSize::Small);
             textY += 18;
         }
 
         if (game.state_ == GameState::Boss)
         {
-            FontManager::Draw(textX, textY, L"--- RADIAL TSUNAMI (BOSS - A8) ---", GetColor(100, 220, 255), FontSize::Small);
+            FontManager::Draw(textX, textY, L"--- 放射状の大波 ---", GetColor(100, 220, 255), FontSize::Small);
             textY += 17;
             FontManager::DrawFormat(textX, textY, GetColor(200, 230, 255), FontSize::Small,
-                L"Thick/Spd: %.2fs | Dodge Window: %.2fs",
+                L"波の通過: %.2f秒 | 回避猶予: %.2f秒",
                 game.boss_.GetTsunamiThicknessOverSpeed(), game.boss_.GetTsunamiJumpWindow());
             textY += 17;
             float timeHit = game.boss_.GetTimeToHitPlayer(game.player_.GetPosition());
             if (timeHit >= 0.0f)
             {
                 FontManager::DrawFormat(textX, textY, GetColor(255, 220, 100), FontSize::Small,
-                    L"Active Waves: %d | Time To Impact: %.2fs", game.boss_.GetActiveTsunamiCount(), timeHit);
+                    L"波の数: %d | 到達まで: %.2f秒", game.boss_.GetActiveTsunamiCount(), timeHit);
             }
             else
             {
                 FontManager::DrawFormat(textX, textY, GetColor(180, 200, 220), FontSize::Small,
-                    L"Active Waves: %d | Time To Impact: --", game.boss_.GetActiveTsunamiCount());
+                    L"波の数: %d | 到達まで: --", game.boss_.GetActiveTsunamiCount());
             }
             textY += 17;
             // AI pacing: đợt chiêu / thời gian nghỉ / 2 chiêu gần nhất
             FontManager::DrawFormat(textX, textY, GetColor(180, 255, 180), FontSize::Small,
-                L"Burst: %d/%d | Rest: %.2fs | Last: %ls, %ls",
+                L"連続攻撃: %d/%d | 休息: %.2f秒 | 直前: %ls, %ls",
                 game.boss_.GetBurstCount(), game.boss_.GetBurstSize(), game.boss_.GetRestTimer(),
                 WhaleBoss::SkillName(game.boss_.GetLastSkill()), WhaleBoss::SkillName(game.boss_.GetPrevSkill()));
             textY += 18;
             if (game.sharkFight_)
             {
                 FontManager::DrawFormat(textX, textY, GetColor(120, 220, 255), FontSize::Small,
-                    L"SHARK HP %.0f/%.0f %ls | Burst %d | Rest %.2fs | Vortex %.1fs | Hunt CD %.1fs | Last: %ls, %ls",
-                    game.shark_.GetHp(), game.shark_.GetMaxHp(), game.shark_.IsFrenzy() ? L"FRENZY" : L"",
+                    L"サメ体力 %.0f/%.0f %ls | 連続 %d | 休息 %.2f秒 | 渦 %.1f秒 | 狩り待ち %.1f秒 | %ls, %ls",
+                    game.shark_.GetHp(), game.shark_.GetMaxHp(), game.shark_.IsFrenzy() ? L"狂乱" : L"",
                     game.shark_.GetBurstCount(), game.shark_.GetRestTimer(), game.shark_.GetVortexTimer(), game.shark_.GetHuntCooldown(),
                     SharkBoss::SkillName(game.shark_.GetLastSkill()), SharkBoss::SkillName(game.shark_.GetPrevSkill()));
                 textY += 18;
@@ -553,35 +553,35 @@ void DebugController::DrawHUD(const GamePrototype& game) const
         FontManager::Draw(textX, textY, L"--------------------------------------------", GetColor(70, 90, 120), FontSize::Small);
         textY += 13;
         FontManager::DrawFormat(textX, textY, GetColor(140, 255, 170), FontSize::Small,
-            L"Summary: %s", game.GetLastSummary());
+            L"結果: %s", game.GetLastSummary());
         textY += 18;
 
         // Thông tin âm thanh & kiểm thử
-        FontManager::Draw(textX, textY, L"--- AUDIO (TASK 12 SOUND MANAGER) ---", GetColor(120, 240, 255), FontSize::Small);
+        FontManager::Draw(textX, textY, L"--- 音声 ---", GetColor(120, 240, 255), FontSize::Small);
         textY += 17;
         FontManager::DrawFormat(textX, textY, GetColor(200, 230, 255), FontSize::Small,
-            L"Master: %d%% (C/V) | BGM: %d%% (Z/X) | SFX: %d%% (H/J)",
+            L"全体: %d%% (C/V) | 音楽: %d%% (Z/X) | 効果音: %d%% (H/J)",
             SoundManager::Instance().GetVolume(SoundChannel::Master),
             SoundManager::Instance().GetVolume(SoundChannel::BGM),
             SoundManager::Instance().GetVolume(SoundChannel::SFX));
         textY += 17;
         FontManager::DrawFormat(textX, textY, GetColor(255, 220, 140), FontSize::Small,
-            L"F3 SFX [%d]: %s",
+            L"F3 効果音 [%d]: %s",
             s_debugSfxIdx, SoundManager::Instance().GetSfxNameW(static_cast<SfxId>(s_debugSfxIdx)));
         textY += 17;
         FontManager::DrawFormat(textX, textY, GetColor(255, 200, 180), FontSize::Small,
-            L"F5 BGM: %s",
+            L"F5 音楽: %s",
             SoundManager::Instance().GetBgmNameW(SoundManager::Instance().GetCurrentBgm()));
         textY += 18;
 
-        FontManager::Draw(textX, textY, L"[DEBUG TEST KEYS]:", GetColor(255, 205, 80), FontSize::Small); textY += 17;
-        FontManager::Draw(textX, textY, L"F3: Test SFX  |  F5: Test BGM  |  C/V, Z/X, H/J: Vol", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"F8: Skip Wave  |  Shift+F8: Kill Boss/Skip Card", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"Ctrl+1..3: Tutorial Wave | Ctrl+6/F6: Whale | Ctrl+5/7/8/9: Endless 5/1/15/30 | Shift+F6: Stage+1 (Ctrl: -1)", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"F9: God Mode  |  Shift+F9: Instant Defeat", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, game.IsRenderInterpEnabled() ? L"F10: Render Interp ON" : L"F10: Render Interp OFF", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"F4: Full HP + Reset CD  |  F7: Boss Tsunami", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"Boss: Shift+1 Breach|2 Tail|3 Stun|4 Triple|5 Wave x2|6 Net|7 Inhale|8 Pack|9 Dive|0 Phase/Rage", GetColor(255, 180, 120), FontSize::Small); textY += 16;
-        FontManager::Draw(textX, textY, L"Ctrl+0: Shark Boss (Endless)  |  Shark: Shift+1 Bite|2 Strafe|3 Vortex|4 Frenzy|5 Hunt", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"[動作確認キー]:", GetColor(255, 205, 80), FontSize::Small); textY += 17;
+        FontManager::Draw(textX, textY, L"F3: 効果音 | F5: 音楽 | C/V, Z/X, H/J: 音量", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"F8: ウェーブ省略 | Shift+F8: ボス撃破・カード省略", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"Ctrl+1～3: 練習 | F6: クジラ | Shift+F6: 次ステージ", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"F9: 無敵 | Shift+F9: 即敗北", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, game.IsRenderInterpEnabled() ? L"F10: 描画補間 有効" : L"F10: 描画補間 無効", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"F4: 全回復・待ち時間解除 | F7: ボスの大波", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"Shift+1～0: ボスの技を指定して実行", GetColor(255, 180, 120), FontSize::Small); textY += 16;
+        FontManager::Draw(textX, textY, L"Ctrl+0: サメ | Shift+1～5: 噛む・旋回・渦・狂乱・狩り", GetColor(255, 180, 120), FontSize::Small); textY += 16;
     }
 }

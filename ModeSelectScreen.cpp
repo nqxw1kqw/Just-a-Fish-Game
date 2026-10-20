@@ -23,34 +23,22 @@ namespace
 void ModeSelectScreen::Init()
 {
     Shutdown();
-    illustratedMenu_.Init(L"Data/UI/ChoiceMenus/Illustrated-v1/mode-en.png", L"Data/UI/ChoiceMenus/Illustrated-v1/mode-ja.png", IllustratedChoiceMenu::Layout::Mode);
-    artwork_[0] = LoadGraph(L"Data/UI/ModeSelect/normal-v1.png");
-    artwork_[1] = LoadGraph(L"Data/UI/ModeSelect/hell-v1.png");
-    for (int i = 0; i < 2; ++i)
-    {
-        if (artwork_[i] == -1)
-            AppLogAdd(L"[MODE_UI] Missing %s artwork; using the panel background.\n", i == 0 ? L"Normal" : L"Hell");
-    }
+    illustratedMenu_.Init(L"Data/UI/ChoiceMenus/Illustrated-v1/mode-ja.png");
 }
 
 void ModeSelectScreen::Shutdown()
 {
     illustratedMenu_.Shutdown();
-    for (int& handle : artwork_)
-    {
-        if (handle != -1) DeleteGraph(handle);
-        handle = -1;
-    }
 }
 
 bool ModeSelectScreen::UpdatePointer(int& selected)
 {
-    return illustratedMenu_.UpdatePointer(selected, L10N::Get() == Language::Japanese);
+    return illustratedMenu_.UpdatePointer(selected);
 }
 
 void ModeSelectScreen::Draw(int selected) const
 {
-    if (illustratedMenu_.Draw(selected, L10N::Get() == Language::Japanese)) return;
+    if (illustratedMenu_.Draw(selected)) return;
     const int sw = GameConsts::SCREEN_WIDTH;
     const int sh = GameConsts::SCREEN_HEIGHT;
     const int cardWidth = 520, cardHeight = 570, gap = 48;
@@ -65,15 +53,15 @@ void ModeSelectScreen::Draw(int selected) const
     SetDrawMode(DX_DRAWMODE_BILINEAR);
     DrawBox(0, 0, sw, sh, MenuStyle::Background(), TRUE);
 
-    const wchar_t* heading = TR(L"CHOOSE YOUR NEXT DIVE");
+    const wchar_t* heading = TR(L"次の海を選ぼう");
     MenuStyle::Center(sw / 2, 65, heading, MenuStyle::Paper(), FontSize::Title, 1.3f, sw - 120);
-    DrawCentered(sw / 2, 126, TR(L"Tutorial cleared. Your cards and recovery carry over."), GetColor(158, 181, 187), FontSize::Medium);
+    DrawCentered(sw / 2, 126, TR(L"チュートリアルクリア！ カードと回復はそのまま引き継ぎます。"), GetColor(158, 181, 187), FontSize::Medium);
 
-    const wchar_t* names[2] = { TR(L"NORMAL"), TR(L"HARD") };
-    const wchar_t* taglines[2] = { TR(L"Find your rhythm"), TR(L"Brave the depths") };
+    const wchar_t* names[2] = { TR(L"ノーマル"), TR(L"ハード") };
+    const wchar_t* taglines[2] = { TR(L"自分のペースで挑もう"), TR(L"深海の試練に挑もう") };
     const wchar_t* rules[2][3] = {
-        { TR(L"Choose your upgrade after each stage"), TR(L"A fresh battlefield every stage"), TR(L"30 stages / Boss every 5 stages") },
-        { TR(L"Take 1.5x damage"), TR(L"Random upgrades as the battle continues"), TR(L"Enemies carry over between stages") }
+        { TR(L"ステージごとに強化カードを選択"), TR(L"毎ステージ、敵をリセット"), TR(L"全30ステージ / 5ステージごとにボス") },
+        { TR(L"受けるダメージが1.5倍"), TR(L"戦闘中にランダムで強化"), TR(L"ステージを越えて敵が残る") }
     };
 
     for (int i = 0; i < 2; ++i)
@@ -93,8 +81,6 @@ void ModeSelectScreen::Draw(int selected) const
         }
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
         DrawBox(x, y, x + cardWidth, y + cardHeight, base, TRUE);
-        if (artwork_[i] != -1)
-            DrawExtendGraph(x, y, x + cardWidth, y + cardWidth, artwork_[i], TRUE);
 
         // Fade the illustration into its caption area without baking text into the image.
         const int fadeStart = y + 300;
@@ -134,13 +120,13 @@ void ModeSelectScreen::Draw(int selected) const
         if (isSelected)
         {
             DrawCircle(x + 35, y + 550, 3, accent, TRUE);
-            MenuStyle::Text(x + 48, y + 541, TR(L"SELECTED"), accent, FontSize::Body);
+            MenuStyle::Text(x + 48, y + 541, TR(L"選択中"), accent, FontSize::Body);
         }
     }
 
     const unsigned int accent = selected == 0 ? GetColor(139, 220, 202) : GetColor(239, 141, 113);
-    MenuStyle::Button(sw / 2 - 280, 783, 560, TR(L"ENTER / SPACE - DIVE IN"), true, accent);
-    DrawCentered(sw / 2, 848, TR(L"A / D or LEFT / RIGHT to choose     1 / 2 to start"), MenuStyle::Muted(), FontSize::Body);
+    MenuStyle::Button(sw / 2 - 280, 783, 560, TR(L"ENTER / SPACE   決定"), true, accent);
+    DrawCentered(sw / 2, 848, TR(L"A / D・左右キーで選択     1 / 2で開始"), MenuStyle::Muted(), FontSize::Body);
     SetDrawMode(previousDrawMode);
     SetDrawBlendMode(previousBlend, previousAlpha);
 }

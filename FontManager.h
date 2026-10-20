@@ -17,7 +17,7 @@ class FontManager
 public:
     static void Init();
     static void Shutdown();
-    // Chọn bộ font theo ngôn ngữ hiện tại (L10N::Get()): EN = Yabikoma, JP = Rounded M+ 1c
+    // 日本語フォントを既定の描画にも適用します。
     static void ApplyLanguage();
     static int GetHandle(FontSize size);
     // Handle font Nhật (luôn có, dùng để vẽ chữ JP khi ngôn ngữ đang là EN, ví dụ màn chọn ngôn ngữ)
@@ -37,9 +37,7 @@ private:
     static void CreateSet(int* handles, const wchar_t* fontName);
     static void DeleteSet(int* handles);
 
-    static int fontHandles_[5];   // bộ Latin (Yabikoma)
     static int jpHandles_[5];     // bộ Nhật
     static bool initialized_;
-    static bool fontLoaded_;
     static bool jpFontLoaded_;
 };

@@ -18,7 +18,6 @@
 
 enum class GameState
 {
-    LanguageSelect, // Màn đầu tiên: chọn ngôn ngữ EN / JP
     Title,        // Màn hình tiêu đề bắt đầu game (G1)
     Wave,         // Đang trong wave chiến đấu (G2)
     CardPick,     // Đang chọn 1 trong 3 thẻ nâng cấp (C2)
@@ -141,8 +140,7 @@ private:
     float GetWaveTimer() const { return waveTimer_; }
     float GetWaveDuration() const { return waveDuration_; }
 
-    GameState state_ = GameState::LanguageSelect;
-    int langSelectIdx_ = 0;              // 0 = English, 1 = 日本語
+    GameState state_ = GameState::Title;
     bool panelsVisible_ = GameConsts::INFO_PANELS_DEFAULT_VISIBLE; // F11: bảng stats/thẻ/debug/hướng dẫn
     GameMode mode_ = GameMode::Classic;
     GameMode runStartMode_ = GameMode::Classic; // Chế độ lúc bắt đầu ván (tutorial tự chuyển sang Endless giữa ván)
@@ -154,7 +152,7 @@ private:
     float waveTimer_ = 0.0f;
     float waveDuration_ = 30.0f;
     float bossIntroTimer_ = 0.0f;
-    wchar_t lastSummaryBuffer_[128] = L"Chưa có tóm tắt wave";
+    wchar_t lastSummaryBuffer_[128] = L"まだ記録がありません";
 
     PlayerFish player_;
     EnemyManager enemies_;

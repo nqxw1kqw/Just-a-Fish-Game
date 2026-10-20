@@ -13,11 +13,11 @@ namespace
     };
 
     LowPolyEntry s_entries[static_cast<int>(LowPolyId::Count)] = {
-        { L"Data/Model/LowPoly/Minion.x",    L"Minion",    -1 },
-        { L"Data/Model/LowPoly/Hopper.x",    L"Hopper",    -1 },
-        { L"Data/Model/LowPoly/Tanker.x",    L"Tanker",    -1 },
-        { L"Data/Model/LowPoly/Float.x",     L"Float",     -1 },
-        { L"Data/Model/LowPoly/Charge.x",    L"Charge",    -1 },
+        { L"Data/Model/LowPoly/Minion.x",    L"小魚",    -1 },
+        { L"Data/Model/LowPoly/Hopper.x",    L"カニ",    -1 },
+        { L"Data/Model/LowPoly/Tanker.x",    L"カメ",    -1 },
+        { L"Data/Model/LowPoly/Float.x",     L"クラゲ",     -1 },
+        { L"Data/Model/LowPoly/Charge.x",    L"突進ザメ",    -1 },
         { L"Data/Model/LowPoly/WhaleBoss.x", L"WhaleBoss", -1 },
         { L"Data/Model/LowPoly/SharkBoss.x", L"SharkBoss", -1 },
         { L"Data/Model/LowPoly/SharkBossTail.x", L"SharkBossTail", -1 },
@@ -54,7 +54,7 @@ namespace LowPolyModels
             else
             {
                 AppLogAdd(L"[LOWPOLY] ERROR: Failed to load %s (%s) - object will not be drawn (no box fallback).\n", e.name, e.path);
-                printfDx(L"ERROR: model %s failed to load (%s)\n", e.name, e.path);
+                printfDx(L"モデル %s を読み込めません (%s)\n", e.name, e.path);
                 OutputDebugStringW(L"[LOWPOLY] ERROR: model failed to load: ");
                 OutputDebugStringW(e.path);
                 OutputDebugStringW(L"\n");

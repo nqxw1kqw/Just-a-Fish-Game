@@ -359,6 +359,7 @@ bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
     {
         if (!e.active && !e.dying)
         {
+            e = Enemy{};
             e.type = type;
             e.pos = pos;
             e.knockback = Vec3{ 0, 0, 0 };
@@ -397,6 +398,9 @@ bool EnemyManager::SpawnEnemy(EnemyType type, const Vec3& pos)
             default:
                 break;
             }
+            e.prevPos = e.pos;
+            e.prevYaw = e.yaw;
+            e.prevActive = false;
             return true;
         }
     }
@@ -588,10 +592,10 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                             effects.SpawnFishSwim(e.pos, moveDir, e.speed, 1.1f, false);
                         }
                     }
-                    if (distToPlayer < 280.0f)
+                    if (distToPlayer <= e.speed * 3.2f * GameConsts::CHARGE_DASH_TIME + e.radius + playerHitRadius)
                     {
                         e.chargeState = 1;
-                        e.chargeTimer = 0.65f; // Khựng báo hiệu 0.65s
+                        e.chargeTimer = GameConsts::CHARGE_TELEGRAPH_TIME; // Khựng báo hiệu 0.65s
                         e.chargeDir = (distToPlayer > 0.1f) ? (toPlayer / distToPlayer) : Vec3{ 0, 0, 1 };
                         e.yaw = std::atan2(e.chargeDir.x, e.chargeDir.z);
                         SoundManager::Instance().PlaySFX(SfxId::SharkTelegraph);
@@ -603,7 +607,7 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
                     if (e.chargeTimer <= 0.0f)
                     {
                         e.chargeState = 2;
-                        e.chargeTimer = 0.65f; // Lao tới trong 0.65s
+                        e.chargeTimer = GameConsts::CHARGE_DASH_TIME; // Lao tới trong 0.65s
                         SoundManager::Instance().PlaySFX(SfxId::SharkDash);
                     }
                 }
@@ -969,7 +973,7 @@ void EnemyManager::Draw() const
         {
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
             Vec3 pStart = e.pos + Vec3{ 0, 1.2f, 0 };
-            Vec3 pEnd = e.pos + e.chargeDir * 280.0f + Vec3{ 0, 1.2f, 0 };
+            Vec3 pEnd = e.pos + e.chargeDir * (e.speed * 3.2f * GameConsts::CHARGE_DASH_TIME) + Vec3{ 0, 1.2f, 0 };
             DxLib::DrawLine3D(DxConv::ToVECTOR(pStart), DxConv::ToVECTOR(pEnd), GetColor(255, 50, 50));
             Render3D::DrawCircle3D(pEnd, 14.0f, 16, GetColor(255, 60, 60), false);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);

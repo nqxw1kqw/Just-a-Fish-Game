@@ -67,3 +67,8 @@ Use case: background-extraction. Image 1 is the exact edit target. Extract ONLY 
 ```text
 Use case: background-extraction. Image 1 is the exact edit target. Extract ONLY its TOP CENTER JAPANESE MODE HEADER wooden sign as ONE independent transparent game UI sprite. Preserve golden wooden board, attached shell/starfish/leaf/droplet decorations and short rope loops (no ceiling or long ropes continuing to canvas edge). Preserve EXACT Japanese headline "次の海を選ぼう" and ivory subtitle strip "チュートリアルクリア！強化を引き継ぎます". Keep all Japanese glyphs correctly formed and readable, and the clean navy-outlined anime cartoon style. Everything outside the sign silhouette must become genuine transparent alpha. No background, cards, fish, floor, button, extra text or cursor. Single wide straight-on horizontal sign around 4:1 width:height, centered with modest transparent safe margins, no clipped edges or ornaments. Not an entire menu or atlas.
 ```
+
+
+## 日本語専用の決定ボタン
+
+既存の confirm.png を参照し、フレーム、貝殻、色、透過背景を保持。上段はキーボードのキー名「ENTER / SPACE」、下段は「決定」だけに変更。「CONFIRM」は削除。単独の透過 PNG として出力。

@@ -217,11 +217,11 @@ void WhaleBoss::StartTsunamiTelegraph(PlayerFish& player, float gapDeg)
 
     if (gapDeg > 0.0f)
     {
-        RecordActionHistory(L"Sóng thần (Khe hở)");
+        RecordActionHistory(L"大波（隙間あり）");
     }
     else
     {
-        RecordActionHistory(L"Sóng thần");
+        RecordActionHistory(L"大波");
     }
 }
 
@@ -258,7 +258,7 @@ void WhaleBoss::ForceDoubleSlam(PlayerFish& player)
     slamTarget_.y = 0.0f;
     slamTarget_ = MapObstacles::Resolve(slamTarget_, slamTarget_, 60.0f);
     slamCount_ = 0;
-    RecordActionHistory(L"Đập kép (F7)");
+    RecordActionHistory(L"連続スラム (F7)");
 }
 
 void WhaleBoss::SpawnRing(float gapDeg, const Vec3& targetPos)
@@ -445,7 +445,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
     {
         action_ = BossAction::TelegraphDoubleSlam;
         slamCount_ = 0;
-        RecordActionHistory(L"Triple Slam");
+        RecordActionHistory(L"三連スラム");
         break;
     }
     case BossSkill::Tail:
@@ -456,7 +456,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
     case BossSkill::Minions:
     {
         StartPackTelegraph(player);
-        RecordActionHistory((phase_ == BossPhase::Phase1) ? L"Triệu hồi" : L"Triệu hồi (Hỗn hợp)");
+        RecordActionHistory((phase_ == BossPhase::Phase1) ? L"群れ召喚" : L"混成群れ召喚");
         break;
     }
     case BossSkill::Tsunami:
@@ -488,7 +488,7 @@ void WhaleBoss::PickNextAction(PlayerFish& player, EnemyManager& enemies)
                 secondRingDelay_ = GameConsts::TSUNAMI_DOUBLE_DELAY;
                 secondRingGapDeg_ = GameConsts::TSUNAMI_GAP_DEG_P2;
                 StartTsunamiTelegraph(player, 0.0f);
-                RecordActionHistory(L"Tsunami Double");
+                RecordActionHistory(L"二重の大波");
             }
         }
         break;
@@ -607,7 +607,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
             restTimer_ = CurrentRestTime() * (hell_ ? GameConsts::HELL_BOSS_REST_MUL : 1.0f);
             burstCount_ = 0;
             burstSize_ = RollBurstSize();
-            RecordActionHistory(L"Rest");
+            RecordActionHistory(L"休息");
         }
         if (restTimer_ > 0.0f)
         {
@@ -637,7 +637,7 @@ void WhaleBoss::Update(float dt, PlayerFish& player, EnemyManager& enemies, Effe
         // 3e: Di chuyển chậm về phía người chơi nếu cự ly > 200 để không bị kẹt ở góc xa
         if (distToPlayer > 200.0f)
         {
-            Vec3 moveDir = toPlayer * (1.0f / distToPlayer);
+            Vec3 moveDir = MapObstacles::ChaseDirection(pos_, player.GetPosition(), GetHitboxRadius());
             pos_ = MapObstacles::Move(pos_, Vec3{ moveDir.x * GameConsts::BOSS_WALK_SPEED * dt, 0, moveDir.z * GameConsts::BOSS_WALK_SPEED * dt }, 60.0f);
             pos_.y = 0.0f;
             pos_ = MapObstacles::Resolve(pos_, pos_, 60.0f);

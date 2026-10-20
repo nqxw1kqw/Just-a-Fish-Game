@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "BattleHud.h"
 #include "ModeSelectScreen.h"
-#include "LanguageSelectScreen.h"
 #include "PauseMenuScreen.h"
 
 class GamePrototype;
@@ -14,12 +13,10 @@ class UIRenderer
 public:
     void Init();
     void Shutdown();
-    void EnterLanguageSelect() { languageSelectScreen_.Enter(); }
     void EnterModeSelect() { modeSelectScreen_.Enter(); }
     void EnterPause() { pauseMenuScreen_.Enter(); }
     void LeavePause() { pauseMenuScreen_.Leave(); }
     PauseMenuScreen::PointerResult UpdatePausePointer(int& selected) { return pauseMenuScreen_.UpdatePointer(selected); }
-    bool UpdateLanguagePointer(int& selected) { return languageSelectScreen_.UpdatePointer(selected); }
     bool UpdateModePointer(int& selected) { return modeSelectScreen_.UpdatePointer(selected); }
     void DrawHUD(const GamePrototype& game) const;
     void DrawBossHealthBar(const WhaleBoss& boss) const;
@@ -28,7 +25,6 @@ public:
     void DrawBossHealthBar(const TurtleBoss& turtle) const;
     void DrawBossHealthBar(const SwordfishBoss& swordfish) const;
     void DrawBossIntroScreen(int bossKind = 0) const; // 0 Whale, 1 Shark, 2 Squid, 3 Turtle, 4 Swordfish
-    void DrawLanguageSelectScreen(const GamePrototype& game) const;
     void DrawTitleScreen(const GamePrototype& game) const;
     void DrawVictoryScreen(const GamePrototype& game) const;
     void DrawGameOverScreen(const GamePrototype& game) const;
@@ -39,7 +35,6 @@ public:
 private:
     int titleArtwork_ = -1;
     ModeSelectScreen modeSelectScreen_;
-    LanguageSelectScreen languageSelectScreen_;
     PauseMenuScreen pauseMenuScreen_;
     BattleHud battleHud_; // 戦闘HUD
 };

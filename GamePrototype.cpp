@@ -226,7 +226,7 @@ void GamePrototype::SaveHighscore()
 void GamePrototype::SaveHighscoreIfEndlessRun()
 {
     // Chỉ lưu khi đang có một ván Endless (không lưu ở màn Title)
-    if (IsEndlessLike() && state_ != GameState::Title && state_ != GameState::LanguageSelect && state_ != GameState::ModeSelect)
+    if (IsEndlessLike() && state_ != GameState::Title && state_ != GameState::ModeSelect)
     {
         SaveHighscore();
     }
@@ -245,10 +245,8 @@ void GamePrototype::Init()
     boss_.Init();
     LoadHighscore();
     Reset();
-    // Luôn bắt đầu từ màn chọn ngôn ngữ (lựa chọn đã lưu được chọn sẵn), sau đó tới Title
-    state_ = GameState::LanguageSelect;
-    langSelectIdx_ = (L10N::Get() == Language::Japanese) ? 1 : 0;
-    uiRenderer_.EnterLanguageSelect();
+    // 日本語専用版はタイトルから開始します。
+    state_ = GameState::Title;
 }
 
 void GamePrototype::Shutdown()
@@ -536,7 +534,7 @@ void GamePrototype::HellAutoPickCard()
 // vào 1 trong 5 chỉ số. Attack -> sát thương, Def -> giảm sát thương nhận, Speed -> bơi, Cooldown -> hồi nhảy, Luck -> độ hiếm thẻ.
 void GamePrototype::GrantLevelStat()
 {
-    static const wchar_t* kNames[LS_Count] = { L"ATTACK", L"DEFENSE", L"SPEED", L"COOLDOWN", L"LUCK" };
+    static const wchar_t* kNames[LS_Count] = { L"攻撃", L"防御", L"速度", L"再使用待ち", L"運" };
     int s = rand() % LS_Count;
     lvStat_[s]++;
     ReapplyAllStats();
@@ -668,7 +666,7 @@ void GamePrototype::OnWaveComplete()
     int killed = enemies_.GetKilledThisWave();
     float dmgTaken = player_.GetDamageTakenThisWave();
     float timeSpent = waveTimer_;
-    swprintf_s(lastSummaryBuffer_, L"Wave %d: sinh %d, hạ %d, nhận %.1f sát thương, dọn trong %.1fs",
+    swprintf_s(lastSummaryBuffer_, L"ウェーブ %d: 出現 %d、撃破 %d、被ダメ %.1f、経過 %.1f秒",
                currentWave_, spawned, killed, dmgTaken, timeSpent);
     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
 
@@ -1093,39 +1091,10 @@ void GamePrototype::Update(float dt)
 
     // Xử lý các phím Debug / Cheat / Camera tinh chỉnh (Phần D)
     // Debug/cheat keys chỉ chạy trong lúc chơi (không chạy sau màn Language/Title)
-    if (state_ != GameState::LanguageSelect && state_ != GameState::Title)
+    if (state_ != GameState::Title)
         debugController_.Update(dt, *this);
 
-    // 00. Màn chọn ngôn ngữ (màn đầu tiên)
-    if (state_ == GameState::LanguageSelect)
-    {
-        // Màn ngôn ngữ (trước Title): im lặng hoàn toàn - không phát BGM, dừng mọi BGM đang phát
-        // (kể cả khi quay lại từ Title bằng [L]). BGM chỉ bắt đầu từ Title.
-        if (SoundManager::Instance().GetCurrentBgm() != BgmId::Count)
-            SoundManager::Instance().StopBGM(false);
-        const bool pointerConfirmed = uiRenderer_.UpdateLanguagePointer(langSelectIdx_);
-        if (input.IsPressed(KEY_INPUT_LEFT) || input.IsPressed(KEY_INPUT_A))
-            langSelectIdx_ = 0;
-        else if (input.IsPressed(KEY_INPUT_RIGHT) || input.IsPressed(KEY_INPUT_D))
-            langSelectIdx_ = 1;
-        else if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) || input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S))
-        {
-            langSelectIdx_ = 1 - langSelectIdx_;
-        }
-        bool k1 = input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1);
-        bool k2 = input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2);
-        if (k1) langSelectIdx_ = 0;
-        if (k2) langSelectIdx_ = 1;
-        if (pointerConfirmed || k1 || k2 || input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
-        {
-            L10N::Set(langSelectIdx_ == 1 ? Language::Japanese : Language::English, true);
-            FontManager::ApplyLanguage();
-            state_ = GameState::Title;
-            Input::Instance().Flush(); // tránh Enter/1/2 bị hiểu là chọn mode ở Title
-            return;
-        }
-        return;
-    }
+
 
     // 0. Màn hình Tiêu đề (Title - G1, Task 10 T4a)
     if (state_ == GameState::Title)
@@ -1133,16 +1102,7 @@ void GamePrototype::Update(float dt)
         SoundManager::Instance().PlayBGM(BgmId::Title, true);
 
 
-        // [L]: quay lại màn chọn ngôn ngữ
-        if (input.IsPressed(GameConsts::KEY_LANGUAGE_SELECT))
-        {
-            langSelectIdx_ = (L10N::Get() == Language::Japanese) ? 1 : 0;
-            state_ = GameState::LanguageSelect;
-            uiRenderer_.EnterLanguageSelect();
-            SoundManager::Instance().StopBGM(false);
-            Input::Instance().Flush();
-            return;
-        }
+
 
         // SPACE (hoặc Enter): vào thẳng Tutorial; Normal/Hell chọn sau khi xong tutorial.
         if (input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
@@ -1155,7 +1115,7 @@ void GamePrototype::Update(float dt)
     }
 
     // Kiểm tra chết (Game Over)
-    if (state_ != GameState::GameOver && state_ != GameState::Victory && state_ != GameState::Title && state_ != GameState::LanguageSelect)
+    if (state_ != GameState::GameOver && state_ != GameState::Victory && state_ != GameState::Title)
     {
         if (player_.GetHp() <= 0.0f)
         {
@@ -1437,7 +1397,7 @@ void GamePrototype::Update(float dt)
                     // Phase 1: hạ Cá Voi tutorial -> màn chọn chế độ Normal / Hell (giữ thẻ + hồi máu)
                     effects_.AddTrauma(0.7f);
                     enemies_.KillAll(effects_);
-                    swprintf_s(lastSummaryBuffer_, L"Boss: %.1f giây", bossTime);
+                    swprintf_s(lastSummaryBuffer_, L"ボス: %.1f秒", bossTime);
                     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
                     player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
                     modeSelectIdx_ = 0;
@@ -1451,7 +1411,7 @@ void GamePrototype::Update(float dt)
                     // Endless Mode: Hạ gục 1 lượt Boss định kỳ! (Task 10 T4c)
                     effects_.AddTrauma(0.7f);
                     enemies_.KillAll(effects_);
-                    swprintf_s(lastSummaryBuffer_, bossKind_ == 4 ? L"Swordfish Tier %d: %.1f giây" : bossKind_ == 3 ? L"Turtle Tier %d: %.1f giây" : bossKind_ == 2 ? L"Squid Tier %d: %.1f giây" : sharkFight_ ? L"Shark Tier %d: %.1f giây" : L"Boss Tier %d: %.1f giây", bossTier, bossTime);
+                    swprintf_s(lastSummaryBuffer_, bossKind_ == 4 ? L"カジキ 第%d段階: %.1f秒" : bossKind_ == 3 ? L"カメ 第%d段階: %.1f秒" : bossKind_ == 2 ? L"イカ 第%d段階: %.1f秒" : sharkFight_ ? L"サメ 第%d段階: %.1f秒" : L"ボス 第%d段階: %.1f秒", bossTier, bossTime);
                     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
 
                     // Hồi 50% máu tối đa thưởng diệt Boss
@@ -1567,12 +1527,7 @@ void GamePrototype::Draw() const
     }
 
     // Language / Title: chỉ vẽ đúng màn hình đó, không vẽ world/HUD phía sau (tránh bleed + không sim nền)
-    if (state_ == GameState::LanguageSelect)
-    {
-        SetFogEnable(FALSE);
-        uiRenderer_.DrawLanguageSelectScreen(*this);
-        return;
-    }
+
     if (state_ == GameState::Title)
     {
         SetFogEnable(FALSE);
@@ -1580,7 +1535,7 @@ void GamePrototype::Draw() const
         return;
     }
     // #15: Sương mù xanh dưới nước chỉ cho cảnh 3D lúc chơi (tắt ở màn Title)
-    const bool useFog = (state_ != GameState::Title && state_ != GameState::LanguageSelect);
+    const bool useFog = (state_ != GameState::Title);
     if (useFog)
     {
         SetFogEnable(TRUE);
@@ -1614,7 +1569,7 @@ void GamePrototype::Draw() const
     weapon_.Draw(player_);
 
     // 6b. 光の筋: tia sáng từ mặt nước + caustics (additive, vẽ sau vật thể đục)
-    if (state_ != GameState::Title && state_ != GameState::LanguageSelect)
+    if (state_ != GameState::Title)
     {
         godRays_.Draw();
     }

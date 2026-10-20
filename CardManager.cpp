@@ -379,25 +379,25 @@ void CardManager::Draw() const
 
     if (offeredCount_ <= 0)
     {
-        DrawCX(sw / 2, sh / 2 - 30, TR(L"=== ALL CARDS FULLY STACKED! ==="), GetColor(255, 230, 80), FontSize::Header);
-        DrawCX(sw / 2, sh / 2 + 10, TR(L"Card pool is empty. Received 20% Max HP Heal bonus!"), GetColor(100, 255, 160), FontSize::Medium);
-        DrawCX(sw / 2, sh / 2 + 45, TR(L"Press [ENTER] to continue swimming..."), GetColor(200, 225, 255), FontSize::Body);
+        DrawCX(sw / 2, sh / 2 - 30, TR(L"=== 全カード最大まで強化済み！ ==="), GetColor(255, 230, 80), FontSize::Header);
+        DrawCX(sw / 2, sh / 2 + 10, TR(L"カードがもうありません。最大HPの20%回復ボーナス！"), GetColor(100, 255, 160), FontSize::Medium);
+        DrawCX(sw / 2, sh / 2 + 45, TR(L"[ENTER] で泳ぎを続ける…"), GetColor(200, 225, 255), FontSize::Body);
         return;
     }
 
     // 2. Tiêu đề
-    DrawCX(sw / 2, 90, TR(L"=== CHOOSE 1 UPGRADE CARD (WAVE CLEARED!) ==="), GetColor(255, 230, 80), FontSize::Header);
+    DrawCX(sw / 2, 90, TR(L"=== 強化カードを1枚選ぼう (ウェーブクリア！) ==="), GetColor(255, 230, 80), FontSize::Header);
     if (offeredCount_ == 1)
     {
-        DrawCX(sw / 2, 125, TR(L"Press [Enter] or [1] to confirm upgrade"), GetColor(180, 205, 235), FontSize::Body);
+        DrawCX(sw / 2, 125, TR(L"[Enter] または [1] で決定"), GetColor(180, 205, 235), FontSize::Body);
     }
     else if (offeredCount_ == 2)
     {
-        DrawCX(sw / 2, 125, TR(L"Use [A/D] to select + [Enter] to confirm, or press keys [1] / [2]"), GetColor(180, 205, 235), FontSize::Body);
+        DrawCX(sw / 2, 125, TR(L"[A/D] で選択 + [Enter] で決定、または [1] / [2]"), GetColor(180, 205, 235), FontSize::Body);
     }
     else
     {
-        DrawCX(sw / 2, 125, TR(L"Use [A/D] to select + [Enter] to confirm, or press keys [1] / [2] / [3]"), GetColor(180, 205, 235), FontSize::Body);
+        DrawCX(sw / 2, 125, TR(L"[A/D] で選択 + [Enter] で決定、または [1] / [2] / [3]"), GetColor(180, 205, 235), FontSize::Body);
     }
 
     // 3. Bố cục thẻ Card linh hoạt (T3, T4d: căn giữa theo số thẻ offeredCount_)
@@ -430,11 +430,11 @@ void CardManager::Draw() const
         if (isEndless_)
         {
             int currentCount = GetCardCount(card.id);
-            swprintf_s(slotHeader, TR(L"Key [%d] %s (x%d/%d)"), i + 1, rarityStr, currentCount, card.maxStack);
+            swprintf_s(slotHeader, TR(L"キー [%d] %s (x%d/%d)"), i + 1, rarityStr, currentCount, card.maxStack);
         }
         else
         {
-            swprintf_s(slotHeader, TR(L"Key [%d]  %s"), i + 1, rarityStr);
+            swprintf_s(slotHeader, TR(L"キー [%d]  %s"), i + 1, rarityStr);
         }
         FontManager::Draw(cx + 12, cardY + 12, slotHeader, edgeColor, FontSize::Small);
 
@@ -453,7 +453,7 @@ void CardManager::Draw() const
             // Fallback nếu không có ảnh: vẽ ô màu trơn kèm cảnh báo (T2)
             DrawBox(imgX, imgY, imgX + imgSize, imgY + imgSize, GetColor(30, 42, 60), TRUE);
             DrawBox(imgX, imgY, imgX + imgSize, imgY + imgSize, GetColor(70, 90, 120), FALSE);
-            FontManager::Draw(imgX + 25, imgY + imgSize / 2 - 15, TR(L"[NO IMAGE]"), GetColor(255, 120, 100), FontSize::Body);
+            FontManager::Draw(imgX + 25, imgY + imgSize / 2 - 15, TR(L"[画像なし]"), GetColor(255, 120, 100), FontSize::Body);
         }
 
         // Tên thẻ (chữ trắng)
@@ -478,7 +478,7 @@ void CardManager::Draw() const
         // Con trỏ chọn bên dưới thẻ
         if (isSelected)
         {
-            FontManager::Draw(cx + cardW / 2 - 76, cardY + cardH + 16, TR(L"> SELECTED (ENTER) <"), GetColor(255, 230, 80), FontSize::Medium);
+            FontManager::Draw(cx + cardW / 2 - 76, cardY + cardH + 16, TR(L"> 選択中 (ENTER) <"), GetColor(255, 230, 80), FontSize::Medium);
         }
     }
 
@@ -487,7 +487,7 @@ void CardManager::Draw() const
     {
         int listX = sw - 320;
         int listY = 30;
-        FontManager::Draw(listX, listY, TR(L"=== ACTIVE CARDS ==="), GetColor(255, 220, 80), FontSize::Body);
+        FontManager::Draw(listX, listY, TR(L"=== 所持カード ==="), GetColor(255, 220, 80), FontSize::Body);
         listY += 24;
         for (const auto& c : activeCards_)
         {

@@ -263,9 +263,6 @@
     <ClInclude Include="ModeSelectScreen.h">
       <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="LanguageSelectScreen.h">
-      <Filter>UI</Filter>
-    </ClInclude>
     <ClInclude Include="CollisionUtil.h">
       <Filter>Utility</Filter>
     </ClInclude>
@@ -353,9 +350,6 @@
     <ClCompile Include="FontManager.cpp">
       <Filter>UI</Filter>
     </ClCompile>
-    <ClCompile Include="Localization.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
     <ClCompile Include="ResultScreen.cpp">
       <Filter>UI</Filter>
     </ClCompile>
@@ -372,9 +366,6 @@
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="IllustratedChoiceMenu.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
-    <ClCompile Include="LanguageSelectScreen.cpp">
       <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>

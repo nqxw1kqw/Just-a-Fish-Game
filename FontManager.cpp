@@ -5,10 +5,8 @@
 #include <cstdio>
 #include <cwchar>
 
-int FontManager::fontHandles_[5] = { -1, -1, -1, -1, -1 };
 int FontManager::jpHandles_[5] = { -1, -1, -1, -1, -1 };
 bool FontManager::initialized_ = false;
-bool FontManager::fontLoaded_ = false;
 bool FontManager::jpFontLoaded_ = false;
 
 void FontManager::CreateSet(int* handles, const wchar_t* fontName)
@@ -36,11 +34,6 @@ void FontManager::Init()
 {
     if (initialized_) return;
 
-    // Font Latin: Yabikoma (Data/Font/)
-    int addRes = AddFontResourceExW(GameConsts::FONT_LATIN_PATH, FR_PRIVATE, NULL);
-    fontLoaded_ = (addRes > 0);
-    CreateSet(fontHandles_, fontLoaded_ ? GameConsts::FONT_LATIN_NAME : L"Consolas");
-
     // Font Nhật: Rounded M+ 1c Bold (SIL OFL 1.1, Data/Font/OFL.txt). Không có file -> Meiryo của Windows
     int addJp = AddFontResourceExW(GameConsts::FONT_JP_PATH, FR_PRIVATE, NULL);
     jpFontLoaded_ = (addJp > 0);
@@ -53,9 +46,7 @@ void FontManager::Init()
 void FontManager::ApplyLanguage()
 {
     // Cấu hình font mặc định cho các hàm DxLib DrawString không dùng handle
-    const bool jp = (L10N::Get() == Language::Japanese);
-    const wchar_t* name = jp ? (jpFontLoaded_ ? GameConsts::FONT_JP_NAME : GameConsts::FONT_JP_FALLBACK_NAME)
-                             : (fontLoaded_ ? GameConsts::FONT_LATIN_NAME : L"Consolas");
+    const wchar_t* name = jpFontLoaded_ ? GameConsts::FONT_JP_NAME : GameConsts::FONT_JP_FALLBACK_NAME;
     ChangeFont(name);
     SetFontSize(16);
     ChangeFontType(DX_FONTTYPE_ANTIALIASING_8X8);
@@ -65,14 +56,9 @@ void FontManager::Shutdown()
 {
     if (!initialized_) return;
 
-    DeleteSet(fontHandles_);
     DeleteSet(jpHandles_);
 
-    if (fontLoaded_)
-    {
-        RemoveFontResourceExW(GameConsts::FONT_LATIN_PATH, FR_PRIVATE, NULL);
-        fontLoaded_ = false;
-    }
+
     if (jpFontLoaded_)
     {
         RemoveFontResourceExW(GameConsts::FONT_JP_PATH, FR_PRIVATE, NULL);
@@ -84,13 +70,7 @@ void FontManager::Shutdown()
 
 int FontManager::GetHandle(FontSize size)
 {
-    if (L10N::Get() == Language::Japanese) return GetHandleJP(size);
-    int idx = static_cast<int>(size);
-    if (idx >= 0 && idx < 5 && fontHandles_[idx] != -1)
-    {
-        return fontHandles_[idx];
-    }
-    return -1;
+    return GetHandleJP(size);
 }
 
 int FontManager::GetHandleJP(FontSize size)
