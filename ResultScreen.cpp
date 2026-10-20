@@ -106,7 +106,7 @@ void ResultScreen::Enter(bool victory, bool diedAtBoss)
 int ResultScreen::ComputeScore(const ResultStats& s)
 {
     // Điểm: 100/quái + 250/level + 1000/wave đã qua + 5000 khi thắng
-    int wavesCleared = (std::max)(0, s.wave - 1);
+    int wavesCleared = (std::max)(0, s.wavesCleared);
     int score = s.kills * 100 + (std::max)(0, s.level - 1) * 250 + wavesCleared * 1000;
     if (s.victory) score += 5000;
     return score;
@@ -189,7 +189,7 @@ bool ResultScreen::DrawIllustrated(const ResultStats& s) const
     swprintf_s(values[1], L"%02d:%02d", seconds / 60, seconds % 60);
     swprintf_s(values[2], L"%d", static_cast<int>(s.kills * count + 0.5f));
     swprintf_s(values[3], L"%d", s.level);
-    swprintf_s(values[4], L"%d / %d", s.wave, s.endless ? GameConsts::ENDLESS_MAX_STAGE : GameConsts::TUTORIAL_WAVES);
+    swprintf_s(values[4], L"%d / %d", s.wave, s.campaign ? GameConsts::CAMPAIGN_WAVES : GameConsts::TUTORIAL_WAVES);
     const int rowCenters[5] = { 252, 329, 406, 482, 558 };
     for (int i = 0; i < 5; ++i)
     {
@@ -199,11 +199,13 @@ bool ResultScreen::DrawIllustrated(const ResultStats& s) const
     }
 
     // This mode and the record vary per run, unlike the baked score-board labels.
-    const wchar_t* mode = s.endless ? (s.hard ? TR(L"ハード") : TR(L"ノーマル")) : TR(L"チュートリアル");
-    DrawRunNote(ScreenX(470), ScreenY(334), mode, ink);
+    const wchar_t* mode = s.campaign ? TR(L"冒険") : TR(L"チュートリアル");
+    wchar_t journey[80];
+    swprintf_s(journey, L"%s　ボス撃破 %d / %d", mode, s.bossesDefeated, GameConsts::CAMPAIGN_BOSSES);
+    DrawRunNote(ScreenX(470), ScreenY(334), journey, ink);
     if (s.retryTutorial)
         DrawRunNote(ScreenX(465), ScreenY(846), TR(L"チュートリアルから再挑戦"), ink);
-    if (s.endless)
+    if (s.campaign)
     {
         wchar_t best[128] = {};
         const int bestSeconds = static_cast<int>(s.bestTime);
@@ -213,7 +215,7 @@ bool ResultScreen::DrawIllustrated(const ResultStats& s) const
     }
     DrawRunNote(ScreenX(465), ScreenY(910), TR(L"R: リトライ   T: タイトルへ"), ink);
     if (s.debugUsed)
-        DrawRunNote(ScreenX(465), ScreenY(808), s.endless ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(151, 39, 44));
+        DrawRunNote(ScreenX(465), ScreenY(808), s.campaign ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(151, 39, 44));
 
     if (timer_ >= INPUT_DELAY)
     {
@@ -274,7 +276,7 @@ void ResultScreen::Draw(const ResultStats& s) const
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     if (t < 0.25f) return;
 
-    const wchar_t* modeName = s.endless ? (s.hard ? TR(L"ハード") : TR(L"ノーマル")) : TR(L"チュートリアル");
+    const wchar_t* modeName = s.campaign ? TR(L"冒険") : TR(L"チュートリアル");
     DrawCentered(cx, 96, modeName, MenuStyle::Muted(), FontSize::Body);
 
     // 2. Tiêu đề: rơi xuống + nhún, từng chữ lượn sóng
@@ -304,8 +306,8 @@ void ResultScreen::Draw(const ResultStats& s) const
         }
         x += cw;
     }
-    const wchar_t* sub = s.victory ? TR(L"全30ステージクリア！")
-                       : (s.diedAtBoss ? TR(L"巨大クジラの前に力尽きた…") : TR(L"お魚は打ち上げられてしまった…"));
+    const wchar_t* sub = s.victory ? TR(L"5体のボスを倒した！")
+                       : (s.diedAtBoss ? TR(L"ボスとの戦いで力尽きた…") : TR(L"お魚は打ち上げられてしまった…"));
     DrawCentered(cx, baseY + 82, sub, GetColor(220, 235, 255), FontSize::Medium);
 
     // 3. Bảng thống kê (trượt vào lần lượt)
@@ -324,10 +326,10 @@ void ResultScreen::Draw(const ResultStats& s) const
     swprintf_s(rows[0], L"%02d:%02d", min, sec);
     swprintf_s(rows[1], L"%d", static_cast<int>(s.kills * countT + 0.5f));
     swprintf_s(rows[2], L"Lv.%d", s.level);
-    if (s.endless) swprintf_s(rows[3], s.victory ? TR(L"%d / %d  クリア") : TR(L"ステージ %d"), s.wave, GameConsts::ENDLESS_MAX_STAGE);
+    if (s.campaign) swprintf_s(rows[3], s.victory ? TR(L"%d / %d  クリア") : TR(L"ステージ %d"), s.wave, GameConsts::CAMPAIGN_WAVES);
     else swprintf_s(rows[3], TR(L"チュートリアル %d / %d"), s.wave, GameConsts::TUTORIAL_WAVES);
     swprintf_s(rows[4], L"%d", static_cast<int>(score * countT + 0.5f));
-    const wchar_t* labels[5] = { TR(L"時間"), TR(L"撃破"), TR(L"レベル"), s.endless ? TR(L"ステージ") : TR(L"チュートリアル"), TR(L"スコア") };
+    const wchar_t* labels[5] = { TR(L"時間"), TR(L"撃破"), TR(L"レベル"), s.campaign ? TR(L"ステージ") : TR(L"チュートリアル"), TR(L"スコア") };
     for (int i = 0; i < 5; ++i)
     {
         float ra = Ease((t - 0.7f - i * 0.1f) / 0.3f);
@@ -342,7 +344,7 @@ void ResultScreen::Draw(const ResultStats& s) const
     }
 
     int extraY = py + panelH + 14;
-    if (s.endless)
+    if (s.campaign)
     {
         int bm = static_cast<int>(s.bestTime) / 60, bs = static_cast<int>(s.bestTime) % 60;
         wchar_t best[96];
@@ -352,7 +354,7 @@ void ResultScreen::Draw(const ResultStats& s) const
     }
     if (s.debugUsed)
     {
-        DrawCentered(cx, extraY, s.endless ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(255, 90, 90), FontSize::Body);
+        DrawCentered(cx, extraY, s.campaign ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(255, 90, 90), FontSize::Body);
     }
 
     // 4. Menu Retry / Title
@@ -397,7 +399,7 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
     DrawFitted(artX + (artSize - static_cast<int>(TextWidth(caption, FontSize::Medium) * captionScale)) / 2,
                731, caption, muted, FontSize::Medium, artSize - 36);
 
-    const wchar_t* modeName = s.endless ? (s.hard ? TR(L"ハード") : TR(L"ノーマル")) : TR(L"チュートリアル");
+    const wchar_t* modeName = s.campaign ? TR(L"冒険") : TR(L"チュートリアル");
     wchar_t summary[96] = {};
     swprintf_s(summary, L"%s / %s", TR(L"今回の記録"), modeName);
     DrawFitted(panelX, 100, summary, muted, FontSize::Body, panelW);
@@ -418,9 +420,9 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
     swprintf_s(values[0], L"%02d:%02d", minutes, seconds);
     swprintf_s(values[1], L"%d", static_cast<int>(s.kills * count + 0.5f));
     swprintf_s(values[2], L"Lv. %d", s.level);
-    if (s.endless) swprintf_s(values[3], L"%d / %d", s.wave, GameConsts::ENDLESS_MAX_STAGE);
+    if (s.campaign) swprintf_s(values[3], L"%d / %d", s.wave, GameConsts::CAMPAIGN_WAVES);
     else swprintf_s(values[3], L"%d / %d", s.wave, GameConsts::TUTORIAL_WAVES);
-    const wchar_t* labels[4] = { TR(L"時間"), TR(L"撃破"), TR(L"レベル"), s.endless ? TR(L"ステージ") : TR(L"チュートリアル") };
+    const wchar_t* labels[4] = { TR(L"時間"), TR(L"撃破"), TR(L"レベル"), s.campaign ? TR(L"ステージ") : TR(L"チュートリアル") };
     for (int i = 0; i < 4; ++i)
     {
         const int x = panelX + (i % 2) * 340;
@@ -429,7 +431,7 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
         DrawFitted(x, y + 27, values[i], paper, FontSize::Header, 300, 1.16f);
     }
 
-    if (s.endless)
+    if (s.campaign)
     {
         wchar_t best[128] = {};
         const int bestMinutes = static_cast<int>(s.bestTime) / 60, bestSeconds = static_cast<int>(s.bestTime) % 60;
@@ -438,7 +440,7 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
         DrawFitted(panelX, 568, best, accent, FontSize::Body, panelW);
     }
     if (s.debugUsed)
-        DrawFitted(panelX, 600, s.endless ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"),
+        DrawFitted(panelX, 600, s.campaign ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"),
                    GetColor(239, 151, 142), FontSize::Body, panelW);
 
     const float menuFade = Ease((timer_ - INPUT_DELAY) / 0.3f);

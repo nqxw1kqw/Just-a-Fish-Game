@@ -14,8 +14,8 @@ class Input;
 struct ResultStats
 {
     bool victory = false;
-    bool endless = false;
-    bool hard = false;
+    bool campaign = false;
+    int bossesDefeated = 0;
     bool retryTutorial = true;
     bool diedAtBoss = false;
     bool debugUsed = false;
@@ -23,6 +23,7 @@ struct ResultStats
     int kills = 0;
     int level = 1;
     int wave = 1;
+    int wavesCleared = 0;
     // Kỷ lục Endless (chỉ hiển thị khi endless)
     int bestWave = 0;
     int bestKills = 0;

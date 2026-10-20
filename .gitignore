@@ -29,3 +29,6 @@ obj/
 
 # Archived and vendor experiments not part of the active game project
 /_Archive/
+
+/Data/highscore_campaign.dat
+/Data/highscore_campaign.tmp

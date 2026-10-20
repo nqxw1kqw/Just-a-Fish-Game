@@ -257,14 +257,16 @@ namespace GameConsts
     // Giới hạn quái sống tối đa khi Boss triệu hồi
     constexpr int BOSS_MINION_ALIVE_CAP = 12;
 
-    // Chế độ Vô tận (Endless Mode - Task 10 T4)
-    constexpr float ENDLESS_WAVE_DURATION = 20.0f; // Balance pass: 35 -> 20s mỗi stage Endless
+    // 冒険の進行：練習 → 通常ウェーブ3回 → ボス、5体撃破で勝利。
+    constexpr float CAMPAIGN_WAVE_DURATION = 25.0f; // 通常ウェーブの時間
 
-    // ===== Balance pass: luồng Tutorial -> Endless =====
-    constexpr int   TUTORIAL_WAVES = 3;              // Ba wave hướng dẫn, rồi chọn Normal/Hard (không có boss tutorial).
-    constexpr int   ENDLESS_BOSS_EVERY = 5;          // Stage 5, 10, 15... là stage Boss (ngẫu nhiên Cá Voi / Cá Mập)
-    constexpr int   ENDLESS_MAX_STAGE = 30;          // Endless tối đa 30 stage -> màn CLEAR
-    // Phase 1 flow: Tutorial 15s/stage -> Whale -> chọn chế độ Normal / Hell
+    // ===== チュートリアルと冒険の進行 =====
+    constexpr int   TUTORIAL_WAVES = 3;              // チュートリアル3回後、通常ウェーブ1へ（練習のボスなし）。
+    constexpr int   WAVES_PER_BOSS = 3;              // 通常ウェーブ3回ごとにボス戦
+    constexpr int   CAMPAIGN_BOSSES = 5;
+    constexpr int   CAMPAIGN_WAVES = WAVES_PER_BOSS * CAMPAIGN_BOSSES;
+    constexpr float CAMPAIGN_BOSS_HP_PER_CLEAR = 0.25f;
+    // 練習は15秒、通常ウェーブは25秒。難易度選択はありません。
     constexpr float TUTORIAL_WAVE_DURATION = 15.0f;  // Mỗi stage tutorial 15 giây
     constexpr float HELL_WAVE_DURATION = 20.0f;      // Hell: 20 giây mỗi stage
     constexpr float HELL_DAMAGE_TAKEN_MUL = 1.5f;    // Hell: sát thương nhận vào x1.5

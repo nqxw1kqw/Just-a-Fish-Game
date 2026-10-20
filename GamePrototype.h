@@ -23,17 +23,12 @@ enum class GameState
     CardPick,     // Đang chọn 1 trong 3 thẻ nâng cấp (C2)
     BossIntro,    // Chuyển cảnh giới thiệu trùm cuối (G1, B4)
     Boss,         // Trận đấu Boss Cá Voi (B)
-    ModeSelect,   // Hoàn thành tutorial -> chọn Normal / Hard
     Victory,      // Màn Thắng cuộc (Result Win)
     GameOver      // Màn Thất bại (Result Lose)
 };
 
-enum class GameMode
-{
-    Classic, // Tutorial: 3 wave, sau đó chọn Normal / Hard.
-    Endless, // NORMAL: 30 stage 20s, chọn thẻ, dọn quái giữa stage, Boss mỗi 5 stage
-    Hell     // HARD: sát thương nhận x1.5, thẻ ngẫu nhiên tự chọn, không dọn quái
-};
+// 選択できる難易度はありません。1回の冒険の中の進行段階です。
+enum class RunPhase { Tutorial, Campaign };
 
 struct HighscoreData
 {
@@ -61,11 +56,9 @@ public:
     void EndRenderInterp();
     bool IsRenderInterpEnabled() const { return renderInterpEnabled_; }
 
-    GameMode GetGameMode() const { return mode_; }
-    void SetGameMode(GameMode mode) { mode_ = mode; }
+    RunPhase GetRunPhase() const { return phase_; }
+    bool IsCampaign() const { return phase_ == RunPhase::Campaign; }
     const HighscoreData& GetHighscore() const { return highscore_; }
-    const HighscoreData& GetHellHighscore() const { return highscoreHell_; }
-    bool IsEndlessLike() const { return mode_ != GameMode::Classic; }
     int GetTotalKills() const { return enemies_.GetTotalKills(); }
 
     // Màn hình tạm dừng (Task #13)
@@ -78,14 +71,12 @@ private:
     bool renderInterpActive_ = false;
     void StartWave(int wave);
     void StartBossFight();
-    void StartRun(GameMode mode);        // Điểm vào DUY NHẤT để bắt đầu / chơi lại một ván (Title, R, Retry)
-    // Tutorial (3 wave) -> chọn Normal/Hard (30 stage, boss mỗi 5 stage).
-    void StartStage(int stage);          // Endless: stage chia hết cho ENDLESS_BOSS_EVERY -> Boss
+    void StartRun();        // Điểm vào DUY NHẤT để bắt đầu / chơi lại một ván (Title, R, Retry)
+    // チュートリアル → 25秒の通常ウェーブを3回 → ボス。5体撃破で勝利。
     void BeginBossIntro();
-    void AdvanceAfterCardPick();         // Sau khi chọn thẻ: sang wave/stage kế tiếp hoặc Boss
-    void EnterEndlessFromTutorial(GameMode mode); // Màn chọn chế độ -> vào Normal/Hell stage 1 (giữ thẻ)
-    void ApplyModeRules();               // Áp luật riêng của chế độ (Hell: x1.5 dmg, trần quái)
-    void HellAutoPickCard();             // Hell: tự chọn 1 thẻ ngẫu nhiên, không dừng game
+    void AdvanceAfterCardPick();         // カード選択後に次のウェーブまたはボスへ進む
+    void FinishTutorial(); // 所持カードを引き継ぎ、通常ウェーブ1へ進む
+    void ApplyPhaseRules();               // 練習中と通常プレイの補正を適用
     float UpdateTutorialTips(float dt);  // Trả về hệ số thời gian (làm chậm nhẹ khi gợi ý vừa hiện)
 
     enum TipId { Tip_Move, Tip_Jump, Tip_Hit, Tip_Card, Tip_Boss, Tip_Count };
@@ -94,39 +85,24 @@ private:
     float tipTimer_ = 0.0f;
     bool tipsSkipped_ = false;
     Vec3 tipMoveStart_{};
-    int modeSelectIdx_ = 0;              // 0 = Normal, 1 = Hell
-    float hellCardToastTimer_ = 0.0f;
-    // Phase 2: vòng quay thẻ Hell
-    void UpdateHellRoulette(float dt);
-    void FinishHellRoulette();
-    bool rouletteActive_ = false;
-    bool rouletteLanded_ = false;
-    int rouletteCount_ = 0;
-    int rouletteIdx_ = 0;
-    int rouletteTarget_ = 0;
-    float rouletteTimer_ = 0.0f;
-    float rouletteStepTimer_ = 0.0f;
-    std::array<Card, 3> rouletteCards_{};
-    // Hell: lên cấp -> +1 bậc chỉ số ngẫu nhiên
     enum LvStat { LS_Atk, LS_Def, LS_Spd, LS_Cd, LS_Luck, LS_Count };
     int lvStat_[LS_Count] = {};          // Normal/Hell: điểm chỉ số từ lên cấp
     int levelUpStat_ = 0;
     float levelUpBannerTimer_ = 0.0f;
     void GrantLevelStat();
     void RefreshDamageTakenMul();        // modeMul x (1 - Def)
-    wchar_t hellCardToast_[96] = L"";
-    void EnterEndlessClear();            // Qua stage ENDLESS_MAX_STAGE -> màn CLEAR
+    void CompleteCampaign();            // 5体のボスを撃破すると勝利
     void OnWaveComplete();
     void ReapplyAllStats();
 
     void LoadHighscore();
     void SaveHighscore();
-    void SaveHighscoreIfEndlessRun();
+    void SaveRunRecord();
 
     // Hỗ trợ Debug (Phần D)
     void SkipCurrentWave();
     void SkipToWave(int waveTarget);
-    void SkipToEndlessWave(int waveTarget);
+    void SkipToCampaignWave(int waveTarget);
     void SkipToBoss();
     void SkipToSharkBoss();   // Debug: nhảy thẳng tới Boss Cá Mập (Endless)
     void SkipToSquidBoss();   // Debug: nhảy thẳng tới Boss Mực (Endless)
@@ -142,11 +118,11 @@ private:
 
     GameState state_ = GameState::Title;
     bool panelsVisible_ = GameConsts::INFO_PANELS_DEFAULT_VISIBLE; // F11: bảng stats/thẻ/debug/hướng dẫn
-    GameMode mode_ = GameMode::Classic;
-    GameMode runStartMode_ = GameMode::Classic; // Chế độ lúc bắt đầu ván (tutorial tự chuyển sang Endless giữa ván)
-    int titleSelectedMode_ = 0; // 0 = Classic, 1 = Endless
+    RunPhase phase_ = RunPhase::Tutorial;
     HighscoreData highscore_{};
-    HighscoreData highscoreHell_{}; // Kỷ lục riêng của Hell (highscore_hell.dat)
+    int bossesDefeated_ = 0;
+    int completedWaves_ = 0;
+    std::array<int, GameConsts::CAMPAIGN_BOSSES> bossOrder_ = {0, 1, 2, 3, 4};
 
     int currentWave_ = 1;
     float waveTimer_ = 0.0f;
@@ -166,7 +142,7 @@ private:
     SwordfishBoss swordfish_;  // Boss #5: Swordfish (chỉ Endless)
     bool sharkFight_ = false;  // Trận boss hiện tại là cá mập?
     int bossKind_ = 0;         // 0 Whale, 1 Shark, 2 Squid, 3 Turtle, 4 Swordfish
-    void PrepareEndlessBoss(int bossIdx);
+    void PrepareBossForRound(int bossIndex);
     PlayerStats playerStats_;
 
     // Camera 3D bám theo cá

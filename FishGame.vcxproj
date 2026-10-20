@@ -135,8 +135,6 @@
     <ClInclude Include="CameraController.h" />
     <ClInclude Include="UIRenderer.h" />
     <ClInclude Include="MenuStyle.h" />
-    <ClInclude Include="IllustratedChoiceMenu.h" />
-    <ClInclude Include="ModeSelectScreen.h" />
     <ClInclude Include="SeabedFloor.h" />
     <ClInclude Include="SoundManager.h" />
     <ClInclude Include="Input.h" />
@@ -190,8 +188,6 @@
     <ClCompile Include="DebugController.cpp" />
     <ClCompile Include="CameraController.cpp" />
     <ClCompile Include="UIRenderer.cpp" />
-    <ClCompile Include="ModeSelectScreen.cpp" />
-    <ClCompile Include="IllustratedChoiceMenu.cpp" />
     <ClCompile Include="SeabedFloor.cpp" />
     <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="Input.cpp" />

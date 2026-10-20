@@ -208,7 +208,7 @@ bool LayeredResultScreen::Draw(const ResultStats& s, float timer, int selected, 
     swprintf_s(values[1], L"%02d:%02d", seconds / 60, seconds % 60);
     swprintf_s(values[2], L"%d", static_cast<int>(s.kills * count + 0.5f));
     swprintf_s(values[3], L"%d", s.level);
-    swprintf_s(values[4], L"%d / %d", s.wave, s.endless ? GameConsts::ENDLESS_MAX_STAGE : GameConsts::TUTORIAL_WAVES);
+    swprintf_s(values[4], L"%d / %d", s.wave, s.campaign ? GameConsts::CAMPAIGN_WAVES : GameConsts::TUTORIAL_WAVES);
     const float sx = static_cast<float>(boardRect.w) / board.source.w;
     const float sy = static_cast<float>(boardRect.h) / board.source.h;
     const int valueX = boardRect.x + static_cast<int>((values_[locale].x - board.source.x) * sx);
@@ -221,10 +221,12 @@ bool LayeredResultScreen::Draw(const ResultStats& s, float timer, int selected, 
                           (std::max)(32, static_cast<int>(values_[locale].width * sx)));
     }
 
-    const wchar_t* mode = s.endless ? (s.hard ? TR(L"ハード") : TR(L"ノーマル")) : TR(L"チュートリアル");
-    Note(modeX_, modeY_, mode, ink);
+    const wchar_t* mode = s.campaign ? TR(L"冒険") : TR(L"チュートリアル");
+    wchar_t journey[80];
+    swprintf_s(journey, L"%s　ボス撃破 %d / %d", mode, s.bossesDefeated, GameConsts::CAMPAIGN_BOSSES);
+    Note(modeX_, modeY_, journey, ink);
     if (s.retryTutorial) Note(notesX_, notesY_, TR(L"チュートリアルから再挑戦"), ink);
-    if (s.endless)
+    if (s.campaign)
     {
         wchar_t best[128];
         const int bestSeconds = static_cast<int>(s.bestTime);
@@ -233,7 +235,7 @@ bool LayeredResultScreen::Draw(const ResultStats& s, float timer, int selected, 
         Note(notesX_, notesY_ + 30, best, ink);
     }
     Note(notesX_, notesY_ + 60, TR(L"R: リトライ   T: タイトルへ"), ink);
-    if (s.debugUsed) Note(notesX_, notesY_ - 30, s.endless ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(151, 39, 44));
+    if (s.debugUsed) Note(notesX_, notesY_ - 30, s.campaign ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(151, 39, 44));
 
     SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * Ease((timer - 0.6f) / 0.2f)));
     for (int i : { 1 - selected, selected }) DrawPart(buttons_[i][locale], ButtonRect(i, selected, held, pressed, japanese));

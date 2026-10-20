@@ -27,7 +27,6 @@ namespace
     constexpr unsigned int HIGHSCORE_VERSION_V2 = 2;
     constexpr unsigned int HIGHSCORE_VERSION = 3;
     // Đường dẫn cũ (tương đối theo thư mục làm việc) - chỉ dùng để đọc/migrate
-    const wchar_t* const HIGHSCORE_LEGACY_PATH = L"Data/highscore.dat";
 
     struct HighscoreFileV1 // struct thô cũ, 16 byte
     {
@@ -128,31 +127,10 @@ namespace
 
 void GamePrototype::LoadHighscore()
 {
-    highscoreHell_ = HighscoreData{};
-    {
-        wchar_t hellPath[MAX_PATH] = {};
-        BuildExeDataPath(hellPath, MAX_PATH, L"highscore_hell.dat");
-        ReadHighscoreFile(hellPath, highscoreHell_); // không có file -> giữ 0
-    }
     highscore_ = HighscoreData{};
     wchar_t path[MAX_PATH] = {};
-    BuildExeDataPath(path, MAX_PATH, L"highscore.dat");
-    if (ReadHighscoreFile(path, highscore_))
-    {
-        AppLogAdd(L"[HIGHSCORE] Loaded %s: Wave=%d Kills=%d Time=%.1fs Score=%d\n",
-            path, highscore_.maxWave, highscore_.maxKills, highscore_.maxSurvivalTime, highscore_.maxScore);
-        return;
-    }
-    // Migrate: file cũ theo thư mục làm việc (nếu exe được chạy từ chỗ khác)
-    HighscoreData legacy{};
-    if (ReadHighscoreFile(HIGHSCORE_LEGACY_PATH, legacy))
-    {
-        highscore_ = legacy;
-        AppLogAdd(L"[HIGHSCORE] Loaded legacy file %s\n", HIGHSCORE_LEGACY_PATH);
-        return;
-    }
-    highscore_ = HighscoreData{}; // không có file / hỏng: bắt đầu từ 0, không crash
-    AppLogAdd(L"[HIGHSCORE] No valid highscore file (%s), starting fresh\n", path);
+    BuildExeDataPath(path, MAX_PATH, L"highscore_campaign.dat");
+    ReadHighscoreFile(path, highscore_);
 }
 
 void GamePrototype::SaveHighscore()
@@ -160,8 +138,7 @@ void GamePrototype::SaveHighscore()
     // Task 10 T4e: Không lưu kỷ lục nếu đã dùng phím debug
     if (debugController_.WasDebugUsed()) return;
 
-    const bool hell = (mode_ == GameMode::Hell);
-    HighscoreData& hs = hell ? highscoreHell_ : highscore_;
+    HighscoreData& hs = highscore_;
     bool updated = false;
     if (currentWave_ > hs.maxWave)
     {
@@ -189,8 +166,8 @@ void GamePrototype::SaveHighscore()
 
     wchar_t dir[MAX_PATH] = {}, path[MAX_PATH] = {}, tmpPath[MAX_PATH] = {};
     BuildExeDataPath(dir, MAX_PATH, L"");
-    BuildExeDataPath(path, MAX_PATH, hell ? L"highscore_hell.dat" : L"highscore.dat");
-    BuildExeDataPath(tmpPath, MAX_PATH, hell ? L"highscore_hell.tmp" : L"highscore.tmp");
+    BuildExeDataPath(path, MAX_PATH, L"highscore_campaign.dat");
+    BuildExeDataPath(tmpPath, MAX_PATH, L"highscore_campaign.tmp");
     CreateDirectoryW(dir, NULL); // đã tồn tại thì bỏ qua
 
     HighscoreFileV3 f{};
@@ -223,10 +200,10 @@ void GamePrototype::SaveHighscore()
     }
 }
 
-void GamePrototype::SaveHighscoreIfEndlessRun()
+void GamePrototype::SaveRunRecord()
 {
     // Chỉ lưu khi đang có một ván Endless (không lưu ở màn Title)
-    if (IsEndlessLike() && state_ != GameState::Title && state_ != GameState::ModeSelect)
+    if (IsCampaign() && state_ != GameState::Title)
     {
         SaveHighscore();
     }
@@ -252,7 +229,7 @@ void GamePrototype::Init()
 void GamePrototype::Shutdown()
 {
     // Thoát game (ESC / đóng cửa sổ) giữa ván Endless: vẫn lưu kỷ lục
-    SaveHighscoreIfEndlessRun();
+    SaveRunRecord();
 
     enemies_.Shutdown();
     cardManager_.Shutdown();
@@ -278,15 +255,19 @@ void GamePrototype::Reset()
     swordfish_.Reset();
     sharkFight_ = false;
     bossKind_ = 0;
+    bossesDefeated_ = 0;
+    completedWaves_ = 0;
+    bossOrder_ = {0, 1, 2, 3, 4};
+    // 最初は必ずクジラ。残る4体だけをシャッフルし、重複させません。
+    for (int i = GameConsts::CAMPAIGN_BOSSES - 1; i > 1; --i)
+        std::swap(bossOrder_[i], bossOrder_[1 + rand() % i]);
 
-    enemies_.SetEndless(IsEndlessLike());
-    cardManager_.SetEndless(IsEndlessLike());
-    hellCardToastTimer_ = 0.0f;
-    rouletteActive_ = false;
+    enemies_.SetEndless(IsCampaign());
+    cardManager_.SetEndless(IsCampaign());
     for (int& v : lvStat_) v = 0;
     levelUpBannerTimer_ = 0.0f;
     activeTip_ = -1;
-    ApplyModeRules();
+    ApplyPhaseRules();
 
     hitStopTimer_ = 0.0f;
 
@@ -305,9 +286,9 @@ void GamePrototype::ReapplyAllStats()
 {
     playerStats_ = PlayerStats{};
     cardManager_.ApplyToStats(playerStats_);
-    if (mode_ == GameMode::Classic) // Tutorial: thêm HP tối đa
+    if (phase_ == RunPhase::Tutorial) // Tutorial: thêm HP tối đa
         playerStats_.maxHp.AddModifier("tutorial", ModifierType::Percent, GameConsts::TUTORIAL_PLAYER_HP_BONUS);
-    if (IsEndlessLike()) // Normal/Hell: điểm chỉ số nhận từ lên cấp (Attack/Def/Speed/Cooldown/Luck)
+    if (IsCampaign()) // Normal/Hell: điểm chỉ số nhận từ lên cấp (Attack/Def/Speed/Cooldown/Luck)
     {
         const float atk = GameConsts::LV_ATK_PCT * lvStat_[LS_Atk];
         if (atk > 0.0f)
@@ -319,7 +300,7 @@ void GamePrototype::ReapplyAllStats()
         if (lvStat_[LS_Spd]) playerStats_.moveSpeed.AddModifier("lvSpd", ModifierType::Percent, GameConsts::LV_SPD_PCT * lvStat_[LS_Spd]);
         if (lvStat_[LS_Cd])  playerStats_.jumpCooldown.AddModifier("lvCd", ModifierType::Percent, GameConsts::LV_CD_PCT * lvStat_[LS_Cd]);
     }
-    cardManager_.SetLuck(IsEndlessLike() ? lvStat_[LS_Luck] : 0);
+    cardManager_.SetLuck(IsCampaign() ? lvStat_[LS_Luck] : 0);
 
     player_.ApplyStats(playerStats_);
     player_.SetHooks(
@@ -337,16 +318,14 @@ void GamePrototype::ReapplyAllStats()
 }
 
 // Điểm vào duy nhất cho mọi lần bắt đầu / chơi lại: Reset() đúng một lần rồi StartStage(1) đúng một lần.
-void GamePrototype::StartRun(GameMode mode)
+void GamePrototype::StartRun()
 {
-    mode_ = mode;
-    runStartMode_ = mode;
-    titleSelectedMode_ = (mode == GameMode::Hell) ? 2 : (mode == GameMode::Endless) ? 1 : 0;
+    phase_ = RunPhase::Tutorial;
     uiRenderer_.LeavePause();
     paused_ = false;
     Reset();
-    StartStage(1);
-    Input::Instance().Flush(); // phím vừa nhấn (R / Enter / 1 / 2) không lọt sang tick sau
+    StartWave(1);
+    Input::Instance().Flush();
 }
 
 void GamePrototype::StartWave(int wave)
@@ -355,23 +334,10 @@ void GamePrototype::StartWave(int wave)
     state_ = GameState::Wave;
     waveTimer_ = 0.0f;
 
-    if (mode_ == GameMode::Classic)
-    {
-        // Phase 1: Tutorial TUTORIAL_WAVES stage, mỗi stage 15s
-        waveDuration_ = GameConsts::TUTORIAL_WAVE_DURATION;
-    }
-    else if (mode_ == GameMode::Hell)
-    {
-        waveDuration_ = GameConsts::HELL_WAVE_DURATION;
-    }
-    else
-    {
-        // Task 10 T4b: Chế độ Endless thời lượng mỗi wave cố định 35 giây
-        waveDuration_ = GameConsts::ENDLESS_WAVE_DURATION;
-    }
+    waveDuration_ = IsCampaign() ? GameConsts::CAMPAIGN_WAVE_DURATION : GameConsts::TUTORIAL_WAVE_DURATION;
 
     player_.ResetDamageTakenThisWave();
-    enemies_.SetWave(wave, IsEndlessLike());
+    enemies_.SetWave(wave, IsCampaign());
     enemies_.SetAutoSpawn(true);
     SoundManager::Instance().PlayBGM(BgmId::Battle, true);
 }
@@ -380,45 +346,37 @@ void GamePrototype::StartBossFight()
 {
     state_ = GameState::Boss;
     player_.ResetDamageTakenThisWave();
-    enemies_.KillAll(effects_); // Dọn quái nhỏ chuẩn bị sàn đấu
-    if (mode_ == GameMode::Classic) player_.SetDamageTakenMul(GameConsts::TUTORIAL_BOSS_DAMAGE_TAKEN_MUL);
-    enemies_.SetAutoSpawn(false); // Trong trận Boss, quái chỉ xuất hiện theo đòn của Boss
-    if (bossKind_ == 1) shark_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
-    else if (bossKind_ == 2) squid_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
-    else if (bossKind_ == 3) turtle_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
-    else if (bossKind_ == 4) swordfish_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
-    boss_.SetDamageTakenMul(mode_ == GameMode::Classic ? GameConsts::TUTORIAL_DMG_MUL_VS_BOSS
-                          : mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
-    shark_.SetDamageTakenMul(mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
-    squid_.SetDamageTakenMul(mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
-    turtle_.SetDamageTakenMul(mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
-    swordfish_.SetDamageTakenMul(mode_ == GameMode::Hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
-    if (bossKind_ == 0) boss_.Spawn(Vec3{ 0.0f, 0.0f, 0.0f });
-    boss_.SetHellMode(mode_ == GameMode::Hell);
-    shark_.SetHellMode(mode_ == GameMode::Hell);
-    squid_.SetHellMode(mode_ == GameMode::Hell);
-    turtle_.SetHellMode(mode_ == GameMode::Hell);
-    swordfish_.SetHellMode(mode_ == GameMode::Hell);
+    enemies_.KillAll(effects_);
+    enemies_.SetAutoSpawn(false);
+    RefreshDamageTakenMul();
+    boss_.SetDamageTakenMul(1.0f); shark_.SetDamageTakenMul(1.0f);
+    squid_.SetDamageTakenMul(1.0f); turtle_.SetDamageTakenMul(1.0f); swordfish_.SetDamageTakenMul(1.0f);
+    boss_.SetHellMode(false); shark_.SetHellMode(false); squid_.SetHellMode(false);
+    turtle_.SetHellMode(false); swordfish_.SetHellMode(false);
+    const Vec3 center{0,0,0};
+    if (bossKind_ == 1) shark_.Spawn(center);
+    else if (bossKind_ == 2) squid_.Spawn(center);
+    else if (bossKind_ == 3) turtle_.Spawn(center);
+    else if (bossKind_ == 4) swordfish_.Spawn(center);
+    else boss_.Spawn(center);
     effects_.AddTrauma(0.5f);
     SoundManager::Instance().PlayBGM(BgmId::Boss, true);
 }
 
-// Endless: tham số là số stage Boss (5, 10, ... 30). Boss ngẫu nhiên Cá Voi / Cá Mập.
-// HP Boss: mul = 1 + ENDLESS_BOSS_HP_PER_STAGE * (stage - 5)  (stage 5 = x1.0, stage 30 = x2.25)
-void GamePrototype::PrepareEndlessBoss(int stage)
+// ボスの出現順と難易度を、その周回の撃破数から決定します。
+void GamePrototype::PrepareBossForRound(int bossIndex)
 {
-    // Boss rotation: Whale / Shark / Giant Squid / Ancient Turtle / Swordfish (random, tutorial stays Whale)
-    bossKind_ = rand() % 5;
+    bossIndex = std::clamp(bossIndex, 0, GameConsts::CAMPAIGN_BOSSES - 1);
+    bossKind_ = bossOrder_[bossIndex];
     sharkFight_ = (bossKind_ == 1);
-    const int tier = (std::max)(1, stage / GameConsts::ENDLESS_BOSS_EVERY);
-    const float hpMul = 1.0f + GameConsts::ENDLESS_BOSS_HP_PER_STAGE
-        * static_cast<float>((std::max)(0, stage - GameConsts::ENDLESS_BOSS_EVERY));
+    const int tier = bossIndex + 1;
+    const float hpMul = 1.0f + GameConsts::CAMPAIGN_BOSS_HP_PER_CLEAR * bossIndex;
     if (bossKind_ == 1) { shark_.SetBossDifficulty(tier); shark_.SetHpMultiplier(hpMul); }
     else if (bossKind_ == 2) { squid_.SetBossDifficulty(tier); squid_.SetHpMultiplier(hpMul); }
     else if (bossKind_ == 3) { turtle_.SetBossDifficulty(tier); turtle_.SetHpMultiplier(hpMul); }
     else if (bossKind_ == 4) { swordfish_.SetBossDifficulty(tier); swordfish_.SetHpMultiplier(hpMul); }
     else { boss_.SetBossDifficulty(tier); boss_.SetHpMultiplier(hpMul); }
-    AppLogAdd(L"[ENDLESS] Stage %d boss kind=%d tier=%d hpMul=%.2f\n", stage, bossKind_, tier, hpMul);
+    AppLogAdd(L"[CAMPAIGN] Boss %d/5 kind=%d hpMul=%.2f\n", tier, bossKind_, hpMul);
 }
 
 void GamePrototype::BeginBossIntro()
@@ -427,107 +385,51 @@ void GamePrototype::BeginBossIntro()
     bossIntroTimer_ = 2.0f;
     enemies_.KillAll(effects_);
     SoundManager::Instance().PlayBGM(BgmId::Boss, true);
-    SoundManager::Instance().PlaySFX(SfxId::WhaleGroan);
-}
-
-void GamePrototype::StartStage(int stage)
-{
-    if (IsEndlessLike() && stage % GameConsts::ENDLESS_BOSS_EVERY == 0)
-    {
-        currentWave_ = stage;
-        waveTimer_ = 0.0f;
-        player_.ResetDamageTakenThisWave();
-        enemies_.SetWave(stage, true);
-        PrepareEndlessBoss(stage);
-        BeginBossIntro();
-        return;
-    }
-    StartWave(stage);
+    SoundManager::Instance().PlaySFX(bossKind_ == 0 ? SfxId::WhaleGroan : SfxId::BossRoar);
 }
 
 void GamePrototype::AdvanceAfterCardPick()
 {
-    if (mode_ == GameMode::Classic)
+    if (!IsCampaign())
     {
-        if (currentWave_ >= GameConsts::TUTORIAL_WAVES)
-        {
-            // Tutorial hoàn tất (không còn trận Boss Cá Voi): hồi máu -> màn chọn Normal / Hell.
-            player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
-            modeSelectIdx_ = 0;
-            state_ = GameState::ModeSelect;
-            uiRenderer_.EnterModeSelect();
-            SoundManager::Instance().PlayBGM(BgmId::Victory, true);
-            Input::Instance().Flush();
-            AppLogAdd(L"[FLOW] Tutorial complete -> ModeSelect (no tutorial boss)\n");
-        }
-        else
-        {
-            StartWave(currentWave_ + 1);
-        }
+        if (currentWave_ >= GameConsts::TUTORIAL_WAVES) FinishTutorial();
+        else StartWave(currentWave_ + 1);
         return;
     }
-    if (currentWave_ >= GameConsts::ENDLESS_MAX_STAGE)
+    // ボス戦は通常ウェーブを置き換えません。撃破数で同じボスへの再入場を防ぎます。
+    if (currentWave_ % GameConsts::WAVES_PER_BOSS == 0 &&
+        bossesDefeated_ < currentWave_ / GameConsts::WAVES_PER_BOSS)
     {
-        EnterEndlessClear();
+        PrepareBossForRound(bossesDefeated_);
+        BeginBossIntro();
         return;
     }
-    StartStage(currentWave_ + 1);
+    StartWave(currentWave_ + 1);
 }
 
-void GamePrototype::EnterEndlessFromTutorial(GameMode mode)
+void GamePrototype::FinishTutorial()
 {
-    AppLogAdd(L"[FLOW] Tutorial cleared -> %s stage 1\n", mode == GameMode::Hell ? L"HELL" : L"NORMAL");
-    mode_ = mode;
-    titleSelectedMode_ = (mode == GameMode::Hell) ? 2 : 1;
+    player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
+    phase_ = RunPhase::Campaign;
+    completedWaves_ = 0;
+    activeTip_ = -1;
     enemies_.SetEndless(true);
     cardManager_.SetEndless(true);
-    ApplyModeRules();
-    ReapplyAllStats(); // bỏ buff HP tutorial
-    boss_.Reset();
-    shark_.Reset();
-    squid_.Reset();
-    turtle_.Reset();
-    swordfish_.Reset();
-    sharkFight_ = false;
-    bossKind_ = 0;
-    // Hồi máu sau tutorial đã được cộng trước màn chọn chế độ; thẻ được giữ nguyên.
-    StartStage(1);
+    ApplyPhaseRules();
+    ReapplyAllStats();
+    // カードとレベルを引き継ぎ、通常ウェーブの番号を1から開始します。
+    StartWave(1);
     Input::Instance().Flush();
 }
 
-void GamePrototype::ApplyModeRules()
+void GamePrototype::ApplyPhaseRules()
 {
-    const bool hell = (mode_ == GameMode::Hell);
-    const bool tutorial = (mode_ == GameMode::Classic);
     RefreshDamageTakenMul();
-    enemies_.SetPlayerDmgMul(tutorial ? GameConsts::TUTORIAL_DMG_MUL_VS_ENEMY : hell ? GameConsts::HELL_PLAYER_DMG_MUL : 1.0f);
-    if (!hell) effects_.SetParticleScale(1.0f);
-    enemies_.SetMaxAlive(hell ? GameConsts::HELL_MAX_ALIVE : 0);
-    enemies_.SetHell(hell);
-    cardManager_.SetBonusScale(hell ? GameConsts::HELL_CARD_BONUS_SCALE : 1.0f);
-}
-
-void GamePrototype::HellAutoPickCard()
-{
-    // Phase 2: vòng quay thẻ chạy song song với trận đấu (không dừng game), thẻ áp dụng khi dừng quay
-    if (rouletteActive_) FinishHellRoulette(); // vòng cũ chưa xong -> áp dụng ngay
-    cardManager_.Roll3Cards(currentWave_);
-    const int n = cardManager_.GetOfferedCardCount();
-    if (n > 0)
-    {
-        const auto& offer = cardManager_.GetCurrentOffer();
-        rouletteCount_ = n;
-        for (int i = 0; i < n; ++i) rouletteCards_[i] = offer[i];
-        rouletteTarget_ = rand() % n;
-        rouletteIdx_ = rand() % n;
-        rouletteTimer_ = 0.0f;
-        rouletteStepTimer_ = 0.0f;
-        rouletteLanded_ = false;
-        rouletteActive_ = true;
-        cardManager_.ClearOffer();
-        SoundManager::Instance().PlaySFX(SfxId::CardFlip);
-    }
-    AdvanceAfterCardPick();
+    enemies_.SetPlayerDmgMul(IsCampaign() ? 1.0f : GameConsts::TUTORIAL_DMG_MUL_VS_ENEMY);
+    effects_.SetParticleScale(1.0f);
+    enemies_.SetMaxAlive(0);
+    enemies_.SetHell(false);
+    cardManager_.SetBonusScale(1.0f);
 }
 
 // "Level" = cấp EXP sẵn có (PlayerFish::AddExp, nhặt EXP orb). Normal/Hell: mỗi lần lên cấp -> +1 điểm ngẫu nhiên
@@ -547,53 +449,14 @@ void GamePrototype::GrantLevelStat()
 
 void GamePrototype::RefreshDamageTakenMul()
 {
-    const bool hell = (mode_ == GameMode::Hell);
-    const bool tutorial = (mode_ == GameMode::Classic);
-    float mul = hell ? GameConsts::HELL_DAMAGE_TAKEN_MUL : tutorial ? GameConsts::TUTORIAL_DAMAGE_TAKEN_MUL : 1.0f;
-    if (tutorial && state_ == GameState::Boss) mul = GameConsts::TUTORIAL_BOSS_DAMAGE_TAKEN_MUL;
-    if (!tutorial) mul *= 1.0f - (std::min)(GameConsts::LV_DEF_MAX, GameConsts::LV_DEF_PCT * lvStat_[LS_Def]);
+    float mul = IsCampaign() ? 1.0f : GameConsts::TUTORIAL_DAMAGE_TAKEN_MUL;
+    if (IsCampaign()) mul *= 1.0f - (std::min)(GameConsts::LV_DEF_MAX, GameConsts::LV_DEF_PCT * lvStat_[LS_Def]);
     player_.SetDamageTakenMul(mul);
-}
-
-void GamePrototype::FinishHellRoulette()
-{
-    if (!rouletteActive_ || rouletteLanded_) return;
-    rouletteLanded_ = true;
-    rouletteIdx_ = rouletteTarget_;
-    const Card& c = rouletteCards_[rouletteTarget_];
-    cardManager_.AddActiveCard(c);
-    ReapplyAllStats();
-    SoundManager::Instance().PlaySFX(SfxId::CardSelect);
-    AppLogAdd(L"[HELL] Roulette card: %s\n", c.name.c_str());
-}
-
-void GamePrototype::UpdateHellRoulette(float dt)
-{
-    if (!rouletteActive_) return;
-    rouletteTimer_ += dt;
-    if (!rouletteLanded_)
-    {
-        float k = (std::min)(1.0f, rouletteTimer_ / GameConsts::HELL_ROULETTE_SPIN_TIME);
-        float step = GameConsts::HELL_ROULETTE_STEP_START + (GameConsts::HELL_ROULETTE_STEP_END - GameConsts::HELL_ROULETTE_STEP_START) * k * k;
-        rouletteStepTimer_ += dt;
-        if (rouletteStepTimer_ >= step && rouletteCount_ > 1)
-        {
-            rouletteStepTimer_ = 0.0f;
-            rouletteIdx_ = (rouletteIdx_ + 1) % rouletteCount_;
-            SoundManager::Instance().PlaySFX(SfxId::UiHover);
-        }
-        if (k >= 1.0f) { FinishHellRoulette(); rouletteTimer_ = 0.0f; }
-    }
-    else if (rouletteTimer_ >= GameConsts::HELL_ROULETTE_HOLD_TIME + GameConsts::HELL_ROULETTE_FADE_TIME)
-    {
-        rouletteActive_ = false;
-    }
 }
 
 float GamePrototype::UpdateTutorialTips(float dt)
 {
-    if (hellCardToastTimer_ > 0.0f) hellCardToastTimer_ -= dt;
-    if (mode_ != GameMode::Classic || tipsSkipped_) { activeTip_ = -1; return 1.0f; }
+    if (phase_ != RunPhase::Tutorial || tipsSkipped_) { activeTip_ = -1; return 1.0f; }
 
     const Input& input = Input::Instance();
     if (activeTip_ >= 0 && input.IsPressed(KEY_INPUT_TAB))
@@ -648,9 +511,9 @@ float GamePrototype::UpdateTutorialTips(float dt)
     return 1.0f;
 }
 
-void GamePrototype::EnterEndlessClear()
+void GamePrototype::CompleteCampaign()
 {
-    AppLogAdd(L"[ENDLESS] All %d stages cleared!\n", GameConsts::ENDLESS_MAX_STAGE);
+    AppLogAdd(L"[CAMPAIGN] All %d bosses defeated!\n", bossesDefeated_);
     state_ = GameState::Victory;
     resultScreen_.Enter(true, false);
     effects_.AddTrauma(0.7f);
@@ -661,6 +524,7 @@ void GamePrototype::EnterEndlessClear()
 
 void GamePrototype::OnWaveComplete()
 {
+    completedWaves_ = (std::max)(completedWaves_, currentWave_);
     // Tóm tắt Wave: sinh X, hạ Y, nhận Z sát thương, dọn trong T giây (Task 10 T1)
     int spawned = enemies_.GetSpawnedThisWave();
     int killed = enemies_.GetKilledThisWave();
@@ -670,11 +534,12 @@ void GamePrototype::OnWaveComplete()
                currentWave_, spawned, killed, dmgTaken, timeSpent);
     AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
 
-    // Hết giờ wave: Quái còn lại biến mất (G2). Hell: KHÔNG dọn quái giữa stage
-    if (mode_ != GameMode::Hell) enemies_.KillAll(effects_);
+    // 時間終了で出現を止め、残りの敵を片付けてカード選択へ。
+    enemies_.SetAutoSpawn(false);
+    enemies_.KillAll(effects_);
 
     // G3: Cuối mỗi wave hồi 30% máu tối đa
-    player_.Heal(player_.GetMaxHp() * (mode_ == GameMode::Hell ? GameConsts::HELL_WAVE_HEAL_PERCENT : GameConsts::WAVE_HEAL_PERCENT));
+    player_.Heal(player_.GetMaxHp() * GameConsts::WAVE_HEAL_PERCENT);
     effects_.PlayFx(FxId::HealWaveEnd, player_.GetPosition() + Vec3{ 0, 15, 0 });
 
     // Hook 11: Vảy hồi phục (Heal thêm 15% max HP - Phần C boost)
@@ -685,19 +550,12 @@ void GamePrototype::OnWaveComplete()
     }
 
     // Task 10 T4d: Trong Endless, nếu pool thẻ đã hết sạch
-    if (IsEndlessLike() && cardManager_.GetAvailableCardsPoolCount() == 0)
+    if (IsCampaign() && cardManager_.GetAvailableCardsPoolCount() == 0)
     {
         player_.Heal(player_.GetMaxHp() * GameConsts::ENDLESS_EMPTY_POOL_HEAL);
         effects_.PlayFx(FxId::HealPoolBonus, player_.GetPosition() + Vec3{ 0, 20, 0 });
 
         AdvanceAfterCardPick();
-        return;
-    }
-
-    // Hell: thẻ ngẫu nhiên tự chọn, không dừng game
-    if (mode_ == GameMode::Hell)
-    {
-        HellAutoPickCard();
         return;
     }
 
@@ -722,6 +580,11 @@ void GamePrototype::SkipToWave(int waveTarget)
 {
     if (waveTarget < 1 || waveTarget > GameConsts::TUTORIAL_WAVES) return;
     debugController_.MarkDebugUsed();
+    phase_ = RunPhase::Tutorial;
+    completedWaves_ = waveTarget - 1;
+    bossesDefeated_ = 0;
+    cardManager_.SetEndless(false);
+    enemies_.SetEndless(false);
 
     // Reset thẻ và cấp ngẫu nhiên (waveTarget - 1) thẻ
     cardManager_.Reset();
@@ -739,16 +602,19 @@ void GamePrototype::SkipToWave(int waveTarget)
     sharkFight_ = false;
     bossKind_ = 0;
 
+    ApplyPhaseRules();
     ReapplyAllStats();
     StartWave(waveTarget);
 }
 
-void GamePrototype::SkipToEndlessWave(int waveTarget)
+void GamePrototype::SkipToCampaignWave(int waveTarget)
 {
     if (waveTarget < 1) return;
-    waveTarget = (std::min)(waveTarget, GameConsts::ENDLESS_MAX_STAGE);
+    waveTarget = (std::min)(waveTarget, GameConsts::CAMPAIGN_WAVES);
     debugController_.MarkDebugUsed();
-    mode_ = GameMode::Endless;
+    phase_ = RunPhase::Campaign;
+    bossesDefeated_ = (waveTarget - 1) / GameConsts::WAVES_PER_BOSS;
+    completedWaves_ = waveTarget - 1;
     cardManager_.SetEndless(true);
     enemies_.SetEndless(true);
 
@@ -767,8 +633,9 @@ void GamePrototype::SkipToEndlessWave(int waveTarget)
     sharkFight_ = false;
     bossKind_ = 0;
 
+    ApplyPhaseRules();
     ReapplyAllStats();
-    StartStage(waveTarget);
+    StartWave(waveTarget);
 }
 
 void GamePrototype::SkipToBoss()
@@ -791,6 +658,14 @@ void GamePrototype::SkipToBoss()
     sharkFight_ = false;
     bossKind_ = 0;
 
+    phase_ = RunPhase::Campaign;
+    bossesDefeated_ = 0;
+    completedWaves_ = GameConsts::WAVES_PER_BOSS;
+    currentWave_ = GameConsts::WAVES_PER_BOSS;
+    cardManager_.SetEndless(true);
+    enemies_.SetEndless(true);
+    ApplyPhaseRules();
+    PrepareBossForRound(0);
     ReapplyAllStats();
     StartBossFight();
 }
@@ -798,7 +673,7 @@ void GamePrototype::SkipToBoss()
 void GamePrototype::SkipToSharkBoss()
 {
     debugController_.MarkDebugUsed();
-    mode_ = GameMode::Endless;
+    phase_ = RunPhase::Campaign;
     cardManager_.SetEndless(true);
     enemies_.SetEndless(true);
     cardManager_.Reset();
@@ -814,8 +689,10 @@ void GamePrototype::SkipToSharkBoss()
     swordfish_.Reset();
 
     ReapplyAllStats();
-    currentWave_ = GameConsts::ENDLESS_BOSS_EVERY;
-    PrepareEndlessBoss(currentWave_);
+    bossesDefeated_ = 0;
+    completedWaves_ = GameConsts::WAVES_PER_BOSS;
+    currentWave_ = GameConsts::WAVES_PER_BOSS;
+    PrepareBossForRound(bossesDefeated_);
     sharkFight_ = true; // Debug: luôn Cá Mập
     bossKind_ = 1;
     shark_.SetBossDifficulty(1);
@@ -826,7 +703,7 @@ void GamePrototype::SkipToSharkBoss()
 void GamePrototype::SkipToSquidBoss()
 {
     debugController_.MarkDebugUsed();
-    mode_ = GameMode::Endless;
+    phase_ = RunPhase::Campaign;
     cardManager_.SetEndless(true);
     enemies_.SetEndless(true);
     cardManager_.Reset();
@@ -840,7 +717,9 @@ void GamePrototype::SkipToSquidBoss()
     turtle_.Reset();
     swordfish_.Reset();
     ReapplyAllStats();
-    currentWave_ = GameConsts::ENDLESS_BOSS_EVERY;
+    bossesDefeated_ = 0;
+    completedWaves_ = GameConsts::WAVES_PER_BOSS;
+    currentWave_ = GameConsts::WAVES_PER_BOSS;
     bossKind_ = 2;
     sharkFight_ = false;
     squid_.SetBossDifficulty(1);
@@ -851,7 +730,7 @@ void GamePrototype::SkipToSquidBoss()
 void GamePrototype::SkipToTurtleBoss()
 {
     debugController_.MarkDebugUsed();
-    mode_ = GameMode::Endless;
+    phase_ = RunPhase::Campaign;
     cardManager_.SetEndless(true);
     enemies_.SetEndless(true);
     cardManager_.Reset();
@@ -865,7 +744,9 @@ void GamePrototype::SkipToTurtleBoss()
     turtle_.Reset();
     swordfish_.Reset();
     ReapplyAllStats();
-    currentWave_ = GameConsts::ENDLESS_BOSS_EVERY;
+    bossesDefeated_ = 0;
+    completedWaves_ = GameConsts::WAVES_PER_BOSS;
+    currentWave_ = GameConsts::WAVES_PER_BOSS;
     bossKind_ = 3;
     sharkFight_ = false;
     turtle_.SetBossDifficulty(1);
@@ -876,7 +757,7 @@ void GamePrototype::SkipToTurtleBoss()
 void GamePrototype::SkipToSwordfishBoss()
 {
     debugController_.MarkDebugUsed();
-    mode_ = GameMode::Endless;
+    phase_ = RunPhase::Campaign;
     cardManager_.SetEndless(true);
     enemies_.SetEndless(true);
     cardManager_.Reset();
@@ -890,7 +771,9 @@ void GamePrototype::SkipToSwordfishBoss()
     turtle_.Reset();
     swordfish_.Reset();
     ReapplyAllStats();
-    currentWave_ = GameConsts::ENDLESS_BOSS_EVERY;
+    bossesDefeated_ = 0;
+    completedWaves_ = GameConsts::WAVES_PER_BOSS;
+    currentWave_ = GameConsts::WAVES_PER_BOSS;
     bossKind_ = 4;
     sharkFight_ = false;
     swordfish_.SetBossDifficulty(1);
@@ -1009,7 +892,7 @@ bool GamePrototype::UpdatePauseInput()
             uiRenderer_.LeavePause();
             paused_ = false;
             Input::Instance().Flush();
-            SaveHighscoreIfEndlessRun(); // Pause -> Title giữa ván Endless: không mất kỷ lục
+            SaveRunRecord(); // Pause -> Title giữa ván Endless: không mất kỷ lục
             Reset();
             state_ = GameState::Title;
             sound.PlayBGM(BgmId::Title, true);
@@ -1094,20 +977,15 @@ void GamePrototype::Update(float dt)
     if (state_ != GameState::Title)
         debugController_.Update(dt, *this);
 
-
-
     // 0. Màn hình Tiêu đề (Title - G1, Task 10 T4a)
     if (state_ == GameState::Title)
     {
         SoundManager::Instance().PlayBGM(BgmId::Title, true);
 
-
-
-
-        // SPACE (hoặc Enter): vào thẳng Tutorial; Normal/Hell chọn sau khi xong tutorial.
+        // SPACE / ENTER: チュートリアルから1つの冒険を開始。
         if (input.IsPressed(KEY_INPUT_SPACE) || input.IsPressed(KEY_INPUT_RETURN))
         {
-            StartRun(GameMode::Classic);
+            StartRun();
             return;
         }
 
@@ -1123,7 +1001,7 @@ void GamePrototype::Update(float dt)
             state_ = GameState::GameOver;
             effects_.AddTrauma(0.85f);
             SoundManager::Instance().PlayBGM(BgmId::GameOver, true);
-            if (IsEndlessLike())
+            if (IsCampaign())
             {
                 SaveHighscore();
             }
@@ -1136,7 +1014,7 @@ void GamePrototype::Update(float dt)
         ResultScreen::Action action = resultScreen_.Update(dt, input);
         if (action == ResultScreen::Action::Retry)
         {
-            StartRun(runStartMode_); // chơi lại đúng chế độ lúc bắt đầu (tutorial -> Endless không làm đổi Retry)
+            StartRun(); // chơi lại đúng chế độ lúc bắt đầu (tutorial -> Endless không làm đổi Retry)
             return;
         }
         if (action == ResultScreen::Action::Title)
@@ -1152,57 +1030,23 @@ void GamePrototype::Update(float dt)
         return;
     }
 
-    // Phase 1: Màn chọn chế độ sau tutorial (Normal / Hell)
-    if (state_ == GameState::ModeSelect)
-    {
-        const int previousSelection = modeSelectIdx_;
-        const bool pointerConfirmed = uiRenderer_.UpdateModePointer(modeSelectIdx_);
-        if (input.IsPressed(KEY_INPUT_LEFT) || input.IsPressed(KEY_INPUT_A))
-            modeSelectIdx_ = 0;
-        else if (input.IsPressed(KEY_INPUT_RIGHT) || input.IsPressed(KEY_INPUT_D))
-            modeSelectIdx_ = 1;
-        else if (input.IsPressed(KEY_INPUT_UP) || input.IsPressed(KEY_INPUT_W) ||
-                 input.IsPressed(KEY_INPUT_DOWN) || input.IsPressed(KEY_INPUT_S))
-            modeSelectIdx_ = 1 - modeSelectIdx_;
-        if (previousSelection != modeSelectIdx_)
-        {
-            SoundManager::Instance().PlaySFX(SfxId::UiHover);
-        }
-        int choose = pointerConfirmed ? modeSelectIdx_ : -1;
-        if (input.IsPressed(KEY_INPUT_1) || input.IsPressed(KEY_INPUT_NUMPAD1)) choose = 0;
-        if (input.IsPressed(KEY_INPUT_2) || input.IsPressed(KEY_INPUT_NUMPAD2)) choose = 1;
-        if (input.IsPressed(KEY_INPUT_RETURN) || input.IsPressed(KEY_INPUT_NUMPADENTER) || input.IsPressed(KEY_INPUT_SPACE)) choose = modeSelectIdx_;
-        if (choose >= 0)
-        {
-            SoundManager::Instance().PlaySFX(SfxId::CardSelect);
-            EnterEndlessFromTutorial(choose == 1 ? GameMode::Hell : GameMode::Endless);
-            return;
-        }
-        effects_.Update(dt, player_.GetPosition());
-        return;
-    }
-
     // Phím R: chơi lại từ wave 1 (cùng chế độ) - chỉ trong các trạng thái đang chơi,
     // chỉ khi vừa nhấn (giữ phím không reset liên tục). Lưu kỷ lục Endless trước khi reset.
     // Chỉ khi đang chiến đấu (Wave / Boss): không reset khi đang chọn thẻ hoặc Boss Intro.
     if (input.IsPressed(KEY_INPUT_R) && (state_ == GameState::Wave || state_ == GameState::Boss))
     {
-        SaveHighscoreIfEndlessRun();
-        StartRun(runStartMode_);
+        SaveRunRecord();
+        StartRun();
         return;
     }
 
-    if (IsEndlessLike())
+    if (IsCampaign())
     {
         for (int n = player_.ConsumeLevelUps(); n > 0; --n) GrantLevelStat();
     }
     else player_.ConsumeLevelUps();
     if (levelUpBannerTimer_ > 0.0f) levelUpBannerTimer_ -= dt;
-    if (mode_ == GameMode::Hell)
-    {
-        effects_.SetParticleScale(enemies_.GetActiveCount() >= GameConsts::HELL_FX_LIGHT_THRESHOLD ? GameConsts::HELL_FX_LIGHT_SCALE : 1.0f);
-    }
-    UpdateHellRoulette(dt); // Phase 2: vòng quay thẻ Hell (game vẫn chạy)
+
     // Gợi ý tutorial: làm chậm nhẹ khi gợi ý vừa hiện
     dt *= UpdateTutorialTips(dt);
 
@@ -1210,6 +1054,7 @@ void GamePrototype::Update(float dt)
     if (state_ == GameState::Wave)
     {
         gameTime_ += dt;
+        waveTimer_ += dt;
 
         // 1. Luôn cập nhật Player để bơi lội mượt mà liên tục, không bao giờ bị đứng lại sau khi đáp đất!
         player_.Update(dt, effects_);
@@ -1245,7 +1090,6 @@ void GamePrototype::Update(float dt)
         }
         else
         {
-            waveTimer_ += dt;
 
             // 3. Hook 3: Mưa đạn khi tiếp đất
             if (player_.ConsumeBulletRainTrigger())
@@ -1275,11 +1119,11 @@ void GamePrototype::Update(float dt)
                 player_.AddExp(collectedExp);
             }
 
-            // 8. Kiểm tra hoàn thành Wave (G2: Hết giờ thì quái biến mất rồi sang CardPick)
-            if (waveTimer_ >= waveDuration_)
-            {
-                OnWaveComplete();
-            }
+        }
+        // ヒットストップ中も25秒の進行は止めません。
+        if (waveTimer_ >= waveDuration_)
+        {
+            OnWaveComplete();
         }
     }
     else if (state_ == GameState::CardPick)
@@ -1389,50 +1233,20 @@ void GamePrototype::Update(float dt)
             // 9. Kiểm tra Boss bị hạ gục
             const bool bossDead = (bossKind_ == 1) ? shark_.IsDead() : (bossKind_ == 2) ? squid_.IsDead() : (bossKind_ == 3) ? turtle_.IsDead() : (bossKind_ == 4) ? swordfish_.IsDead() : boss_.IsDead();
             const float bossTime = (bossKind_ == 1) ? shark_.GetBossFightTimer() : (bossKind_ == 2) ? squid_.GetBossFightTimer() : (bossKind_ == 3) ? turtle_.GetBossFightTimer() : (bossKind_ == 4) ? swordfish_.GetBossFightTimer() : boss_.GetBossFightTimer();
-            const int bossTier = (bossKind_ == 1) ? shark_.GetBossTier() : (bossKind_ == 2) ? squid_.GetBossTier() : (bossKind_ == 3) ? turtle_.GetBossTier() : (bossKind_ == 4) ? swordfish_.GetBossTier() : boss_.GetBossTier();
-            if (bossDead)
+            if (bossDead && player_.GetHp() > 0.0f)
             {
-                if (mode_ == GameMode::Classic)
-                {
-                    // Phase 1: hạ Cá Voi tutorial -> màn chọn chế độ Normal / Hell (giữ thẻ + hồi máu)
-                    effects_.AddTrauma(0.7f);
-                    enemies_.KillAll(effects_);
-                    swprintf_s(lastSummaryBuffer_, L"ボス: %.1f秒", bossTime);
-                    AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
-                    player_.Heal(player_.GetMaxHp() * GameConsts::TUTORIAL_BOSS_CLEAR_HEAL);
-                    modeSelectIdx_ = 0;
-                    state_ = GameState::ModeSelect;
-                    uiRenderer_.EnterModeSelect();
-                    SoundManager::Instance().PlayBGM(BgmId::Victory, true);
-                    Input::Instance().Flush();
-                }
+                ++bossesDefeated_;
+                effects_.AddTrauma(0.7f);
+                enemies_.KillAll(effects_);
+                swprintf_s(lastSummaryBuffer_, L"ボス %d / %d 撃破: %.1f秒", bossesDefeated_, GameConsts::CAMPAIGN_BOSSES, bossTime);
+                player_.Heal(player_.GetMaxHp() * 0.50f);
+                effects_.PlayFx(FxId::HealBossReward, player_.GetPosition() + Vec3{0,20,0});
+                if (bossesDefeated_ >= GameConsts::CAMPAIGN_BOSSES) CompleteCampaign();
                 else
                 {
-                    // Endless Mode: Hạ gục 1 lượt Boss định kỳ! (Task 10 T4c)
-                    effects_.AddTrauma(0.7f);
-                    enemies_.KillAll(effects_);
-                    swprintf_s(lastSummaryBuffer_, bossKind_ == 4 ? L"カジキ 第%d段階: %.1f秒" : bossKind_ == 3 ? L"カメ 第%d段階: %.1f秒" : bossKind_ == 2 ? L"イカ 第%d段階: %.1f秒" : sharkFight_ ? L"サメ 第%d段階: %.1f秒" : L"ボス 第%d段階: %.1f秒", bossTier, bossTime);
-                    AppLogAdd(L"[SUMMARY] %s\n", lastSummaryBuffer_);
-
-                    // Hồi 50% máu tối đa thưởng diệt Boss
-                    player_.Heal(player_.GetMaxHp() * 0.50f);
-                    effects_.PlayFx(FxId::HealBossReward, player_.GetPosition() + Vec3{ 0, 20, 0 });
-
-                    // Stage cuối -> CLEAR; ngược lại chọn thẻ rồi sang stage kế tiếp
-                    if (currentWave_ >= GameConsts::ENDLESS_MAX_STAGE)
-                    {
-                        EnterEndlessClear();
-                    }
-                    else if (mode_ == GameMode::Hell)
-                    {
-                        HellAutoPickCard();
-                    }
-                    else
-                    {
-                        state_ = GameState::CardPick;
-                        SoundManager::Instance().PlaySFX(SfxId::CardFlip);
-                        cardManager_.Roll3Cards(currentWave_);
-                    }
+                    state_ = GameState::CardPick;
+                    SoundManager::Instance().PlaySFX(SfxId::CardFlip);
+                    cardManager_.Roll3Cards(currentWave_);
                 }
             }
         }
@@ -1519,12 +1333,7 @@ void GamePrototype::Draw() const
     }
 
     // The illustrated menu is a complete screen; combat HUD/tips must not cover it.
-    if (state_ == GameState::ModeSelect)
-    {
-        SetFogEnable(FALSE);
-        uiRenderer_.DrawModeSelectScreen(*this);
-        return;
-    }
+
 
     // Language / Title: chỉ vẽ đúng màn hình đó, không vẽ world/HUD phía sau (tránh bleed + không sim nền)
 
@@ -1631,16 +1440,17 @@ ResultStats GamePrototype::BuildResultStats() const
 {
     ResultStats s;
     s.victory = (state_ == GameState::Victory);
-    s.endless = IsEndlessLike();
-    s.hard = (mode_ == GameMode::Hell);
-    s.retryTutorial = (runStartMode_ == GameMode::Classic);
+    s.campaign = IsCampaign();
+    s.retryTutorial = true;
+    s.bossesDefeated = bossesDefeated_;
     s.diedAtBoss = resultScreen_.DiedAtBoss();
     s.debugUsed = debugController_.WasDebugUsed();
     s.time = gameTime_;
     s.kills = GetTotalKills();
     s.level = player_.GetLevel();
     s.wave = currentWave_;
-    const HighscoreData& hs = (mode_ == GameMode::Hell) ? highscoreHell_ : highscore_;
+    s.wavesCleared = completedWaves_;
+    const HighscoreData& hs = highscore_;
     s.bestWave = hs.maxWave;
     s.bestKills = hs.maxKills;
     s.bestTime = hs.maxSurvivalTime;

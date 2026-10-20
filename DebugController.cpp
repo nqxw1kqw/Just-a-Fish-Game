@@ -199,13 +199,13 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 if (k2) game.SkipToWave(2);
                 if (k3) game.SkipToWave(3);
                 if (k4) game.SkipToWave(4);
-                if (k5) game.SkipToEndlessWave(5);  // Ctrl+5: Endless stage 5 (Boss đầu tiên)
+                if (k5) game.SkipToCampaignWave(5);  // Ctrl+5: Endless stage 5 (Boss đầu tiên)
                 if (k6) game.SkipToBoss();
-                if (k7) game.SkipToEndlessWave(1);   // Ctrl+7: Endless stage 1
+                if (k7) game.SkipToCampaignWave(1);   // Ctrl+7: Endless stage 1
                 if (k8 && shiftHeld) game.SkipToSwordfishBoss(); // Ctrl+Shift+8: Boss Cá Kiếm (Endless)
-                else if (k8) game.SkipToEndlessWave(15);  // Ctrl+8: Endless stage 15 (Boss)
+                else if (k8) game.SkipToCampaignWave(15);  // Ctrl+8: Endless stage 15 (Boss)
                 if (k9 && shiftHeld) game.SkipToTurtleBoss(); // Ctrl+Shift+9: Boss Rùa Cổ (Endless)
-                else if (k9) game.SkipToEndlessWave(GameConsts::ENDLESS_MAX_STAGE); // Ctrl+9: stage 30 (Boss cuối)
+                else if (k9) game.SkipToCampaignWave(GameConsts::CAMPAIGN_WAVES); // Ctrl+9: stage 30 (Boss cuối)
                 bool k0 = (input.IsPressed(KEY_INPUT_0) || input.IsPressed(KEY_INPUT_NUMPAD0));
                 if (k0 && shiftHeld) game.SkipToSquidBoss(); // Ctrl+Shift+0: Boss Mực (Endless)
                 else if (k0) game.SkipToSharkBoss(); // Ctrl+0: Boss Cá Mập (Endless)
@@ -219,8 +219,8 @@ void DebugController::Update(float /*dt*/, GamePrototype& game)
                 {
                     // Shift+F6: Endless stage kế tiếp (Ctrl+Shift+F6: lùi 1 stage), giữ nguyên chế độ Endless
                     int target = game.currentWave_ + (ctrlHeld ? -1 : 1);
-                    if (!game.IsEndlessLike()) target = 1;
-                    game.SkipToEndlessWave((std::max)(1, target));
+                    if (!game.IsCampaign()) target = 1;
+                    game.SkipToCampaignWave((std::max)(1, target));
                 }
                 else
                 {
