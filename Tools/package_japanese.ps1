@@ -19,9 +19,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Git の追跡ファイルを取得できません。' }
     # 新しい日本語画像は、コミット前でも配布用へ含めます。
     $files += @('Data/UI/Pause/Layered-v1/row-music-ja.png',
-                'Data/UI/Pause/Layered-v1/row-sfx-ja.png')
+                'Data/UI/Pause/Layered-v1/row-sfx-ja.png',
+                'Data/UI/Results/Layered-v1/board-stage-ja.png')
     $oldNames = @('header-language.png','language-english.png','language-japanese.png',
-                  'language.png','Yabikoma-e9W16.otf','confirm.png','row-bgm.png','row-sfx.png')
+                  'language.png','Yabikoma-e9W16.otf','confirm.png','row-bgm.png','row-sfx.png','board-ja.png','win-ja.png','lose-ja.png')
     $excludedCount = 0
     [long]$excludedBytes = 0
     foreach ($relative in ($files | Sort-Object -Unique)) {
@@ -45,6 +46,7 @@ FishGame.exe を起動してください。Data フォルダーは実行ファ�
 スペースまたはエンターで開始し、W/A/S/D または矢印キーで移動します。
 スペースでジャンプし、着地時に攻撃します。Esc/P で一時停止します。
 日本語専用です。チュートリアル後は25秒のウェーブが3回続き、その後にボスと戦います。
+経験値・レベルはありません。3ウェーブごとに能力が自動強化され、敵の群れも徐々に増えます。
 最初のボスは必ずクジラです。合計5体のボスを倒すと勝利します。
 難易度選択・英語用の素材と個人の記録はこの配布物に含まれていません。
 '@ | Set-Content -LiteralPath (Join-Path $package 'README.txt') -Encoding utf8

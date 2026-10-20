@@ -44,7 +44,7 @@ void CardManager::Reset()
 
 CardRarity CardManager::PickRarity(int completedWave) const
 {
-    int r = (std::min)(99, rand() % 100 + luck_ * GameConsts::LV_LUCK_RARITY_SHIFT);
+    int r = rand() % 100;
     if (completedWave <= 2)
     {
         // 75% Common, 25% Rare, 0% Epic

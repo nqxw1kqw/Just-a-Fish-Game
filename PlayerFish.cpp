@@ -303,10 +303,6 @@ void PlayerFish::Reset()
 
     hp_ = 100.0f;
     maxHp_ = 100.0f;
-    exp_ = 0;
-    expNext_ = 30; // 20 + 10 * 1
-    level_ = 1;
-    pendingLevelUps_ = 0;
 
     hitFlashTimer_ = 0.0f;
     swimSoundTimer_ = 0.0f;
@@ -693,19 +689,6 @@ void PlayerFish::ReleaseThrow(const Vec3& vel, float iframes)
     knockback_ = Vec3{ vel.x, 0.0f, vel.z };
     invulnerableTimer_ = iframes;      // bất tử suốt lúc bay/trượt + sau khi tiếp đất
     hitFlashTimer_ = GameConsts::PLAYER_HIT_FLASH_TIME * 2.0f;
-}
-
-void PlayerFish::AddExp(int amount)
-{
-    exp_ += amount;
-    SoundManager::Instance().PlaySFX(SfxId::ExpPickup);
-    if (exp_ >= expNext_)
-    {
-        exp_ -= expNext_;
-        level_++;
-        pendingLevelUps_++;
-        expNext_ = static_cast<int>(expNext_ * 1.4f);
-    }
 }
 
 void PlayerFish::Draw() const

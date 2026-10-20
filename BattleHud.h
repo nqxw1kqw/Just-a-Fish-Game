@@ -9,7 +9,7 @@ class SwordfishBoss;
 
 // =======================================================================
 // BattleHud.h
-// 戦闘HUD: khung HP người chơi (thanh máu trễ), EXP/Lv, vòng hồi chiêu Slam,
+// 戦闘HUD: khung HP người chơi (thanh máu trễ), 区間, vòng hồi chiêu Slam,
 // combo, thanh máu Boss (tên + pha + mốc 50%) và chớp đỏ khi bị trúng đòn.
 // Vẽ hoàn toàn bằng DxLib (không cần file ảnh). Trạng thái hoạt ảnh là mutable
 // vì UIRenderer::Draw* là const; dt lấy từ đồng hồ hiệu năng cao.
@@ -18,7 +18,7 @@ class BattleHud
 {
 public:
     void Reset() const;
-    void DrawPlayerPanel(const PlayerFish& player) const;
+    void DrawPlayerPanel(const PlayerFish& player, int stage) const;
     void DrawBossBar(const WhaleBoss& boss) const;
     void DrawBossBar(const SharkBoss& shark) const;
     void DrawBossBar(const SquidBoss& squid) const;

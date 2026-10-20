@@ -296,6 +296,8 @@ void EnemyManager::SetWave(int wave, bool isEndless)
 {
     currentWave_ = wave;
     isEndless_ = isEndless;
+    maxAlive_ = isEndless ? GameConsts::CAMPAIGN_ALIVE_START +
+        GameConsts::CAMPAIGN_ALIVE_PER_WAVE * (std::clamp(wave, 1, GameConsts::CAMPAIGN_WAVES) - 1) : 0;
     waveTimer_ = 0.0f;
     spawnTimer_ = 0.0f;
     spawnedThisWave_ = 0;
@@ -462,20 +464,32 @@ void EnemyManager::Update(float dt, PlayerFish& player, EffectSystem& effects)
         float baseInterval = 1.25f - (currentWave_ - 1) * 0.16f;
         float minInterval = 0.40f - (currentWave_ - 1) * 0.02f;
         float spawnInterval = (std::max)(minInterval, baseInterval - waveTimer_ * 0.010f);
+        if (isEndless_)
+        {
+            const int waveStep = std::clamp(currentWave_, 1, GameConsts::CAMPAIGN_WAVES) - 1;
+            spawnInterval = (std::max)(GameConsts::CAMPAIGN_SPAWN_INTERVAL_MIN,
+                GameConsts::CAMPAIGN_SPAWN_INTERVAL_START - GameConsts::CAMPAIGN_SPAWN_INTERVAL_STEP * waveStep);
+        }
         if (isHell_) spawnInterval *= GameConsts::HELL_SPAWN_INTERVAL_MUL;
         if (spawnTimer_ >= spawnInterval)
         {
             // Sinh theo nhóm nhỏ: W1-2 tối đa 2 con, W3+ tối đa 3 con
             int maxGroup = (currentWave_ <= 2) ? 2 : 3;
             int groupSize = 1 + (rand() % maxGroup);
+            if (isEndless_)
+            {
+                const int waveStep = std::clamp(currentWave_, 1, GameConsts::CAMPAIGN_WAVES) - 1;
+                // 4ウェーブごとに基本の群れを1体増やし、その間も期待出現数を増やします。
+                groupSize = 1 + waveStep / 4 + ((rand() % 4 < waveStep % 4) ? 1 : 0);
+            }
             if (isHell_)
             {
                 // Hell: mỗi HELL_SPAWN_STAGES_PER_ADD stage, mỗi nhóm thêm HELL_SPAWN_PER_STAGE_ADD con
                 int add = ((currentWave_ - 1) / GameConsts::HELL_SPAWN_STAGES_PER_ADD) * GameConsts::HELL_SPAWN_PER_STAGE_ADD;
                 groupSize += (std::min)(add, GameConsts::HELL_SPAWN_GROUP_ADD_MAX);
             }
-            // Nhân khoảng nghỉ với số con trong nhóm
-            spawnTimer_ = -spawnInterval * (groupSize - 1);
+            // 冒険では群れの数が増えても次の出現を遅らせません。
+            spawnTimer_ = isEndless_ ? spawnTimer_ - spawnInterval : -spawnInterval * (groupSize - 1);
 
             for (int g = 0; g < groupSize; ++g)
             {
@@ -846,12 +860,6 @@ int EnemyManager::ApplyShockwave(const Vec3& center, float radius, float damage,
                 killedThisWave_++;
                 totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
                 SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
-                // G3: Bỏ EXP, quái chết có tỉ lệ 10% rơi vật hồi máu nhỏ (+10 HP)
-                if (isEndless_) effects.SpawnExpOrb(e.pos, GameConsts::EXP_ORB_VALUE); // Normal/Hell: luôn rơi EXP
-                else if ((rand() % 100) < 10)
-                {
-                    effects.SpawnExpOrb(e.pos, 10.0f);
-                }
             }
         }
     }
@@ -876,9 +884,9 @@ Enemy* EnemyManager::FindClosestEnemy(const Vec3& fromPos, float maxRange)
     return closest;
 }
 
-bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, float damage, Vec3 bulletDir, EffectSystem& effects, int& outExp)
+bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, float damage, Vec3 bulletDir, EffectSystem& effects, int& outKills)
 {
-    outExp = 0;
+    outKills = 0;
     damage *= GameConsts::PLAYER_DMG_MUL_VS_ENEMY * playerDmgMul_; // quái thường nhận thêm sát thương (Boss không)
     for (auto& e : enemies_)
     {
@@ -898,15 +906,11 @@ bool EnemyManager::CheckBulletHit(const Vec3& bulletPos, float bulletRadius, flo
 
                 if (e.hp <= 0.0f)
                 {
+                    outKills = 1;
                     StartDeath(e, e.pos - bulletDir * 10.0f);
                     killedThisWave_++;
                     totalKills_++; // Task 10 T4e: đếm tổng quái hạ cho Endless
                     SoundManager::Instance().PlaySFX(SfxId::EnemySquish);
-                    if (isEndless_) effects.SpawnExpOrb(e.pos, GameConsts::EXP_ORB_VALUE); // Normal/Hell: luôn rơi EXP
-                    else if ((rand() % 100) < 10)
-                    {
-                        effects.SpawnExpOrb(e.pos, 10.0f);
-                    }
                 }
                 return true;
             }

@@ -64,7 +64,7 @@ void LayeredResultScreen::Init()
     Load(fish_[0], L"fish-lose"); Load(fish_[1], L"fish-win");
     Load(headers_[0][1], L"header-lose-ja");
     Load(headers_[1][1], L"header-win-ja");
-    Load(boards_[1], L"board-ja");
+    Load(boards_[1], L"board-stage-ja");
     Load(buttons_[0][1], L"button-retry-ja");
     Load(buttons_[1][1], L"button-title-ja");
     ReadLayout();
@@ -207,7 +207,8 @@ bool LayeredResultScreen::Draw(const ResultStats& s, float timer, int selected, 
     const int seconds = static_cast<int>(s.time);
     swprintf_s(values[1], L"%02d:%02d", seconds / 60, seconds % 60);
     swprintf_s(values[2], L"%d", static_cast<int>(s.kills * count + 0.5f));
-    swprintf_s(values[3], L"%d", s.level);
+    if (s.campaign) swprintf_s(values[3], L"%d / 5", s.stage);
+    else swprintf_s(values[3], L"練習");
     swprintf_s(values[4], L"%d / %d", s.wave, s.campaign ? GameConsts::CAMPAIGN_WAVES : GameConsts::TUTORIAL_WAVES);
     const float sx = static_cast<float>(boardRect.w) / board.source.w;
     const float sy = static_cast<float>(boardRect.h) / board.source.h;

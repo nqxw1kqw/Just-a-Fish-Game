@@ -17,21 +17,6 @@ struct Shockwave
 };
 
 
-// Hạt ngọc kinh nghiệm / tiền
-struct ExpOrb
-{
-    Vec3 pos;
-    Vec3 vel;
-    float value = 1.0f;
-    float life = 0.0f;
-    float spin = 0.0f;        // pha xoay riêng (không xoay đồng loạt)
-    float magnetT = -1.0f;    // < 0: chưa bị hút; >= 0: thời gian đã bị hút (tăng tốc dần)
-    float curveSign = 1.0f;   // hướng cong khi bay vào người chơi
-    float absorbT = -1.0f;    // >= 0: đang bị hấp thụ (thu nhỏ + chớp) rồi biến mất
-    bool landed = false;
-    bool active = false;
-};
-
 // Số sát thương nổi 3D chiếu lên màn hình 2D
 struct DamagePopup
 {
@@ -84,12 +69,10 @@ public:
     bool HasFx(FxId id) const;
     void SetParticleScale(float s) { particleScale_ = s; } // Hell: giảm hạt khi đông quái
     float particleScale_ = 1.0f;
-    void SpawnExpOrb(const Vec3& pos, float val = 1.0f);
     void SpawnDamagePopup(const Vec3& pos, float damage, bool isCrit = false);
     void AddTrauma(float amount);
 
     Vec3 GetCameraShakeOffset(float shakeScale = 1.0f) const;
-    int CollectExpOrbs(const Vec3& playerPos, float pickupRadius);
 
 private:
     std::unique_ptr<HitFxSet> hitFx_;
@@ -99,11 +82,6 @@ private:
     void RegisterNamedFx(); // nơi đăng ký hiệu ứng Fuyuu theo tên
     std::array<NamedFx::Handler, static_cast<size_t>(FxId::Count)> namedFx_{};
     mutable std::array<bool, static_cast<size_t>(FxId::Count)> namedFxWarned_{};
-    std::array<ExpOrb, 300> expOrbs_{};
-    void UpdateExpOrbs(float dt, const Vec3& playerPos);
-    void DrawExpOrbs() const;
-    Vec3 expTarget_{};             // vị trí người chơi (điểm hấp thụ)
-    mutable int expGlowTex_ = -1;  // texture quầng sáng mềm (tạo lười)
     std::array<DamagePopup, MAX_DAMAGE_POPUPS> damagePopups_{};
 
     WaterSplashSystem waterSplash_;

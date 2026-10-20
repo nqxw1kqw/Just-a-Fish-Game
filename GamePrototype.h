@@ -58,6 +58,12 @@ public:
 
     RunPhase GetRunPhase() const { return phase_; }
     bool IsCampaign() const { return phase_ == RunPhase::Campaign; }
+    int GetProgressionStage() const
+    {
+        if (!IsCampaign()) return 0;
+        const int stage = (currentWave_ - 1) / GameConsts::WAVES_PER_BOSS + 1;
+        return stage < 1 ? 1 : (stage > GameConsts::CAMPAIGN_BOSSES ? GameConsts::CAMPAIGN_BOSSES : stage);
+    }
     const HighscoreData& GetHighscore() const { return highscore_; }
     int GetTotalKills() const { return enemies_.GetTotalKills(); }
 
@@ -85,11 +91,6 @@ private:
     float tipTimer_ = 0.0f;
     bool tipsSkipped_ = false;
     Vec3 tipMoveStart_{};
-    enum LvStat { LS_Atk, LS_Def, LS_Spd, LS_Cd, LS_Luck, LS_Count };
-    int lvStat_[LS_Count] = {};          // Normal/Hell: điểm chỉ số từ lên cấp
-    int levelUpStat_ = 0;
-    float levelUpBannerTimer_ = 0.0f;
-    void GrantLevelStat();
     void RefreshDamageTakenMul();        // modeMul x (1 - Def)
     void CompleteCampaign();            // 5体のボスを撃破すると勝利
     void OnWaveComplete();

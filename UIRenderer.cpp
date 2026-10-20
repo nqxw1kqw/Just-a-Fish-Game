@@ -69,8 +69,8 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
     // 0. Chớp đỏ khi bị trúng đòn (vẽ dưới các bảng HUD)
     battleHud_.DrawDamageFlash();
 
-    // 1-2. 戦闘HUD: HP (máu trễ), EXP/Lv, vòng hồi chiêu Slam, combo
-    battleHud_.DrawPlayerPanel(game.player_);
+    // 1-2. 戦闘HUD: HP (máu trễ), 区間, vòng hồi chiêu Slam, combo
+    battleHud_.DrawPlayerPanel(game.player_, game.GetProgressionStage());
     int jumpY = BattleHud::PanelBottomY() - 28;
 
     // 3. Trạng thái Wave / Boss ở giữa trên
@@ -104,20 +104,19 @@ void UIRenderer::DrawHUD(const GamePrototype& game) const
         return;
     }
 
-    // Normal/Hell: bảng chỉ số nhỏ (góc trái, dưới bảng HP) - điểm từ lên cấp
     if (game.IsCampaign())
     {
         const PlayerStats& st = game.playerStats_;
-        const int* lv = game.lvStat_;
-        const float def = (std::min)(GameConsts::LV_DEF_MAX, GameConsts::LV_DEF_PCT * lv[GamePrototype::LS_Def]);
+        const int stage = game.GetProgressionStage();
+        const int defense = static_cast<int>(GameConsts::STAGE_DEFENSE_PCT * (stage - 1) * 100.0f + 0.5f);
         int y = cardListY;
-        DrawBox(hpX - 4, y - 2, hpX + 270, y + 6 * 16 + 4, GetColor(10, 18, 30), TRUE);
-        FontManager::DrawFormat(hpX, y, GetColor(120, 210, 255), FontSize::Small, TR(L"[ステータス]  レベル %d  経験値 %d/%d"), game.player_.GetLevel(), game.player_.GetExp(), game.player_.GetExpNext()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"攻撃 +%d   スラム %.0f  弾 %.0f"), lv[0], st.slamDamage.GetValue(), st.bulletDamage.GetValue()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"防御 +%d   被ダメ -%d%%   体力 %.0f"), lv[1], (int)(def * 100.0f + 0.5f), st.maxHp.GetValue()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"速度 +%d   %.0f"), lv[2], st.moveSpeed.GetValue()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"待ち時間  +%d   ジャンプ %.2f秒"), lv[3], st.jumpCooldown.GetValue()); y += 16;
-        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, TR(L"運 +%d  レア度 +%d"), lv[4], lv[4] * GameConsts::LV_LUCK_RARITY_SHIFT); y += 16;
+        DrawBox(hpX - 4, y - 2, hpX + 290, y + 6 * 16 + 4, GetColor(10, 18, 30), TRUE);
+        FontManager::DrawFormat(hpX, y, GetColor(120, 210, 255), FontSize::Small, L"[ステータス]  第%d区間 / 5", stage); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"攻撃  スラム %.0f  弾 %.0f", game.player_.GetSlamDamage(), st.bulletDamage.GetValue()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"被ダメ -%d%%   最大体力 %.0f", defense, game.player_.GetMaxHp()); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"速度 %.0f", (std::min)(GameConsts::MAX_MOVE_SPEED, st.moveSpeed.GetValue())); y += 16;
+        FontManager::DrawFormat(hpX, y, GetColor(220, 220, 230), FontSize::Small, L"ジャンプ待ち時間 %.2f秒", game.player_.GetJumpCooldownMax()); y += 16;
+        FontManager::Draw(hpX, y, L"3ウェーブごとに自動強化", GetColor(150, 220, 185), FontSize::Small); y += 16;
         cardListY = y + 8;
     }
     const auto& cards = game.cardManager_.GetActiveCards();
@@ -178,19 +177,6 @@ void UIRenderer::DrawTitleScreen(const GamePrototype& game) const
 void UIRenderer::DrawFlowOverlay(const GamePrototype& game) const
 {
     int sw = GameConsts::SCREEN_WIDTH;
-    if (game.levelUpBannerTimer_ > 0.0f && game.IsCampaign())
-    {
-        static const wchar_t* kStat[GamePrototype::LS_Count] = { L"攻撃 +1", L"防御 +1", L"速度 +1", L"クールダウン +1", L"運 +1" };
-        float k = (std::min)(1.0f, game.levelUpBannerTimer_ / 0.4f); // mờ dần 0.4s cuối
-        int by = GameConsts::SCREEN_HEIGHT / 2 - 150;
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(200 * k));
-        DrawBox(sw / 2 - 170, by, sw / 2 + 170, by + 70, GetColor(10, 30, 50), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * k));
-        DrawBox(sw / 2 - 170, by, sw / 2 + 170, by + 70, GetColor(120, 230, 255), FALSE);
-        FontManager::DrawFormat(sw / 2 - 120, by + 8, GetColor(255, 255, 255), FontSize::Header, TR(L"レベルアップ！  レベル %d"), game.player_.GetLevel());
-        FontManager::Draw(sw / 2 - 70, by + 44, TR(kStat[game.levelUpStat_]), GetColor(120, 255, 180), FontSize::Medium);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-    }
     if (game.activeTip_ < 0 || game.paused_) return;
 
     static const wchar_t* kTips[GamePrototype::Tip_Count] = {

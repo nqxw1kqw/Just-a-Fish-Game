@@ -90,7 +90,8 @@ public:
     Enemy* FindClosestEnemy(const Vec3& fromPos, float maxRange);
 
     // Va chạm với đạn
-    bool CheckBulletHit(const Vec3& bulletPos, float bulletRadius, float damage, Vec3 bulletDir, EffectSystem& effects, int& outExp);
+    void RegisterKill() { ++killedThisWave_; ++totalKills_; }
+    bool CheckBulletHit(const Vec3& bulletPos, float bulletRadius, float damage, Vec3 bulletDir, EffectSystem& effects, int& outKills);
 
     int GetActiveCount() const;
     float GetAliveCost() const;

@@ -7,7 +7,7 @@ class Input;
 // =======================================================================
 // ResultScreen.h
 // ゲームオーバー・勝利画面: fade-in, tiêu đề chuyển động, bảng thống kê
-// (thời gian, số quái hạ, level, wave, điểm) và menu Retry / Title điều khiển
+// (thời gian, số quái hạ, 区間, wave, điểm) và menu Retry / Title điều khiển
 // bằng bàn phím (W/S hoặc ↑/↓, Enter/Space xác nhận khi NHẢ phím như màn Pause).
 // =======================================================================
 
@@ -21,7 +21,7 @@ struct ResultStats
     bool debugUsed = false;
     float time = 0.0f;
     int kills = 0;
-    int level = 1;
+    int stage = 0;
     int wave = 1;
     int wavesCleared = 0;
     // Kỷ lục Endless (chỉ hiển thị khi endless)
@@ -49,9 +49,6 @@ public:
 
 private:
     LayeredResultScreen layeredScreen_;
-    bool DrawIllustrated(const ResultStats& stats) const;
-    // [loss / victory][English / Japanese], with lettering baked into the PNGs.
-    int resultArtwork_[2][2] = { { -1, -1 }, { -1, -1 } };
     int selectionArtwork_ = -1;
     void DrawDefeat(const ResultStats& stats) const;
     int defeatArtwork_ = -1;

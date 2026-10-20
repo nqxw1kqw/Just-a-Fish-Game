@@ -11,18 +11,6 @@
 
 namespace
 {
-    // Layout measured on the generated 1672 x 941 canvases. Rendering and mouse
-    // hit regions use the same conversion to the game's logical resolution.
-    int ScreenX(int x) { return x * GameConsts::SCREEN_WIDTH / 1672; }
-    int ScreenY(int y) { return y * GameConsts::SCREEN_HEIGHT / 941; }
-    int ButtonAt(int x, int y)
-    {
-        if (x < ScreenX(930) || x > ScreenX(1585)) return -1;
-        if (y >= ScreenY(650) && y <= ScreenY(775)) return 0;
-        if (y >= ScreenY(785) && y <= ScreenY(905)) return 1;
-        return -1;
-    }
-
     float Ease(float t) { t = std::clamp(t, 0.0f, 1.0f); return 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t); }
 
     int TextWidth(const wchar_t* s, FontSize size)
@@ -57,16 +45,6 @@ void ResultScreen::Init()
 {
     Shutdown();
     layeredScreen_.Init();
-    const wchar_t* paths[2] = {
-        L"Data/UI/Results/Illustrated-v1/lose-ja.png",
-        L"Data/UI/Results/Illustrated-v1/win-ja.png"
-    };
-    for (int outcome = 0; outcome < 2; ++outcome)
-    {
-        resultArtwork_[outcome][1] = LoadGraph(paths[outcome]);
-        if (resultArtwork_[outcome][1] == -1)
-            AppLogAdd(L"[RESULT_UI] 日本語画像を読み込めません: %s\n", paths[outcome]);
-    }
     selectionArtwork_ = LoadGraph(L"Data/UI/Results/Illustrated-v1/selection-arrow.png");
     defeatArtwork_ = LoadGraph(L"Data/UI/Results/defeat-v2-simple.png");
     if (defeatArtwork_ == -1)
@@ -76,12 +54,6 @@ void ResultScreen::Init()
 void ResultScreen::Shutdown()
 {
     layeredScreen_.Shutdown();
-    for (auto& outcome : resultArtwork_)
-        for (int& handle : outcome)
-        {
-            if (handle != -1) DeleteGraph(handle);
-            handle = -1;
-        }
     if (selectionArtwork_ != -1) DeleteGraph(selectionArtwork_);
     selectionArtwork_ = -1;
     if (defeatArtwork_ != -1) DeleteGraph(defeatArtwork_);
@@ -105,9 +77,9 @@ void ResultScreen::Enter(bool victory, bool diedAtBoss)
 
 int ResultScreen::ComputeScore(const ResultStats& s)
 {
-    // Điểm: 100/quái + 250/level + 1000/wave đã qua + 5000 khi thắng
+    // 撃破100点、クリア済みウェーブ1000点、勝利5000点。
     int wavesCleared = (std::max)(0, s.wavesCleared);
-    int score = s.kills * 100 + (std::max)(0, s.level - 1) * 250 + wavesCleared * 1000;
+    int score = s.kills * 100 + wavesCleared * 1000;
     if (s.victory) score += 5000;
     return score;
 }
@@ -129,11 +101,9 @@ ResultScreen::Action ResultScreen::Update(float dt, const Input& input)
 
     const int language = 1;
     const bool layered = layeredScreen_.Ready(victory_, language == 1);
-    if (layered || resultArtwork_[victory_ ? 1 : 0][language] != -1)
+    if (layered)
     {
-        const int hovered = layered
-            ? layeredScreen_.ButtonAt(mouseX, mouseY, selected_, mouseNow, mousePressedItem_, language == 1)
-            : ButtonAt(mouseX, mouseY);
+        const int hovered = layeredScreen_.ButtonAt(mouseX, mouseY, selected_, mouseNow, mousePressedItem_, true);
         // A stationary pointer must not undo selection made with the keyboard.
         if (mouseMoved && hovered >= 0) selected_ = hovered;
         if (!mouseReady_)
@@ -172,85 +142,10 @@ ResultScreen::Action ResultScreen::Update(float dt, const Input& input)
     return Action::None;
 }
 
-bool ResultScreen::DrawIllustrated(const ResultStats& s) const
-{
-    const int language = 1;
-    const int artwork = resultArtwork_[s.victory ? 1 : 0][language];
-    if (artwork == -1) return false;
-
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
-    DrawExtendGraph(0, 0, GameConsts::SCREEN_WIDTH, GameConsts::SCREEN_HEIGHT, artwork, FALSE);
-
-    const float count = Ease((timer_ - 0.45f) / 0.85f);
-    const unsigned int ink = GetColor(15, 35, 64);
-    wchar_t values[5][64] = {};
-    swprintf_s(values[0], L"%d", static_cast<int>(ComputeScore(s) * count + 0.5f));
-    const int seconds = static_cast<int>(s.time);
-    swprintf_s(values[1], L"%02d:%02d", seconds / 60, seconds % 60);
-    swprintf_s(values[2], L"%d", static_cast<int>(s.kills * count + 0.5f));
-    swprintf_s(values[3], L"%d", s.level);
-    swprintf_s(values[4], L"%d / %d", s.wave, s.campaign ? GameConsts::CAMPAIGN_WAVES : GameConsts::TUTORIAL_WAVES);
-    const int rowCenters[5] = { 252, 329, 406, 482, 558 };
-    for (int i = 0; i < 5; ++i)
-    {
-        const float scale = i == 0 ? 1.8f : 1.55f;
-        MenuStyle::Center(ScreenX(1370), ScreenY(rowCenters[i]) - (i == 0 ? 23 : 20),
-                          values[i], ink, FontSize::Header, scale, ScreenX(330));
-    }
-
-    // This mode and the record vary per run, unlike the baked score-board labels.
-    const wchar_t* mode = s.campaign ? TR(L"冒険") : TR(L"チュートリアル");
-    wchar_t journey[80];
-    swprintf_s(journey, L"%s　ボス撃破 %d / %d", mode, s.bossesDefeated, GameConsts::CAMPAIGN_BOSSES);
-    DrawRunNote(ScreenX(470), ScreenY(334), journey, ink);
-    if (s.retryTutorial)
-        DrawRunNote(ScreenX(465), ScreenY(846), TR(L"チュートリアルから再挑戦"), ink);
-    if (s.campaign)
-    {
-        wchar_t best[128] = {};
-        const int bestSeconds = static_cast<int>(s.bestTime);
-        swprintf_s(best, TR(L"ベスト: ステージ %d  |  撃破 %d  |  %02d:%02d  |  スコア %d"),
-                   s.bestWave, s.bestKills, bestSeconds / 60, bestSeconds % 60, s.bestScore);
-        DrawRunNote(ScreenX(465), ScreenY(880), best, ink);
-    }
-    DrawRunNote(ScreenX(465), ScreenY(910), TR(L"R: リトライ   T: タイトルへ"), ink);
-    if (s.debugUsed)
-        DrawRunNote(ScreenX(465), ScreenY(808), s.campaign ? TR(L"[デバッグ使用 ― 記録は保存されません]") : TR(L"[デバッグ使用]"), GetColor(151, 39, 44));
-
-    if (timer_ >= INPUT_DELAY)
-    {
-        if (selectionArtwork_ != -1)
-        {
-            const int centerY = ScreenY(selected_ == 0 ? 713 : 839);
-            const int bob = static_cast<int>(std::sin(timer_ * 5.0f) * 4.0f);
-            SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * Ease((timer_ - INPUT_DELAY) / 0.2f)));
-            DrawExtendGraph(ScreenX(780) + bob, centerY - 72, ScreenX(930) + bob, centerY + 72, selectionArtwork_, TRUE);
-        }
-        else
-        {
-            // Keep keyboard selection visible even if only the optional cursor is missing.
-            const int top = selected_ == 0 ? 650 : 785;
-            const int bottom = selected_ == 0 ? 775 : 905;
-            SetDrawBlendMode(DX_BLENDMODE_ADD, 55);
-            DrawRectExtendGraph(ScreenX(930), ScreenY(top), ScreenX(1585), ScreenY(bottom),
-                                930, top, 655, bottom - top, artwork, FALSE);
-        }
-    }
-
-    const float fade = Ease(timer_ / 0.45f);
-    if (fade < 1.0f)
-    {
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, static_cast<int>(255 * (1.0f - fade)));
-        DrawBox(0, 0, GameConsts::SCREEN_WIDTH, GameConsts::SCREEN_HEIGHT, GetColor(7, 19, 31), TRUE);
-    }
-    return true;
-}
-
 void ResultScreen::Draw(const ResultStats& s) const
 {
     const MenuStyle::DrawState drawState;
     if (layeredScreen_.Draw(s, timer_, selected_, mousePrev_, mousePressedItem_, selectionArtwork_)) return;
-    if (DrawIllustrated(s)) return;
     if (!s.victory)
     {
         DrawDefeat(s);
@@ -325,11 +220,12 @@ void ResultScreen::Draw(const ResultStats& s) const
     wchar_t rows[5][64] = {};
     swprintf_s(rows[0], L"%02d:%02d", min, sec);
     swprintf_s(rows[1], L"%d", static_cast<int>(s.kills * countT + 0.5f));
-    swprintf_s(rows[2], L"Lv.%d", s.level);
+    if (s.campaign) swprintf_s(rows[2], L"%d / 5", s.stage);
+    else swprintf_s(rows[2], L"練習");
     if (s.campaign) swprintf_s(rows[3], s.victory ? TR(L"%d / %d  クリア") : TR(L"ステージ %d"), s.wave, GameConsts::CAMPAIGN_WAVES);
     else swprintf_s(rows[3], TR(L"チュートリアル %d / %d"), s.wave, GameConsts::TUTORIAL_WAVES);
     swprintf_s(rows[4], L"%d", static_cast<int>(score * countT + 0.5f));
-    const wchar_t* labels[5] = { TR(L"時間"), TR(L"撃破"), TR(L"レベル"), s.campaign ? TR(L"ステージ") : TR(L"チュートリアル"), TR(L"スコア") };
+    const wchar_t* labels[5] = { TR(L"時間"), TR(L"撃破"), TR(L"区間"), s.campaign ? TR(L"ステージ") : TR(L"チュートリアル"), TR(L"スコア") };
     for (int i = 0; i < 5; ++i)
     {
         float ra = Ease((t - 0.7f - i * 0.1f) / 0.3f);
@@ -419,10 +315,11 @@ void ResultScreen::DrawDefeat(const ResultStats& s) const
     wchar_t values[4][64] = {};
     swprintf_s(values[0], L"%02d:%02d", minutes, seconds);
     swprintf_s(values[1], L"%d", static_cast<int>(s.kills * count + 0.5f));
-    swprintf_s(values[2], L"Lv. %d", s.level);
+    if (s.campaign) swprintf_s(values[2], L"%d / 5", s.stage);
+    else swprintf_s(values[2], L"練習");
     if (s.campaign) swprintf_s(values[3], L"%d / %d", s.wave, GameConsts::CAMPAIGN_WAVES);
     else swprintf_s(values[3], L"%d / %d", s.wave, GameConsts::TUTORIAL_WAVES);
-    const wchar_t* labels[4] = { TR(L"時間"), TR(L"撃破"), TR(L"レベル"), s.campaign ? TR(L"ステージ") : TR(L"チュートリアル") };
+    const wchar_t* labels[4] = { TR(L"時間"), TR(L"撃破"), TR(L"区間"), s.campaign ? TR(L"ステージ") : TR(L"チュートリアル") };
     for (int i = 0; i < 4; ++i)
     {
         const int x = panelX + (i % 2) * 340;

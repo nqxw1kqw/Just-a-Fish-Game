@@ -73,7 +73,7 @@ int BattleHud::PanelBottomY()
     return PANEL_Y + PANEL_H + 10;
 }
 
-void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
+void BattleHud::DrawPlayerPanel(const PlayerFish& player, int stage) const
 {
     dt_ = FrameDt();
     pulse_ += dt_;
@@ -92,15 +92,16 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
     DrawRoundRect(PANEL_X, PANEL_Y, PANEL_X + PANEL_W, PANEL_Y + PANEL_H, 14, 14, GetColor(70, 160, 220), FALSE);
 
-    // Huy hiệu Level (vòng tròn bên trái)
+    // 現在の区間。経験値やレベルは使用しません。
     float bx = PANEL_X + 50.0f, by = PANEL_Y + PANEL_H * 0.5f;
     DrawCircleAA(bx, by, 36.0f, 48, GetColor(12, 40, 70), TRUE);
-    float expRatio = (player.GetExpNext() > 0) ? static_cast<float>(player.GetExp()) / player.GetExpNext() : 0.0f;
-    DrawRadial(bx, by, 36.0f, expRatio, GetColor(120, 230, 255));          // vòng EXP
     DrawCircleAA(bx, by, 29.0f, 48, GetColor(10, 30, 55), TRUE);
     DrawCircleAA(bx, by, 36.0f, 48, GetColor(140, 210, 255), FALSE, 2.0f);
-    FontManager::Draw(static_cast<int>(bx) - 20, static_cast<int>(by) - 22, L"レベル", GetColor(150, 200, 235), FontSize::Small);
-    FontManager::DrawFormat(static_cast<int>(bx) - (player.GetLevel() >= 10 ? 13 : 7), static_cast<int>(by) - 6, GetColor(255, 255, 255), FontSize::Medium, L"%d", player.GetLevel());
+    FontManager::Draw(static_cast<int>(bx) - 20, static_cast<int>(by) - 22, L"区間", GetColor(150, 200, 235), FontSize::Small);
+    if (stage > 0)
+        FontManager::DrawFormat(static_cast<int>(bx) - 18, static_cast<int>(by) - 6, GetColor(255, 255, 255), FontSize::Medium, L"%d/5", stage);
+    else
+        FontManager::Draw(static_cast<int>(bx) - 20, static_cast<int>(by) - 6, L"練習", GetColor(255, 255, 255), FontSize::Body);
 
     // Thanh HP (+ phần máu trễ màu trắng)
     int hx = PANEL_X + 100, hy = PANEL_Y + 18, hw = 280, hh = 22;
@@ -122,10 +123,7 @@ void BattleHud::DrawPlayerPanel(const PlayerFish& player) const
     FontManager::DrawFormat(hx + hw - 81, hy + 4, GetColor(0, 0, 0), FontSize::Body, L"%3.0f / %3.0f", hp, maxHp);   // bóng chữ
     FontManager::DrawFormat(hx + hw - 82, hy + 3, GetColor(255, 255, 255), FontSize::Body, L"%3.0f / %3.0f", hp, maxHp);
 
-    // Thanh EXP mảnh
-    int ey = hy + hh + 8;
-    DrawBar(hx, ey, hw, 8, expRatio, GetColor(18, 30, 50), GetColor(90, 200, 255), GetColor(170, 235, 255));
-    FontManager::DrawFormat(hx, ey + 11, GetColor(150, 200, 235), FontSize::Small, L"経験値 %d / %d", player.GetExp(), player.GetExpNext());
+    FontManager::Draw(hx, hy + hh + 12, stage > 0 ? L"区間が進むと能力が自動で強化" : L"泳いで、跳んで、操作を覚えよう", GetColor(150, 200, 235), FontSize::Small);
 
     // Ô kỹ năng Slam (vòng hồi chiêu)
     float sx = static_cast<float>(hx + 22), sy = static_cast<float>(PANEL_Y + PANEL_H - 24);

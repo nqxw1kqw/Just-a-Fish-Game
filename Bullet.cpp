@@ -266,9 +266,9 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
         }
 
         // 2. Kiểm tra va chạm với quái thường
-        int gainedExp = 0;
+        int gainedKills = 0;
         Vec3 bulletDir = b.vel.Normalized();
-        if (enemies.CheckBulletHit(b.pos, b.radius, b.damage, bulletDir, effects, gainedExp))
+        if (enemies.CheckBulletHit(b.pos, b.radius, b.damage, bulletDir, effects, gainedKills))
         {
             b.active = false;
 
@@ -278,7 +278,7 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
                 Enemy* chained = enemies.FindClosestEnemy(b.pos, 160.0f);
                 if (chained)
                 {
-                    int extraExp = 0;
+                    int extraKills = 0;
                     float chainDmg = b.damage * 0.5f;
                     chained->hp -= chainDmg;
                     chained->hitFlashTimer = GameConsts::HIT_FLASH_TIME;
@@ -288,17 +288,15 @@ void WeaponSystem::Update(float dt, const PlayerFish& player, EnemyManager& enem
                     {
                         EnemyManager::StartDeath(*chained, b.pos);
                         SoundManager::Instance().PlaySFX(SfxId::EnemySquish); // #4: tiếng quái chết (giật sét)
-                        extraExp = 1;
-                        effects.SpawnExpOrb(chained->pos, 1.0f);
+                        extraKills = 1;
+                        enemies.RegisterKill();
                     }
-                    gainedExp += extraExp;
+                    gainedKills += extraKills;
                 }
             }
 
-            if (gainedExp > 0)
+            if (gainedKills > 0)
             {
-                const_cast<PlayerFish&>(player).AddExp(gainedExp);
-
                 // Hook 12: Cá mập đói - giết quái có 15% cơ hội hồi 5 máu
                 if (hasSharkHook_ && (rand() % 100 < 15))
                 {

@@ -38,7 +38,6 @@ enum class SfxId
     SharkFrenzy,        // sfx_shark_frenzy: gầm cuồng nộ
     SharkStun,          // sfx_shark_stun: choáng
     PufferSpikes,       // sfx_puffer_spikes: cá nóc bắn 8 gai phản đòn
-    ExpPickup,          // sfx_exp_pickup: nhặt ngọc kinh nghiệm / hồi phục
 
     // Trùm cuối Cá Voi (Whale Titan Boss)
     WhaleGroan,         // sfx_whale_groan: cá voi gầm lúc Boss Intro

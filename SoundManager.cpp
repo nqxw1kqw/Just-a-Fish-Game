@@ -33,7 +33,6 @@ static const SfxInitConfig kSfxConfigs[] = {
     { SfxId::SharkFrenzy,    "sfx_shark_frenzy",    L"sfx_shark_frenzy",    2, 100, nullptr },
     { SfxId::SharkStun,      "sfx_shark_stun",      L"sfx_shark_stun",      2, 88,  nullptr },
     { SfxId::PufferSpikes,   "sfx_puffer_spikes",   L"sfx_puffer_spikes",   4, 90,  nullptr },
-    { SfxId::ExpPickup,      "sfx_exp_pickup",      L"sfx_exp_pickup",      4, 75,  nullptr },
     { SfxId::WhaleGroan,     "sfx_whale_groan",     L"sfx_whale_groan",     4, 100, nullptr },
     { SfxId::TsunamiCharge,  "sfx_tsunami_charge",  L"sfx_tsunami_charge",  4, 95,  nullptr },
     { SfxId::TsunamiSurge,   "sfx_tsunami_surge",   L"sfx_tsunami_surge",   4, 100, nullptr },
@@ -528,7 +527,7 @@ const wchar_t* SoundManager::GetSfxNameW(SfxId id) const
     static const wchar_t* names[] = {
         L"泳ぐ音", L"ジャンプ", L"着地スラム", L"被弾", L"敵の撃破", L"サメの予告", L"サメの突進",
         L"サメの潜行", L"サメの浮上", L"サメの捕獲", L"サメの投げ", L"サメの旋回", L"渦潮",
-        L"サメの狂乱", L"サメの気絶", L"フグの針", L"経験値取得", L"クジラの声", L"大波の予告",
+        L"サメの狂乱", L"サメの気絶", L"フグの針", L"クジラの声", L"大波の予告",
         L"大波", L"ボスの着地", L"ボスの咆哮", L"尾撃", L"泡の網", L"潜行突進", L"吸い込み",
         L"群れ召喚", L"気絶", L"敵への命中", L"敵への強打", L"敵の消滅", L"負傷", L"減速",
         L"項目の選択", L"カードを開く", L"カードの決定"

@@ -264,8 +264,6 @@ void GamePrototype::Reset()
 
     enemies_.SetEndless(IsCampaign());
     cardManager_.SetEndless(IsCampaign());
-    for (int& v : lvStat_) v = 0;
-    levelUpBannerTimer_ = 0.0f;
     activeTip_ = -1;
     ApplyPhaseRules();
 
@@ -288,19 +286,17 @@ void GamePrototype::ReapplyAllStats()
     cardManager_.ApplyToStats(playerStats_);
     if (phase_ == RunPhase::Tutorial) // Tutorial: thêm HP tối đa
         playerStats_.maxHp.AddModifier("tutorial", ModifierType::Percent, GameConsts::TUTORIAL_PLAYER_HP_BONUS);
-    if (IsCampaign()) // Normal/Hell: điểm chỉ số nhận từ lên cấp (Attack/Def/Speed/Cooldown/Luck)
+    if (IsCampaign())
     {
-        const float atk = GameConsts::LV_ATK_PCT * lvStat_[LS_Atk];
-        if (atk > 0.0f)
-        {
-            playerStats_.slamDamage.AddModifier("lvAtk", ModifierType::Percent, atk);
-            playerStats_.shockwaveDamage.AddModifier("lvAtk", ModifierType::Percent, atk);
-            playerStats_.bulletDamage.AddModifier("lvAtk", ModifierType::Percent, atk);
-        }
-        if (lvStat_[LS_Spd]) playerStats_.moveSpeed.AddModifier("lvSpd", ModifierType::Percent, GameConsts::LV_SPD_PCT * lvStat_[LS_Spd]);
-        if (lvStat_[LS_Cd])  playerStats_.jumpCooldown.AddModifier("lvCd", ModifierType::Percent, GameConsts::LV_CD_PCT * lvStat_[LS_Cd]);
+        const float step = static_cast<float>(GetProgressionStage() - 1);
+        playerStats_.maxHp.AddModifier("stage", ModifierType::Percent, GameConsts::STAGE_HP_PCT * step);
+        playerStats_.slamDamage.AddModifier("stage", ModifierType::Percent, GameConsts::STAGE_DAMAGE_PCT * step);
+        playerStats_.shockwaveDamage.AddModifier("stage", ModifierType::Percent, GameConsts::STAGE_DAMAGE_PCT * step);
+        playerStats_.bulletDamage.AddModifier("stage", ModifierType::Percent, GameConsts::STAGE_DAMAGE_PCT * step);
+        playerStats_.moveSpeed.AddModifier("stage", ModifierType::Percent, GameConsts::STAGE_SPEED_PCT * step);
+        playerStats_.airSpeed.AddModifier("stage", ModifierType::Percent, GameConsts::STAGE_SPEED_PCT * step);
+        playerStats_.jumpCooldown.AddModifier("stage", ModifierType::Percent, GameConsts::STAGE_COOLDOWN_PCT * step);
     }
-    cardManager_.SetLuck(IsCampaign() ? lvStat_[LS_Luck] : 0);
 
     player_.ApplyStats(playerStats_);
     player_.SetHooks(
@@ -331,6 +327,8 @@ void GamePrototype::StartRun()
 void GamePrototype::StartWave(int wave)
 {
     currentWave_ = wave;
+    ReapplyAllStats();
+    RefreshDamageTakenMul();
     state_ = GameState::Wave;
     waveTimer_ = 0.0f;
 
@@ -345,6 +343,7 @@ void GamePrototype::StartWave(int wave)
 void GamePrototype::StartBossFight()
 {
     state_ = GameState::Boss;
+    ReapplyAllStats();
     player_.ResetDamageTakenThisWave();
     enemies_.KillAll(effects_);
     enemies_.SetAutoSpawn(false);
@@ -417,7 +416,7 @@ void GamePrototype::FinishTutorial()
     cardManager_.SetEndless(true);
     ApplyPhaseRules();
     ReapplyAllStats();
-    // カードとレベルを引き継ぎ、通常ウェーブの番号を1から開始します。
+    // カードを引き継ぎ、通常ウェーブの番号を1から開始します。
     StartWave(1);
     Input::Instance().Flush();
 }
@@ -432,25 +431,10 @@ void GamePrototype::ApplyPhaseRules()
     cardManager_.SetBonusScale(1.0f);
 }
 
-// "Level" = cấp EXP sẵn có (PlayerFish::AddExp, nhặt EXP orb). Normal/Hell: mỗi lần lên cấp -> +1 điểm ngẫu nhiên
-// vào 1 trong 5 chỉ số. Attack -> sát thương, Def -> giảm sát thương nhận, Speed -> bơi, Cooldown -> hồi nhảy, Luck -> độ hiếm thẻ.
-void GamePrototype::GrantLevelStat()
-{
-    static const wchar_t* kNames[LS_Count] = { L"攻撃", L"防御", L"速度", L"再使用待ち", L"運" };
-    int s = rand() % LS_Count;
-    lvStat_[s]++;
-    ReapplyAllStats();
-    RefreshDamageTakenMul();
-    levelUpStat_ = s;
-    levelUpBannerTimer_ = GameConsts::LEVEL_UP_BANNER_TIME;
-    SoundManager::Instance().PlaySFX(SfxId::CardSelect);
-    AppLogAdd(L"[LEVEL] Lv %d: +1 %s\n", player_.GetLevel(), kNames[s]);
-}
-
 void GamePrototype::RefreshDamageTakenMul()
 {
     float mul = IsCampaign() ? 1.0f : GameConsts::TUTORIAL_DAMAGE_TAKEN_MUL;
-    if (IsCampaign()) mul *= 1.0f - (std::min)(GameConsts::LV_DEF_MAX, GameConsts::LV_DEF_PCT * lvStat_[LS_Def]);
+    if (IsCampaign()) mul *= 1.0f - GameConsts::STAGE_DEFENSE_PCT * (GetProgressionStage() - 1);
     player_.SetDamageTakenMul(mul);
 }
 
@@ -1040,13 +1024,6 @@ void GamePrototype::Update(float dt)
         return;
     }
 
-    if (IsCampaign())
-    {
-        for (int n = player_.ConsumeLevelUps(); n > 0; --n) GrantLevelStat();
-    }
-    else player_.ConsumeLevelUps();
-    if (levelUpBannerTimer_ > 0.0f) levelUpBannerTimer_ -= dt;
-
     // Gợi ý tutorial: làm chậm nhẹ khi gợi ý vừa hiện
     dt *= UpdateTutorialTips(dt);
 
@@ -1111,13 +1088,6 @@ void GamePrototype::Update(float dt)
 
             // 6. Cập nhật hạt hiệu ứng & sóng nước
             effects_.Update(dt, player_.GetPosition());
-
-            // 7. Nhặt hạt kinh nghiệm / tiền
-            int collectedExp = effects_.CollectExpOrbs(player_.GetPosition(), GameConsts::EXP_PICKUP_RADIUS);
-            if (collectedExp > 0)
-            {
-                player_.AddExp(collectedExp);
-            }
 
         }
         // ヒットストップ中も25秒の進行は止めません。
@@ -1226,9 +1196,6 @@ void GamePrototype::Update(float dt)
 
             // 7. Cập nhật hiệu ứng
             effects_.Update(dt, player_.GetPosition());
-
-            // 8. Thu thập hạt EXP (Trận Boss không có level-up theo yêu cầu)
-            effects_.CollectExpOrbs(player_.GetPosition(), GameConsts::EXP_PICKUP_RADIUS);
 
             // 9. Kiểm tra Boss bị hạ gục
             const bool bossDead = (bossKind_ == 1) ? shark_.IsDead() : (bossKind_ == 2) ? squid_.IsDead() : (bossKind_ == 3) ? turtle_.IsDead() : (bossKind_ == 4) ? swordfish_.IsDead() : boss_.IsDead();
@@ -1447,7 +1414,7 @@ ResultStats GamePrototype::BuildResultStats() const
     s.debugUsed = debugController_.WasDebugUsed();
     s.time = gameTime_;
     s.kills = GetTotalKills();
-    s.level = player_.GetLevel();
+    s.stage = GetProgressionStage();
     s.wave = currentWave_;
     s.wavesCleared = completedWaves_;
     const HighscoreData& hs = highscore_;

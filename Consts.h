@@ -235,7 +235,6 @@ namespace GameConsts
     constexpr int MAX_ENEMIES = 300;
     constexpr int MAX_BULLETS = 600;
     constexpr int MAX_PARTICLES = 500;
-    constexpr int MAX_EXP_ORBS = 300;
 
     // Chi phí quái (Enemy Cost - Task 10 T1 & T2)
     constexpr float ENEMY_COST_MINION = 1.0f;
@@ -289,38 +288,17 @@ namespace GameConsts
     // Hell: hạt hiệu ứng nhẹ hơn khi đông quái (giảm lag)
     constexpr int   HELL_FX_LIGHT_THRESHOLD = 8;     // Từ 8 quái sống trở lên
     constexpr float HELL_FX_LIGHT_SCALE = 0.4f;      // Số hạt x0.4
-    // Normal + Hell: mỗi lần lên cấp (EXP) -> +1 điểm ngẫu nhiên vào 5 chỉ số (Tutorial không áp dụng)
-    constexpr float LV_ATK_PCT = 0.05f;              // Attack: +5% sát thương Slam + đạn / điểm
-    constexpr float LV_DEF_PCT = 0.04f;              // Def: -4% sát thương nhận / điểm
-    constexpr float LV_DEF_MAX = 0.50f;              // Def: giảm tối đa 50%
-    constexpr float LV_SPD_PCT = 0.04f;              // Speed: +4% tốc độ bơi / điểm
-    constexpr float LV_CD_PCT = -0.04f;              // Cooldown: -4% hồi nhảy / điểm
-    constexpr int   LV_LUCK_RARITY_SHIFT = 4;        // Luck: +4 vào roll độ hiếm (0..99) / điểm -> thẻ hiếm hơn
-    constexpr float LEVEL_UP_BANNER_TIME = 2.0f;     // Thời gian hiện bảng LEVEL UP
-    // EXP orb (Normal + Hell): mọi quái chết đều rơi 1 viên trắng
-    constexpr float EXP_ORB_VALUE = 5.0f;            // EXP / viên (lên cấp đầu cần 30, x1.4 mỗi cấp)
-    constexpr float EXP_ORB_SIZE = 9.0f;             // Bán kính ngọc (bát diện) - chiều cao = 2x
-    constexpr float EXP_ORB_HOVER_Y = 9.0f;          // Độ cao lơ lửng khi nằm yên
-    constexpr float EXP_ORB_BOB_AMP = 2.5f;          // Biên độ nhấp nhô
-    constexpr float EXP_ORB_BOB_SPEED = 4.0f;        // Tốc độ nhấp nhô (rad/s)
-    constexpr float EXP_ORB_SPIN_SPEED = 2.2f;       // Tốc độ xoay (rad/s), x3 khi bị hút
-    constexpr float EXP_ORB_POP_SPEED_MIN = 60.0f;   // Văng ra khi rơi (ngang)
-    constexpr float EXP_ORB_POP_SPEED_MAX = 130.0f;
-    constexpr float EXP_ORB_POP_UP_MIN = 150.0f;     // Văng lên
-    constexpr float EXP_ORB_POP_UP_MAX = 220.0f;
-    constexpr float EXP_ORB_GRAVITY = 650.0f;
-    constexpr float EXP_ORB_BOUNCE = 0.30f;          // Nảy 1 lần khi chạm đất
-    constexpr float EXP_ORB_HALO_SIZE = 34.0f;       // Quầng sáng billboard (additive)
-    constexpr int   EXP_ORB_HALO_ALPHA = 110;
-    constexpr int   EXP_ORB_HALO_MAX = 120;          // Quá số này: bỏ quầng sáng (Hell đông, giảm lag)
-    constexpr float EXP_ORB_ABSORB_TIME = 0.12f;     // Hấp thụ: thu nhỏ + chớp
-    constexpr float EXP_MAGNET_RADIUS = 260.0f;      // Bán kính nam châm (vào vùng này là bị hút đến khi nhặt)
-    constexpr float EXP_MAGNET_SPEED = 520.0f;       // Tốc độ hút tối đa
-    constexpr float EXP_MAGNET_SPEED_START = 60.0f;  // Tốc độ lúc mới bị hút (ease-in)
-    constexpr float EXP_MAGNET_ACCEL = 1600.0f;      // Gia tốc hút (đơn vị/s^2)
-    constexpr float EXP_MAGNET_CURVE = 140.0f;       // Lực cong ngang lúc đầu (giảm dần về 0)
-    constexpr float EXP_MAGNET_CURVE_TIME = 0.35f;   // Thời gian cong
-    constexpr float EXP_PICKUP_RADIUS = 45.0f;       // Bán kính nhặt
+    // 区間ごとの自動成長。カード補正と加算し、毎回基礎値から再計算します。
+    constexpr float STAGE_HP_PCT = 0.20f;
+    constexpr float STAGE_DAMAGE_PCT = 0.15f;
+    constexpr float STAGE_SPEED_PCT = 0.04f;
+    constexpr float STAGE_COOLDOWN_PCT = -0.05f;
+    constexpr float STAGE_DEFENSE_PCT = 0.04f;
+    constexpr int CAMPAIGN_ALIVE_START = 12;
+    constexpr int CAMPAIGN_ALIVE_PER_WAVE = 2;
+    constexpr float CAMPAIGN_SPAWN_INTERVAL_START = 1.65f;
+    constexpr float CAMPAIGN_SPAWN_INTERVAL_STEP = 0.055f;
+    constexpr float CAMPAIGN_SPAWN_INTERVAL_MIN = 0.85f;
     // Hell: thẻ bị giảm mạnh (~1/10): +10% -> +1%. Thẻ vẫn cộng dồn. (bulletCount / extraJumps giữ nguyên)
     constexpr float HELL_CARD_BONUS_SCALE = 0.10f;
     constexpr float HELL_ROULETTE_FADE_TIME = 0.5f;  // Mờ dần sau khi hiện thẻ trúng

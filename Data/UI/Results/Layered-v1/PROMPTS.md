@@ -73,3 +73,12 @@ Use case: background-extraction. Image 1 is the exact edit target. Extract ONLY 
 ```text
 Use case: background-extraction. Image 1 is the exact edit target. Extract ONLY its lower teal wooden Japanese title button as ONE independent transparent PNG. Preserve rounded wood/rope border, teal center, shell, leaves and bubble decorations and EXACT cream/navy Japanese lettering "タイトル". Correct Japanese glyphs. All outside the button silhouette must be actual transparent alpha. Remove floor, fish, scenery, score board, other button, header and all additional text. Single full horizontal straight-on button about 5:1 width:height centered with transparent margins, no clipped ornaments. Preserve source cartoon linework and proportions. No selection cursor, glow or atlas.
 ```
+
+
+## board-stage-ja（区間表示版）
+
+組み込み画像生成ツールの編集モードを使用。編集元は `board-ja.png`、保存先は `board-stage-ja.png`。1484×1060、透過背景、描画矩形は元画像と同じです。元ファイルと日本語素材のコピーは変更していません。
+
+```text
+Use case: text-localization. Asset type: production modular Japanese game results scoreboard, transparent PNG. Image 1 is the exact edit target. Change ONLY fourth row label from "レベル" to exact Japanese "区間". Preserve the other text exactly: header "今回の記録" and labels "スコア", "時間", "撃破", "ステージ". Keep the five row positions, row separators, divider, overall frame silhouette, shells, leaves, rope knots, cream paper, navy lettering, cartoon linework, proportions and blank right value column unchanged. Keep genuine transparent alpha outside the complete scoreboard silhouette, no clipped edges. No digits, added writing, backgrounds, shadows outside the silhouette, watermarks or extra objects. The fourth row must read exactly "区間" in the same dark navy hand-lettered style.
+```
