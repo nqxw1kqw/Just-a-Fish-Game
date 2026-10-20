@@ -19,6 +19,7 @@ enum class LowPolyId
     SquidTentacle,  // Tentacle arm (slam/grab), posed by SquidBoss
     TurtleBoss,     // Boss #4: Ancient Turtle
     SwordfishBoss,  // Boss #5: Swordfish
+    Floor,          // Sàn đấu 3D: đáy biển cát (chỉ hiển thị, Tools/LowPolyModels/build_floor.py)
     Count
 };
 
