@@ -19,6 +19,9 @@ obj/
 /Log.txt
 /Data/highscore.dat
 /Data/highscore.tmp
+/Data/highscore_hell.dat
+/Data/highscore_hell.tmp
+/Data/settings.ini
 /test_screenshot.png
 /fish_zoom*.png
 /Review_Bundle.md

@@ -12,7 +12,12 @@ namespace GameConsts
     constexpr float ARENA_SIZE = 1400.0f;
     constexpr float ARENA_HALF_SIZE = ARENA_SIZE * 0.5f;
     constexpr bool FLOOR_USE_MODEL = true;      // true: sàn = model 3D (Data/Model/LowPoly/Floor.x); false: sàn code cũ (SeabedFloor/hộp+lưới)
-    constexpr float FLOOR_MODEL_Y = 0.0f;       // Model sàn chỉ để hiển thị; logic mặt đất vẫn y=0
+    // Cát dao động tối đa +5.5: hạ 6 unit để không cắt mặt nước/che vòng cảnh báo ở y=0..2.
+    constexpr float FLOOR_MODEL_Y = -6.0f;      // Model hiển thị; mặt đất gameplay vẫn y=0
+    constexpr float FLOOR_MODEL_TINT_R = 0.35f;
+    constexpr float FLOOR_MODEL_TINT_G = 0.40f;
+    constexpr float FLOOR_MODEL_TINT_B = 0.45f;
+    constexpr float SHALLOW_OCEAN_Y = 0.55f;    // Sóng +/-0.44 luôn cao hơn mặt sàn dự phòng y=0.
 
     // Chế độ Debug (Phần D)
 #ifdef _DEBUG
@@ -253,7 +258,7 @@ namespace GameConsts
     constexpr float ENDLESS_WAVE_DURATION = 20.0f; // Balance pass: 35 -> 20s mỗi stage Endless
 
     // ===== Balance pass: luồng Tutorial -> Endless =====
-    constexpr int   TUTORIAL_WAVES = 3;              // Tutorial (Cá Voi): 5 -> 3 wave, rồi Boss Cá Voi, rồi tự vào Endless
+    constexpr int   TUTORIAL_WAVES = 3;              // Ba wave hướng dẫn, rồi chọn Normal/Hard (không có boss tutorial).
     constexpr int   ENDLESS_BOSS_EVERY = 5;          // Stage 5, 10, 15... là stage Boss (ngẫu nhiên Cá Voi / Cá Mập)
     constexpr int   ENDLESS_MAX_STAGE = 30;          // Endless tối đa 30 stage -> màn CLEAR
     // Phase 1 flow: Tutorial 15s/stage -> Whale -> chọn chế độ Normal / Hell

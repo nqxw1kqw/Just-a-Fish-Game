@@ -1489,7 +1489,7 @@ void GamePrototype::DrawArena() const
     float half = GameConsts::ARENA_HALF_SIZE;
 
     // 1. Mặt sàn chính: model 3D đáy biển (FLOOR_USE_MODEL) -> SeabedFloor texture -> hộp màu + lưới cũ.
-    //    Model chỉ hiển thị (đỉnh mặt ~y=0); logic mặt đất/collision giữ nguyên y=0.
+    //    Hạ cát dưới mặt nước; logic mặt đất/collision giữ nguyên y=0.
     bool floorDrawn = false;
     if (GameConsts::FLOOR_USE_MODEL)
     {
@@ -1497,9 +1497,9 @@ void GamePrototype::DrawArena() const
         if (floorModel >= 0)
         {
             MV1SetMatrix(floorModel, MGetTranslate(VGet(0.0f, GameConsts::FLOOR_MODEL_Y, 0.0f)));
-            MV1SetDifColorScale(floorModel, GetColorF(1.0f, 1.0f, 1.0f, 1.0f));
-            MV1DrawModel(floorModel);
-            floorDrawn = true;
+            MV1SetDifColorScale(floorModel, GetColorF(GameConsts::FLOOR_MODEL_TINT_R,
+                GameConsts::FLOOR_MODEL_TINT_G, GameConsts::FLOOR_MODEL_TINT_B, 1.0f));
+            floorDrawn = MV1DrawModel(floorModel) == 0;
         }
     }
     if (!floorDrawn && !SeabedFloor::Draw(half))

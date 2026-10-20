@@ -24,7 +24,7 @@ enum class GameState
     CardPick,     // Đang chọn 1 trong 3 thẻ nâng cấp (C2)
     BossIntro,    // Chuyển cảnh giới thiệu trùm cuối (G1, B4)
     Boss,         // Trận đấu Boss Cá Voi (B)
-    ModeSelect,   // Phase 1: Sau khi hạ Cá Voi tutorial -> chọn Normal / Hell
+    ModeSelect,   // Hoàn thành tutorial -> chọn Normal / Hard
     Victory,      // Màn Thắng cuộc (Result Win)
     GameOver      // Màn Thất bại (Result Lose)
 };
@@ -33,7 +33,7 @@ enum class GameMode
 {
     Classic, // Tutorial: 3 wave, sau đó chọn Normal / Hard.
     Endless, // NORMAL: 30 stage 20s, chọn thẻ, dọn quái giữa stage, Boss mỗi 5 stage
-    Hell     // HELL (Phase 1 stub): sát thương nhận x1.5, thẻ ngẫu nhiên tự chọn, không dọn quái
+    Hell     // HARD: sát thương nhận x1.5, thẻ ngẫu nhiên tự chọn, không dọn quái
 };
 
 struct HighscoreData
@@ -80,7 +80,7 @@ private:
     void StartWave(int wave);
     void StartBossFight();
     void StartRun(GameMode mode);        // Điểm vào DUY NHẤT để bắt đầu / chơi lại một ván (Title, R, Retry)
-    // Balance pass: luồng Tutorial (3 wave + Cá Voi) -> Endless (30 stage, Boss mỗi 5 stage)
+    // Tutorial (3 wave) -> chọn Normal/Hard (30 stage, boss mỗi 5 stage).
     void StartStage(int stage);          // Endless: stage chia hết cho ENDLESS_BOSS_EVERY -> Boss
     void BeginBossIntro();
     void AdvanceAfterCardPick();         // Sau khi chọn thẻ: sang wave/stage kế tiếp hoặc Boss

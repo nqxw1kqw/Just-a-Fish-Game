@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdlib>
 #include "WaterSplash.h"
+#include "Consts.h"
 #include "DxConv.h"
 
 namespace
@@ -799,7 +800,7 @@ void WaterSplashSystem::DrawShallowOcean(float arenaHalfSize) const
         float waveH = std::sin(x * 0.012f + waterTime_ * 1.6f) * 0.22f
                     + std::cos(z * 0.012f + waterTime_ * 1.3f) * 0.22f;
         VERTEX3D v{};
-        v.pos = VGet(x, 0.35f + waveH, z);
+        v.pos = VGet(x, GameConsts::SHALLOW_OCEAN_Y + waveH, z);
         v.norm = VGet(0, 1, 0);
 
         // Gradient màu: ở gần tâm xanh ngọc lam nhiệt đới sáng trong, ra mép sâu thẳm
