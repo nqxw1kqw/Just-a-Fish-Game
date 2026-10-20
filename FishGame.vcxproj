@@ -115,6 +115,7 @@
     <ClInclude Include="DxPlus\TextAnimator.h" />
     <ClInclude Include="DxPlus\Utils.h" />
     <ClInclude Include="DxPlus\Vector2.h" />
+    <ClInclude Include="EffectsManager.h" />
     <ClInclude Include="Effects.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="GamePrototype.h" />
@@ -152,6 +153,7 @@
     <ClCompile Include="DxPlus\Text.cpp" />
     <ClCompile Include="DxPlus\TextAnimator.cpp" />
     <ClCompile Include="DxPlus\Utils.cpp" />
+    <ClCompile Include="EffectsManager.cpp" />
     <ClCompile Include="Effects.cpp" />
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="GamePrototype.cpp" />

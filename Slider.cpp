@@ -174,6 +174,19 @@ void Slider::Update(int mousePosX, int mousePosY, bool isClick)
 
         handlePosition.y = position.y;
     }
+
+
+    if (hitHandle && isClick)
+    {
+        isHandleMove = true;
+        isSelect = true;
+    }
+    else if (!isClick)
+    {
+        isHandleMove = false;
+        isSelect = false;
+    }
+
 }
 
 

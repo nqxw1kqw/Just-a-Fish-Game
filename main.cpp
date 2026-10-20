@@ -7,6 +7,8 @@
 #include "GamePrototype.h"
 #include "FontManager.h"
 #include "SceneManager.h"
+#include "EffekseerForDXLib.h"
+
 
 #ifdef _DEBUG
 std::atomic<size_t> g_gameplayAllocCount{ 0 };
@@ -65,6 +67,15 @@ int WINAPI WinMain(
         return -1;
     }
 
+    if (Effekseer_Init(4000) == -1)
+    {
+        return -1;
+    }
+
+    SetChangeScreenModeGraphicsSystemResetFlag(FALSE);
+    Effekseer_SetGraphicsDeviceLostCallbackFunctions();
+
+
     // Khởi tạo Font tùy chỉnh (Yabikoma)
     FontManager::Init();
 
@@ -116,15 +127,22 @@ int WINAPI WinMain(
             acc -= kStep;
         }
 
+        UpdateEffekseer3D();
+
         // Kết xuất hình ảnh
         ClearDrawScreen();
         scene.Draw();
+
+        Effekseer_Sync3DSetting();
+        DrawEffekseer3D();
+
         ScreenFlip();
     }
 
     //game.Shutdown();
     
     FontManager::Shutdown();
+    Effkseer_End();
     DxLib_End();
     return 0;
 }

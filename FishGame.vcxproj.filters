@@ -16,6 +16,9 @@
     <Filter Include="Scene">
       <UniqueIdentifier>{a52b680e-df05-46af-83a1-56cd93616553}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\Effect">
+      <UniqueIdentifier>{6b417ee1-7893-4fb9-b27e-4b70f3bbffbd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Consts.h">
@@ -137,6 +140,9 @@
       <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="TitleFishMove.h" />
+    <ClInclude Include="EffectsManager.h">
+      <Filter>System\Effect</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -228,5 +234,8 @@
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="TitleFishMove.cpp" />
+    <ClCompile Include="EffectsManager.cpp">
+      <Filter>System\Effect</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

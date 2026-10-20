@@ -2,6 +2,7 @@
 #include "Vector3.h"
 #include "Scene.h"
 #include "TitleFishMove.h"
+#include "EffectsManager.h"
 
 enum TitleMenu
 {
@@ -35,6 +36,7 @@ private:
 	TitleMenu currentMenu = TitleMenu::GamePlay;
 
 	TitleFishMove titleFishMove;
+	EffectsManager effectManager;
 
 
 	bool finished{ false };
@@ -67,6 +69,7 @@ private:
 	int selectCount = 0;
 
 	int titleBackModelHandle = -1;
+	int titleBackHandle = -1;
 	int titlePlayerModelHandle = -1;
 
 };

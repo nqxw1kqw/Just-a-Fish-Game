@@ -23,6 +23,9 @@ public:
 
 private:
 	int OptionBgmHandle = -1;
+	int OptionStageModelHandle = -1;
+	int OptionBackModelHandle = -1;
+	int OptionSelectModelHandle = -1;
 
 
 	bool finish{false};
@@ -45,6 +48,18 @@ private:
 
 	float bgmV = 100;
 	float seV = 100;
+
+	//Test
+
+	VECTOR camPos = VGet(0.0f, 10.0f, -220.0f);
+	VECTOR camTarget = VGet(0.0f, 20.0f, 0.0f);
+
+	float deg = 0.0f; 
+	float rad = deg * DX_PI_F / 180.0f;
+
+	float tx;
+	float ty;
+	float tz;
 
 };
 

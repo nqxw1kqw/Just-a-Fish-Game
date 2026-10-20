@@ -23,6 +23,8 @@ void Title::Init()
 		titleBackModelHandle = MV1LoadModel(L"Data/Model/Title/TitleBack.mv1");
 	}
 
+	titleBackHandle = LoadGraph(L"Data/Image/TitleBack.png");
+
 	/*if (titlePlayerModelHandle < 0)
 	{
 		titlePlayerModelHandle = MV1LoadModel(L"Data/Model/Title/Title_Fish.mv1");
@@ -32,6 +34,10 @@ void Title::Init()
 	DxLib::SetBackgroundColor(16, 28, 38);
 
 	titleFishMove.Init();
+
+	//====================================
+
+	effectManager.Load();
 
 }
 
@@ -118,6 +124,12 @@ void Title::Update()
 	
 	titleFishMove.Update();
 
+	Vec3 EfPosition{ 0,0,0 };
+
+	effectManager.PlayHit(EfPosition, 0);
+
+	effectManager.Update();
+
 }
 
 void Title::Reset()
@@ -131,6 +143,13 @@ void Title::Reset()
 
 void Title::Draw()
 {
+	DrawExtendGraph(
+		0, 0,
+		1600,
+		900,
+		titleBackHandle,
+		FALSE
+	);
 	VECTOR camPos = VGet(0.0f, 50.0f, -120.0f);
 	VECTOR camTarget = VGet(0.0f, 20.0f, 0.0f);
 
@@ -146,10 +165,10 @@ void Title::Draw()
 	MV1SetScale(titleBackModelHandle, VGet(0.5f, 0.5f, 0.5f));
 
 
-	if (titleBackModelHandle >= 0)
+	/*if (titleBackModelHandle >= 0)
 	{
 		MV1DrawModel(titleBackModelHandle);
-	}
+	}*/
 
 	/*MV1SetPosition(titlePlayerModelHandle, VGet(0, 0, 0));
 	MV1SetScale(titlePlayerModelHandle, VGet(4.5f, 4.5f, 4.5f));
@@ -169,7 +188,9 @@ void Title::Draw()
 	DrawString(200, 200, L"Credit", GetColor(Credit_Color.x, Credit_Color.y, Credit_Color.z));
 	//DrawString(200, 150, L"Tutorial", GetColor(Tutorial_Color.x, Tutorial_Color.y, Tutorial_Color.z));
 	
-	titleFishMove.Draw();
+	//titleFishMove.Draw();
+
+	effectManager.Draw();
 }
 
 

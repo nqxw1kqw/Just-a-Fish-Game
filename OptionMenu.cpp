@@ -9,8 +9,29 @@ OptionMenu::OptionMenu()
 
 void OptionMenu::Init()
 {
-	DxLib::SetBackgroundColor(0, 0, 0);
+	camPos = VGet(0.0f, 10.0f, -220.0f);
+	camTarget = VGet(0.0f, 20.0f, 0.0f);
 
+	SetCameraPositionAndTarget_UpVecY(camPos, camTarget);
+
+	DxLib::SetBackgroundColor(0, 30, 200);
+
+	if (OptionStageModelHandle < 0)
+	{
+		OptionStageModelHandle = MV1LoadModel(L"Data/Model/Option/TitleBack.mv1");
+	}
+	if (OptionBackModelHandle < 0)
+	{
+		OptionBackModelHandle = MV1LoadModel(L"Data/Model/Option/Option_Back.mv1");
+	}
+	if (OptionSelectModelHandle < 0)
+	{
+		OptionSelectModelHandle = MV1LoadModel(L"Data/Model/Option/kanisann.mv1");
+	}
+
+	rad = 1.55;
+	camPos = VGet(0.0f, 50.0f, -120.0f);
+	camTarget = VGet(0.0f, 20.0f, 0.0f);
 }
 
 void OptionMenu::Update()
@@ -61,7 +82,45 @@ void OptionMenu::Update()
 	//ChangeVolumeSoundMem(seVolume255, seHandle);
 
 
+	//Debug--------------------------------------------------------------------------
 
+	float speed = 10.0f;
+
+	// 前後
+	if (CheckHitKey(KEY_INPUT_W)) camPos.z += speed;
+	if (CheckHitKey(KEY_INPUT_S)) camPos.z -= speed;
+
+	// 左右
+	if (CheckHitKey(KEY_INPUT_A)) camPos.x -= speed;
+	if (CheckHitKey(KEY_INPUT_D)) camPos.x += speed;
+
+	// 上下
+	if (CheckHitKey(KEY_INPUT_Q)) camPos.y += speed;
+	if (CheckHitKey(KEY_INPUT_E)) camPos.y -= speed;
+
+	// カメラ回転（簡易）
+	if (CheckHitKey(KEY_INPUT_LEFT)) camTarget.x -= speed;
+	if (CheckHitKey(KEY_INPUT_RIGHT)) camTarget.x += speed;
+	if (CheckHitKey(KEY_INPUT_UP)) camTarget.y += speed;
+	if (CheckHitKey(KEY_INPUT_DOWN)) camTarget.y -= speed;
+
+	//kakudotyousei
+	if (CheckHitKey(KEY_INPUT_M)) deg += 1.0f; 
+	if (CheckHitKey(KEY_INPUT_N)) deg -= 1.0f; 
+
+	// itityousei
+	if (CheckHitKey(KEY_INPUT_0)) tx++;
+	if (CheckHitKey(KEY_INPUT_9)) ty++;
+	if (CheckHitKey(KEY_INPUT_8)) tz++;
+
+	if (CheckHitKey(KEY_INPUT_1)) tx--;
+	if (CheckHitKey(KEY_INPUT_2)) ty--;
+	if (CheckHitKey(KEY_INPUT_3)) tz--;
+
+
+	SetCameraPositionAndTarget_UpVecY(camPos, camTarget);
+
+	
 }
 
 void OptionMenu::Reset()
@@ -69,10 +128,13 @@ void OptionMenu::Reset()
 	finish = false;
 	goTitle = false;
 
-	
+	camPos = VGet(0.0f, 50.0f, -120.0f);
+	camTarget = VGet(0.0f, 30.0f, 0.0f);
 
 	//=========================================================//
-	sliders[0].SetPosition(DxPlus::CLIENT_WIDTH * 0.5, 260);
+	//Slider
+
+	sliders[0].SetPosition(730, 260);
 	sliders[0].SetHandleSize(25, 25);
 	sliders[0].SetBackSize(200, 20);
 	sliders[0].SetFillColor(GetColor(0, 255, 255));
@@ -81,7 +143,7 @@ void OptionMenu::Reset()
 	sliders[0].SetMaxValue(100);
 	sliders[0].SetValue(100);
 
-	sliders[1].SetPosition(DxPlus::CLIENT_WIDTH * 0.5, 460);
+	sliders[1].SetPosition(730, 460);
 	sliders[1].SetHandleSize(25, 25);
 	sliders[1].SetBackSize(200, 20);
 	sliders[1].SetFillColor(GetColor(0, 255, 255));
@@ -93,6 +155,50 @@ void OptionMenu::Reset()
 
 void OptionMenu::Draw()
 {
+	
+
+
+	//-----------------------------------------
+
+	//背景
+	MV1SetPosition(OptionBackModelHandle, VGet(-46, -195, 115));
+	MV1SetRotationXYZ(OptionBackModelHandle, VGet(0.0f, rad, 0.0f));
+	MV1SetScale(OptionBackModelHandle, VGet(0.33f,0.33f,0.33f));
+
+	if (OptionBackModelHandle >= 0)
+	{
+		MV1DrawModel(OptionBackModelHandle);
+	}
+
+	//水槽
+	//MV1SetPosition(OptionStageModelHandle, VGet(0, -30, 0));
+	MV1SetPosition(OptionStageModelHandle, VGet(1, -29, 24));
+	MV1SetScale(OptionStageModelHandle, VGet(0.5f, 0.5f, 0.5f));
+
+	if (OptionStageModelHandle >= 0)
+		{
+			MV1DrawModel(OptionStageModelHandle);
+		}
+
+	
+
+
+	//カニ
+	
+	MV1SetPosition(OptionSelectModelHandle, VGet(0, 0, 0));
+	MV1SetScale(OptionSelectModelHandle, VGet(0.08f, 0.08f, 0.08f));
+
+	if (OptionSelectModelHandle >= 0)
+	{
+		MV1DrawModel(OptionSelectModelHandle);
+	}
+
+
+
+
+
+	//===============================================================
+
 	DrawString(10, 10, L"Scene:Option", GetColor(255, 255, 255));
 
 	for (auto& s : sliders)
@@ -100,8 +206,22 @@ void OptionMenu::Draw()
 		s.Draw();
 	}
 
-	DxLib::DrawString(450, 200, L"BGM : %d", GetColor(255, 255, 255));
-	DxLib::DrawString(450, 400, L"SE : %d", GetColor(255, 255, 255));
+	DxLib::DrawString(540, 200, L"BGM : %d", GetColor(255, 255, 255));
+	DxLib::DrawString(540, 400, L"SE : %d", GetColor(255, 255, 255));
+
+
+	//==============================================
+	//Debug
+	float value = camPos.x;
+
+	std::wstring text = L"camPos.x = " + std::to_wstring(value);
+	DrawString(0, 0, text.c_str(), GetColor(255, 255, 255));
+	
+	wchar_t buf[256];
+
+	sprintfDx(buf, L"tx = %.2f  ty = %.2f  tz = %.2f", tx, ty, tz);
+	DrawString(10, 60, buf, GetColor(255, 255, 255));
+
 
 }
 

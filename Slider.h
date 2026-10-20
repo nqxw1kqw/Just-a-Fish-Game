@@ -12,6 +12,8 @@ public:
 	float GetValue() { return value; }
 	float GetMaxValue() { return maxValue; }
 	float GetMinValue() { return minValue; }
+
+	bool GetIsHandleMoveSlider() { return isHandleMove; }
 	
 
 	void SetPosition(float setPositionX, float setPositionY);
@@ -74,7 +76,7 @@ private:
 
 	bool isHandleMove = false;
 
-
+	bool isSelect = false;
 
 
 
