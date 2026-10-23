@@ -49,6 +49,8 @@ private:
 	float bgmV = 100;
 	float seV = 100;
 
+	float rotationTime;
+
 	//Test
 
 	VECTOR camPos = VGet(0.0f, 10.0f, -220.0f);
@@ -56,10 +58,15 @@ private:
 
 	float deg = 0.0f; 
 	float rad = deg * DX_PI_F / 180.0f;
+	float degK = 0.0f; 
+	float radK = deg * DX_PI_F / 180.0f;
 
 	float tx;
 	float ty;
 	float tz;
+
+	float tsc = 1.0f;
+	float tlig = 1.0f;
 
 };
 

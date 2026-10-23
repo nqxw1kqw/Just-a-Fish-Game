@@ -10,12 +10,22 @@ OptionMenu::OptionMenu()
 void OptionMenu::Init()
 {
 	camPos = VGet(0.0f, 10.0f, -220.0f);
-	camTarget = VGet(0.0f, 20.0f, 0.0f);
+	camTarget = VGet(0.0f, 25.0f, 0.0f);
 
 	SetCameraPositionAndTarget_UpVecY(camPos, camTarget);
 
+	tlig = 0.0f;
+
+	SetLightDirection(VGet(-1.0f, 1.0f, 1.0f)); // 斜め上
+	SetGlobalAmbientLight(GetColorF(tlig, tlig, tlig,0.0f));//light設定
+	//SetLightDifColor(GetColorF(2.0f, 2.0f, 2.0f,1.0f)); 
+
+	SetLightEnable(TRUE);
+
 	DxLib::SetBackgroundColor(0, 30, 200);
 
+
+	//モデル読みこみ
 	if (OptionStageModelHandle < 0)
 	{
 		OptionStageModelHandle = MV1LoadModel(L"Data/Model/Option/TitleBack.mv1");
@@ -29,16 +39,22 @@ void OptionMenu::Init()
 		OptionSelectModelHandle = MV1LoadModel(L"Data/Model/Option/kanisann.mv1");
 	}
 
+	//その他初期化
 	rad = 1.55;
 	camPos = VGet(0.0f, 50.0f, -120.0f);
 	camTarget = VGet(0.0f, 20.0f, 0.0f);
+
+	degK = 170.0f;
+	tsc = 0.36;
 }
 
 void OptionMenu::Update()
 {
+	//単体キー取得
 	memcpy(oldKeyState, keyState, 256);
 	GetHitKeyStateAll(keyState);
 
+	//タイトルに戻る
 	if (IsKeyPressed(KEY_INPUT_BACK))
 	{
 		finish = true;
@@ -47,7 +63,7 @@ void OptionMenu::Update()
 
 
 
-	
+	//スライダーのためのマウスポイント取得
 	GetMousePoint(&mousePosX, &mousePosY);
 
 	bool isClick = GetMouseInput() == MOUSE_INPUT_LEFT;
@@ -57,9 +73,18 @@ void OptionMenu::Update()
 		s.Update(mousePosX, mousePosY, isClick);
 	}
 
+	//if ((!sliders[0].wasHovered && sliders[0].isHovered) ||
+	//	(!sliders[1].wasHovered && sliders[1].isHovered))
+	//{
+	//	degK = 170.0f;
+	//}
 
+	//if (sliders[0].isHovered || sliders[1].isHovered)
+	//{
+	//	degK += 1.0f;   
+	//}
 
-
+	//サウンド設定
 	SoundManager::bgmVolume = sliders[0].GetValue();
 	SoundManager::seVolume = sliders[1].GetValue();
 
@@ -86,41 +111,50 @@ void OptionMenu::Update()
 
 	float speed = 10.0f;
 
+	//デバッグカメラ移動
 	// 前後
-	if (CheckHitKey(KEY_INPUT_W)) camPos.z += speed;
-	if (CheckHitKey(KEY_INPUT_S)) camPos.z -= speed;
+	//if (CheckHitKey(KEY_INPUT_W)) camPos.z += speed;
+	//if (CheckHitKey(KEY_INPUT_S)) camPos.z -= speed;
 
-	// 左右
-	if (CheckHitKey(KEY_INPUT_A)) camPos.x -= speed;
-	if (CheckHitKey(KEY_INPUT_D)) camPos.x += speed;
+	//// 左右
+	//if (CheckHitKey(KEY_INPUT_A)) camPos.x -= speed;
+	//if (CheckHitKey(KEY_INPUT_D)) camPos.x += speed;
 
-	// 上下
-	if (CheckHitKey(KEY_INPUT_Q)) camPos.y += speed;
-	if (CheckHitKey(KEY_INPUT_E)) camPos.y -= speed;
+	//// 上下
+	//if (CheckHitKey(KEY_INPUT_Q)) camPos.y += speed;
+	//if (CheckHitKey(KEY_INPUT_E)) camPos.y -= speed;
 
-	// カメラ回転（簡易）
-	if (CheckHitKey(KEY_INPUT_LEFT)) camTarget.x -= speed;
-	if (CheckHitKey(KEY_INPUT_RIGHT)) camTarget.x += speed;
-	if (CheckHitKey(KEY_INPUT_UP)) camTarget.y += speed;
-	if (CheckHitKey(KEY_INPUT_DOWN)) camTarget.y -= speed;
+	//// カメラ回転（簡易）
+	//if (CheckHitKey(KEY_INPUT_LEFT)) camTarget.x -= speed;
+	//if (CheckHitKey(KEY_INPUT_RIGHT)) camTarget.x += speed;
+	//if (CheckHitKey(KEY_INPUT_UP)) camTarget.y += speed;
+	//if (CheckHitKey(KEY_INPUT_DOWN)) camTarget.y -= speed;
 
 	//kakudotyousei
-	if (CheckHitKey(KEY_INPUT_M)) deg += 1.0f; 
-	if (CheckHitKey(KEY_INPUT_N)) deg -= 1.0f; 
+	if (CheckHitKey(KEY_INPUT_M)) tlig += 1.01f;
+	if (CheckHitKey(KEY_INPUT_N)) tlig -= 1.01f;
 
 	// itityousei
-	if (CheckHitKey(KEY_INPUT_0)) tx++;
-	if (CheckHitKey(KEY_INPUT_9)) ty++;
-	if (CheckHitKey(KEY_INPUT_8)) tz++;
+	if (CheckHitKey(KEY_INPUT_0))  tx += 0.01f;
+	if (CheckHitKey(KEY_INPUT_9))  ty += 0.01f;
+	if (CheckHitKey(KEY_INPUT_8))  tz += 0.01f;
 
-	if (CheckHitKey(KEY_INPUT_1)) tx--;
-	if (CheckHitKey(KEY_INPUT_2)) ty--;
-	if (CheckHitKey(KEY_INPUT_3)) tz--;
+	if (CheckHitKey(KEY_INPUT_1)) tx -= 0.01f;
+	if (CheckHitKey(KEY_INPUT_2)) ty -= 0.01f;
+	if (CheckHitKey(KEY_INPUT_3)) tz -= 0.01f;
+
+	if (CheckHitKey(KEY_INPUT_6)) tsc += 0.01f;
+	if (CheckHitKey(KEY_INPUT_7)) tsc -= 0.01f;
 
 
 	SetCameraPositionAndTarget_UpVecY(camPos, camTarget);
+	radK = degK * DX_PI_F / 180.0f;
 
-	
+
+	degK++;
+	if (degK >= 530)degK = 170;
+
+
 }
 
 void OptionMenu::Reset()
@@ -130,6 +164,9 @@ void OptionMenu::Reset()
 
 	camPos = VGet(0.0f, 50.0f, -120.0f);
 	camTarget = VGet(0.0f, 30.0f, 0.0f);
+
+	degK = 170.0f;
+
 
 	//=========================================================//
 	//Slider
@@ -161,9 +198,10 @@ void OptionMenu::Draw()
 	//-----------------------------------------
 
 	//背景
-	MV1SetPosition(OptionBackModelHandle, VGet(-46, -195, 115));
+	//MV1SetPosition(OptionBackModelHandle, VGet(-46, -195, 115));
+	MV1SetPosition(OptionBackModelHandle, VGet(-60, -219, 134));
 	MV1SetRotationXYZ(OptionBackModelHandle, VGet(0.0f, rad, 0.0f));
-	MV1SetScale(OptionBackModelHandle, VGet(0.33f,0.33f,0.33f));
+	MV1SetScale(OptionBackModelHandle, VGet(tsc, tsc, tsc));
 
 	if (OptionBackModelHandle >= 0)
 	{
@@ -181,17 +219,41 @@ void OptionMenu::Draw()
 		}
 
 	
+	
+
+
+
 
 
 	//カニ
 	
-	MV1SetPosition(OptionSelectModelHandle, VGet(0, 0, 0));
-	MV1SetScale(OptionSelectModelHandle, VGet(0.08f, 0.08f, 0.08f));
+	MV1SetScale(OptionSelectModelHandle, VGet(0.06f, 0.06f, 0.06f));
 
-	if (OptionSelectModelHandle >= 0)
+	
+
+	if (sliders[0].isSelected)
 	{
-		MV1DrawModel(OptionSelectModelHandle);
+		MV1SetPosition(OptionSelectModelHandle, VGet(-43, 53, -24));
+		MV1SetRotationXYZ(OptionSelectModelHandle, VGet(0.0f, radK, 0.0f));
+
+		if (OptionSelectModelHandle >= 0)
+		{
+			MV1DrawModel(OptionSelectModelHandle);
+		}
 	}
+
+	if (sliders[1].isSelected)
+	{
+		MV1SetPosition(OptionSelectModelHandle, VGet(-44, 28, -24));
+		MV1SetRotationXYZ(OptionSelectModelHandle, VGet(0.0f, radK, 0.0f));
+		if (OptionSelectModelHandle >= 0)
+		{
+			MV1DrawModel(OptionSelectModelHandle);
+		}
+	}
+
+
+	
 
 
 
@@ -222,8 +284,16 @@ void OptionMenu::Draw()
 	sprintfDx(buf, L"tx = %.2f  ty = %.2f  tz = %.2f", tx, ty, tz);
 	DrawString(10, 60, buf, GetColor(255, 255, 255));
 
+	sprintfDx(buf, L"tlig = %.2f", tlig);
+	DrawString(10, 90, buf, GetColor(255, 255, 255));
+
+	sprintfDx(buf, L"tsc = %.2f", tsc);
+	DrawString(10, 120, buf, GetColor(255, 255, 255));
+
+
 
 }
+
 
 bool OptionMenu::IsFinished()
 {

@@ -56,6 +56,10 @@ public:
 		return (vx < boxWidth && vy < boxHeight);
 	}
 
+	bool isSelected = false;
+
+	bool isHovered = false;
+	bool wasHovered = false;
 
 private:
 
@@ -76,7 +80,6 @@ private:
 
 	bool isHandleMove = false;
 
-	bool isSelect = false;
 
 
 

@@ -72,5 +72,8 @@ private:
 	int titleBackHandle = -1;
 	int titlePlayerModelHandle = -1;
 
+	int titleBGMSoundHandle = -1;
+	int titleSESoundHandle = -1;
+
 };
 

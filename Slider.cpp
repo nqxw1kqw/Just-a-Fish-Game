@@ -176,16 +176,18 @@ void Slider::Update(int mousePosX, int mousePosY, bool isClick)
     }
 
 
-    if (hitHandle && isClick)
+    if (hitHandle)
     {
-        isHandleMove = true;
-        isSelect = true;
+        isSelected = true;
     }
-    else if (!isClick)
+    else 
     {
-        isHandleMove = false;
-        isSelect = false;
+        isSelected = false;
     }
+
+
+    wasHovered = isHovered;
+    isHovered = hitBar;   // バーにカーソルが乗っているか?
 
 }
 
