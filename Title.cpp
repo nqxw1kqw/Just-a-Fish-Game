@@ -49,6 +49,8 @@ void Title::Init()
 
 	effectManager.Load();
 
+	int seVolume255 = (int)(SoundManager::seVolume * 2.55f);
+
 
 	//int bgmVolume255 = (int)((SoundManager::bgmVolume - 0) /(100 - 0) * 255.0f);
 	int bgmVolume255 = (int)(SoundManager::bgmVolume * 2.55f);
