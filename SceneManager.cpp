@@ -51,13 +51,13 @@ void SceneManager::Update(float dt)
 
                 current = SceneType::Credit_Scene;
             }
-            else if (title.GoTutorial())
-            {
-                title.StopBGM();
-                //Ç±Ç±Ç…ÅZÅZ.Reset()Ç∆Init()
+            //else if (title.GoTutorial())
+            //{
+            //    title.StopBGM();
+            //    //Ç±Ç±Ç…ÅZÅZ.Reset()Ç∆Init()
 
-                current = SceneType::Tutorial_Scene;
-            }
+            //    current = SceneType::Tutorial_Scene;
+            //}
             break;
         }
     case SceneType::Game_Scene:
@@ -65,8 +65,8 @@ void SceneManager::Update(float dt)
         if (game.GetState() == GameState::Title)
         {
             current = SceneType::Title_Scene;
-            title.Init();
             title.Reset();
+            title.Init();
         }
         break;
 
@@ -75,6 +75,7 @@ void SceneManager::Update(float dt)
         option.Update();
         if (option.IsFinished())
         {
+            option.StopBGM();
             option.Reset();
             current = SceneType::Title_Scene;
             title.Init();

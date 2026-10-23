@@ -22,11 +22,12 @@ public:
 	
 
 private:
-	int OptionBgmHandle = -1;
 	int OptionStageModelHandle = -1;
 	int OptionBackModelHandle = -1;
 	int OptionSelectModelHandle = -1;
 
+	int OptionBGMSooundHandle = -1;
+	int OptionSESooundHandle = -1;
 
 	bool finish{false};
 
@@ -61,9 +62,9 @@ private:
 	float degK = 0.0f; 
 	float radK = deg * DX_PI_F / 180.0f;
 
-	float tx;
-	float ty;
-	float tz;
+	float tx =-44;
+	float ty = 53;
+	float tz = -24;
 
 	float tsc = 1.0f;
 	float tlig = 1.0f;

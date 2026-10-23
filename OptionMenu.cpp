@@ -5,10 +5,13 @@
 
 OptionMenu::OptionMenu()
 {
+	OptionBGMSooundHandle = -1;
+
 }
 
 void OptionMenu::Init()
 {
+	//カメラ・ライト
 	camPos = VGet(0.0f, 10.0f, -220.0f);
 	camTarget = VGet(0.0f, 25.0f, 0.0f);
 
@@ -24,6 +27,7 @@ void OptionMenu::Init()
 
 	DxLib::SetBackgroundColor(0, 30, 200);
 
+	//------------
 
 	//モデル読みこみ
 	if (OptionStageModelHandle < 0)
@@ -39,6 +43,17 @@ void OptionMenu::Init()
 		OptionSelectModelHandle = MV1LoadModel(L"Data/Model/Option/kanisann.mv1");
 	}
 
+	//Sound読み込み　一度だけ再生
+	if (OptionBGMSooundHandle < 0)
+	{
+		OptionBGMSooundHandle = LoadSoundMem(L"Data/Sound/BGM/OptionBGM.mp3");
+	}
+
+	if (CheckSoundMem(OptionBGMSooundHandle) == 0)
+	{
+		PlaySoundMem(OptionBGMSooundHandle, DX_PLAYTYPE_LOOP);
+	}
+
 	//その他初期化
 	rad = 1.55;
 	camPos = VGet(0.0f, 50.0f, -120.0f);
@@ -46,6 +61,25 @@ void OptionMenu::Init()
 
 	degK = 170.0f;
 	tsc = 0.36;
+
+
+	sliders[0].SetPosition(730, 260);
+	sliders[0].SetHandleSize(25, 25);
+	sliders[0].SetBackSize(200, 20);
+	sliders[0].SetFillColor(GetColor(0, 255, 255));
+
+	sliders[0].SetMinValue(0);
+	sliders[0].SetMaxValue(100);
+	sliders[0].SetValue(SoundManager::bgmVolume);
+
+	sliders[1].SetPosition(730, 460);
+	sliders[1].SetHandleSize(25, 25);
+	sliders[1].SetBackSize(200, 20);
+	sliders[1].SetFillColor(GetColor(0, 255, 255));
+
+	sliders[1].SetMinValue(0);
+	sliders[1].SetMaxValue(100);
+	sliders[1].SetValue(SoundManager::seVolume);
 }
 
 void OptionMenu::Update()
@@ -95,7 +129,7 @@ void OptionMenu::Update()
 		(sliders[0].GetMaxValue() - sliders[0].GetMinValue()) * 255.0f
 		);
 
-	ChangeVolumeSoundMem(bgmVolume255, OptionBgmHandle);
+	ChangeVolumeSoundMem(bgmVolume255, OptionBGMSooundHandle);
 
 	float seValue = sliders[1].GetValue();
 
@@ -103,6 +137,7 @@ void OptionMenu::Update()
 		(seValue - sliders[1].GetMinValue()) /
 		(sliders[1].GetMaxValue() - sliders[1].GetMinValue()) * 255.0f
 		);
+	ChangeVolumeSoundMem(bgmVolume255, OptionSESooundHandle);
 
 	//ChangeVolumeSoundMem(seVolume255, seHandle);
 
@@ -131,10 +166,10 @@ void OptionMenu::Update()
 	//if (CheckHitKey(KEY_INPUT_DOWN)) camTarget.y -= speed;
 
 	//kakudotyousei
-	if (CheckHitKey(KEY_INPUT_M)) tlig += 1.01f;
-	if (CheckHitKey(KEY_INPUT_N)) tlig -= 1.01f;
+	//if (CheckHitKey(KEY_INPUT_M)) tlig += 1.01f;
+	//if (CheckHitKey(KEY_INPUT_N)) tlig -= 1.01f;
 
-	// itityousei
+	//// itityousei
 	if (CheckHitKey(KEY_INPUT_0))  tx += 0.01f;
 	if (CheckHitKey(KEY_INPUT_9))  ty += 0.01f;
 	if (CheckHitKey(KEY_INPUT_8))  tz += 0.01f;
@@ -143,8 +178,8 @@ void OptionMenu::Update()
 	if (CheckHitKey(KEY_INPUT_2)) ty -= 0.01f;
 	if (CheckHitKey(KEY_INPUT_3)) tz -= 0.01f;
 
-	if (CheckHitKey(KEY_INPUT_6)) tsc += 0.01f;
-	if (CheckHitKey(KEY_INPUT_7)) tsc -= 0.01f;
+	//if (CheckHitKey(KEY_INPUT_6)) tsc += 0.01f;
+	//if (CheckHitKey(KEY_INPUT_7)) tsc -= 0.01f;
 
 
 	SetCameraPositionAndTarget_UpVecY(camPos, camTarget);
@@ -171,23 +206,7 @@ void OptionMenu::Reset()
 	//=========================================================//
 	//Slider
 
-	sliders[0].SetPosition(730, 260);
-	sliders[0].SetHandleSize(25, 25);
-	sliders[0].SetBackSize(200, 20);
-	sliders[0].SetFillColor(GetColor(0, 255, 255));
-		 
-	sliders[0].SetMinValue(0); 
-	sliders[0].SetMaxValue(100);
-	sliders[0].SetValue(100);
-
-	sliders[1].SetPosition(730, 460);
-	sliders[1].SetHandleSize(25, 25);
-	sliders[1].SetBackSize(200, 20);
-	sliders[1].SetFillColor(GetColor(0, 255, 255));
-		   
-	sliders[1].SetMinValue(0);
-	sliders[1].SetMaxValue(100);
-	sliders[1].SetValue(100);
+	
 }
 
 void OptionMenu::Draw()
@@ -234,6 +253,7 @@ void OptionMenu::Draw()
 	if (sliders[0].isSelected)
 	{
 		MV1SetPosition(OptionSelectModelHandle, VGet(-43, 53, -24));
+		//MV1SetPosition(OptionSelectModelHandle, VGet(tx, ty, tz));
 		MV1SetRotationXYZ(OptionSelectModelHandle, VGet(0.0f, radK, 0.0f));
 
 		if (OptionSelectModelHandle >= 0)
@@ -302,6 +322,9 @@ bool OptionMenu::IsFinished()
 
 void OptionMenu::StopBGM()
 {
+	
+	StopSoundMem(OptionBGMSooundHandle);
+	
 }
 
 bool OptionMenu::IsKeyPressed(int key)

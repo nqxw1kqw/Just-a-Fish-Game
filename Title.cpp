@@ -1,6 +1,7 @@
 #include "Title.h"
 #include "DxPlus/DxPlus.h"
 #include "SceneManager.h"
+#include "SoundManager.h"
 
 bool Title::IsKeyPressed(int key)
 {
@@ -9,7 +10,7 @@ bool Title::IsKeyPressed(int key)
 
 Title::Title()
 {
-
+	titleBGMSoundHandle = -1;
 
 
 
@@ -23,12 +24,21 @@ void Title::Init()
 		titleBackModelHandle = MV1LoadModel(L"Data/Model/Title/TitleBack.mv1");
 	}
 
+
+	//Sound ˆê“x‚¾‚¯Ä¶
+	if (titleBGMSoundHandle < 0)
+	{
+		titleBGMSoundHandle = LoadSoundMem(L"Data/Sound/BGM/TitleBGM.mp3");
+	}
+
+	if (CheckSoundMem(titleBGMSoundHandle) == 0)
+	{
+		PlaySoundMem(titleBGMSoundHandle, DX_PLAYTYPE_LOOP);
+	}
+
 	titleBackHandle = LoadGraph(L"Data/Image/TitleBack.png");
 
-	/*if (titlePlayerModelHandle < 0)
-	{
-		titlePlayerModelHandle = MV1LoadModel(L"Data/Model/Title/Title_Fish.mv1");
-	}*/
+	
 	
 	
 	DxLib::SetBackgroundColor(16, 28, 38);
@@ -38,6 +48,14 @@ void Title::Init()
 	//====================================
 
 	effectManager.Load();
+
+
+	//int bgmVolume255 = (int)((SoundManager::bgmVolume - 0) /(100 - 0) * 255.0f);
+	int bgmVolume255 = (int)(SoundManager::bgmVolume * 2.55f);
+
+	ChangeVolumeSoundMem(bgmVolume255, titleBGMSoundHandle);
+	//ChangeVolumeSoundMem(SoundManager::bgmVolume, titleSESoundHandle);
+
 
 }
 
@@ -66,15 +84,15 @@ void Title::Update()
 	}
 	else if ((IsKeyPressed(KEY_INPUT_W) || IsKeyPressed(KEY_INPUT_UP)) && (selectCount == 0))
 	{
-		selectCount = 2;
+		selectCount = 1;
 	}
 
 
-	if ((IsKeyPressed(KEY_INPUT_S) || IsKeyPressed(KEY_INPUT_DOWN)) && (selectCount < 2))
+	if ((IsKeyPressed(KEY_INPUT_S) || IsKeyPressed(KEY_INPUT_DOWN)) && (selectCount < 1))
 	{
 		selectCount++;
 	}
-	else if ((IsKeyPressed(KEY_INPUT_S) || IsKeyPressed(KEY_INPUT_DOWN)) && (selectCount == 2))
+	else if ((IsKeyPressed(KEY_INPUT_S) || IsKeyPressed(KEY_INPUT_DOWN)) && (selectCount == 1))
 	{
 		selectCount = 0;
 	}
@@ -139,6 +157,7 @@ void Title::Reset()
 	goOption = false;
 	goCredit = false;
 	goTutorial = false;
+
 }
 
 void Title::Draw()
@@ -185,7 +204,7 @@ void Title::Draw()
 
 	DrawString(200, 100, L"GameStart", GetColor(Game_Color.x,Game_Color.y,Game_Color.z));
 	DrawString(200, 150, L"Option", GetColor(Option_Color.x, Option_Color.y, Option_Color.z));
-	DrawString(200, 200, L"Credit", GetColor(Credit_Color.x, Credit_Color.y, Credit_Color.z));
+	//DrawString(200, 200, L"Credit", GetColor(Credit_Color.x, Credit_Color.y, Credit_Color.z));
 	//DrawString(200, 150, L"Tutorial", GetColor(Tutorial_Color.x, Tutorial_Color.y, Tutorial_Color.z));
 	
 	//titleFishMove.Draw();
@@ -201,6 +220,7 @@ bool Title::IsFinished()
 
 void Title::StopBGM()
 {
+	StopSoundMem(titleBGMSoundHandle);
 }
 
 
