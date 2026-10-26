@@ -33,6 +33,13 @@ public:
 
 
 private:
+
+	float CubicOut(float t)
+	{
+		return 1.0f - powf(1.0f - t, 3.0f);
+	}
+
+
 	TitleMenu currentMenu = TitleMenu::GamePlay;
 
 	TitleFishMove titleFishMove;
@@ -70,10 +77,38 @@ private:
 
 	int titleBackModelHandle = -1;
 	int titleBackHandle = -1;
+	int titleLogoHandle = -1;
 	int titlePlayerModelHandle = -1;
 
 	int titleBGMSoundHandle = -1;
-	int titleSESoundHandle = -1;
+	int titleSelectSESoundHandle = -1;
+	int titleEnterSESoundHandle = -1;
 
+	int titleStartUiHandle = -1;
+	int titleOptionUiHandle = -1;
+
+	float Selectscale;
+	float Nonescale;
+
+	float Sscale;
+	float Oscale;
+
+	//----------
+
+	int mousePosX;
+	int mousePosY;
+
+	int startX = 930;
+	int startY = 50;
+	int startW = 600; 
+	int startH = 150; 
+
+	int optionX = 930;
+	int optionY = 250;
+	int optionW = 600;
+	int optionH = 150;
+
+	bool hoverOption;
+	bool hoverStart;
 };
 

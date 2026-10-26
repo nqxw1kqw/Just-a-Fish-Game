@@ -20,7 +20,7 @@ void OptionMenu::Init()
 	tlig = 0.0f;
 
 	SetLightDirection(VGet(-1.0f, 1.0f, 1.0f)); // éŒÇﬂè„
-	SetGlobalAmbientLight(GetColorF(tlig, tlig, tlig,0.0f));//lightê›íË
+	SetGlobalAmbientLight(GetColorF(tlig, tlig, tlig, 0.0f));//lightê›íË
 	//SetLightDifColor(GetColorF(2.0f, 2.0f, 2.0f,1.0f)); 
 
 	SetLightEnable(TRUE);
@@ -28,6 +28,13 @@ void OptionMenu::Init()
 	DxLib::SetBackgroundColor(0, 30, 200);
 
 	//------------
+	//âÊëúì«Ç›çûÇ›
+	if (OptionUiHandle < 0)
+	{
+		OptionUiHandle = LoadGraph(L"Data/Image/TitleUi.png");
+	}
+
+
 
 	//ÉÇÉfÉãì«Ç›Ç±Ç›
 	if (OptionStageModelHandle < 0)
@@ -52,6 +59,11 @@ void OptionMenu::Init()
 	if (CheckSoundMem(OptionBGMSooundHandle) == 0)
 	{
 		PlaySoundMem(OptionBGMSooundHandle, DX_PLAYTYPE_LOOP);
+	}
+
+	if (optionEnterSESoundHandle < 0)
+	{
+		optionEnterSESoundHandle = LoadSoundMem(L"Data/Sound/SE/Enter_SE.mp3");
 	}
 
 	//ÇªÇÃëºèâä˙âª
@@ -80,6 +92,14 @@ void OptionMenu::Init()
 	sliders[1].SetMinValue(0);
 	sliders[1].SetMaxValue(100);
 	sliders[1].SetValue(SoundManager::seVolume);
+
+
+	MV1SetScale(OptionSelectModelHandle, VGet(0.06f, 0.06f, 0.06f));
+	MV1SetPosition(OptionStageModelHandle, VGet(1, -29, 24));
+	MV1SetScale(OptionStageModelHandle, VGet(0.5f, 0.5f, 0.5f));
+	MV1SetPosition(OptionBackModelHandle, VGet(-60, -219, 134));
+
+
 }
 
 void OptionMenu::Update()
@@ -189,6 +209,29 @@ void OptionMenu::Update()
 	degK++;
 	if (degK >= 530)degK = 170;
 
+	//======================================
+
+	GetMousePoint(&mousePosX, &mousePosY);
+
+
+	hovertitle =
+		mousePosX >= titleX &&
+		mousePosX <= titleX + titleW &&
+		mousePosY >= titleY &&
+		mousePosY <= titleY + titleH;
+
+	if (hovertitle)Uiscale = Sscale;
+	else
+	{
+		Uiscale = Nscale;
+	}
+
+	if (hovertitle && isClick) {
+		PlaySoundMem(optionEnterSESoundHandle, DX_PLAYTYPE_NORMAL);
+		finish = true;
+		goTitle = true; 
+	}
+
 
 }
 
@@ -206,21 +249,21 @@ void OptionMenu::Reset()
 	//=========================================================//
 	//Slider
 
-	
+	Uiscale = 0.35f;
+
 }
 
 void OptionMenu::Draw()
 {
-	
+
 
 
 	//-----------------------------------------
 
 	//îwåi
 	//MV1SetPosition(OptionBackModelHandle, VGet(-46, -195, 115));
-	MV1SetPosition(OptionBackModelHandle, VGet(-60, -219, 134));
-	MV1SetRotationXYZ(OptionBackModelHandle, VGet(0.0f, rad, 0.0f));
 	MV1SetScale(OptionBackModelHandle, VGet(tsc, tsc, tsc));
+	MV1SetRotationXYZ(OptionBackModelHandle, VGet(0.0f, rad, 0.0f));
 
 	if (OptionBackModelHandle >= 0)
 	{
@@ -229,26 +272,23 @@ void OptionMenu::Draw()
 
 	//êÖëÖ
 	//MV1SetPosition(OptionStageModelHandle, VGet(0, -30, 0));
-	MV1SetPosition(OptionStageModelHandle, VGet(1, -29, 24));
-	MV1SetScale(OptionStageModelHandle, VGet(0.5f, 0.5f, 0.5f));
+
 
 	if (OptionStageModelHandle >= 0)
-		{
-			MV1DrawModel(OptionStageModelHandle);
-		}
+	{
+		MV1DrawModel(OptionStageModelHandle);
+	}
 
-	
-	
+
 
 
 
 
 
 	//ÉJÉj
-	
-	MV1SetScale(OptionSelectModelHandle, VGet(0.06f, 0.06f, 0.06f));
 
-	
+
+
 
 	if (sliders[0].isSelected)
 	{
@@ -273,7 +313,7 @@ void OptionMenu::Draw()
 	}
 
 
-	
+	DxPlus::Sprite::Draw(OptionUiHandle, { 800,600 }, { Uiscale,Uiscale });
 
 
 
@@ -281,34 +321,38 @@ void OptionMenu::Draw()
 
 	//===============================================================
 
-	DrawString(10, 10, L"Scene:Option", GetColor(255, 255, 255));
+	//DrawString(10, 10, L"Scene:Option", GetColor(255, 255, 255));
 
 	for (auto& s : sliders)
 	{
 		s.Draw();
 	}
 
-	DxLib::DrawString(540, 200, L"BGM : %d", GetColor(255, 255, 255));
-	DxLib::DrawString(540, 400, L"SE : %d", GetColor(255, 255, 255));
+
+	DxLib::DrawFormatString(540, 200, GetColor(255, 255, 255), L"BGM : %d", SoundManager::bgmVolume);
+	DxLib::DrawFormatString(540, 400, GetColor(255, 255, 255), L"SE : %d", SoundManager::seVolume);
+
+	//DxLib::DrawString(540, 200, L"BGM : %d", GetColor(255, 255, 255));
+	//DxLib::DrawString(540, 400, L"SE : %d", GetColor(255, 255, 255));
 
 
 	//==============================================
 	//Debug
-	float value = camPos.x;
+	/*float value = camPos.x;
 
 	std::wstring text = L"camPos.x = " + std::to_wstring(value);
 	DrawString(0, 0, text.c_str(), GetColor(255, 255, 255));
-	
-	wchar_t buf[256];
 
-	sprintfDx(buf, L"tx = %.2f  ty = %.2f  tz = %.2f", tx, ty, tz);
-	DrawString(10, 60, buf, GetColor(255, 255, 255));
+	wchar_t buf[256];*/
 
-	sprintfDx(buf, L"tlig = %.2f", tlig);
-	DrawString(10, 90, buf, GetColor(255, 255, 255));
+	//sprintfDx(buf, L"tx = %.2f  ty = %.2f  tz = %.2f", tx, ty, tz);
+	//DrawString(10, 60, buf, GetColor(255, 255, 255));
 
-	sprintfDx(buf, L"tsc = %.2f", tsc);
-	DrawString(10, 120, buf, GetColor(255, 255, 255));
+	//sprintfDx(buf, L"tlig = %.2f", tlig);
+	//DrawString(10, 90, buf, GetColor(255, 255, 255));
+
+	//sprintfDx(buf, L"tsc = %.2f", tsc);
+	//DrawString(10, 120, buf, GetColor(255, 255, 255));
 
 
 
@@ -322,12 +366,14 @@ bool OptionMenu::IsFinished()
 
 void OptionMenu::StopBGM()
 {
-	
+
 	StopSoundMem(OptionBGMSooundHandle);
-	
+
 }
 
 bool OptionMenu::IsKeyPressed(int key)
 {
 	return keyState[key] == 1 && oldKeyState[key] == 0;
 }
+
+

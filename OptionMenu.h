@@ -25,6 +25,10 @@ private:
 	int OptionStageModelHandle = -1;
 	int OptionBackModelHandle = -1;
 	int OptionSelectModelHandle = -1;
+	int OptionUiHandle = -1;
+
+	int optionEnterSESoundHandle = -1;
+
 
 	int OptionBGMSooundHandle = -1;
 	int OptionSESooundHandle = -1;
@@ -69,5 +73,17 @@ private:
 	float tsc = 1.0f;
 	float tlig = 1.0f;
 
+	//======================
+	int titleX = 800;
+	int titleY = 600;
+	int titleW = 600;
+	int titleH = 150;
+
+	bool hovertitle;
+	bool select;
+	float Uiscale = 0.3f;
+
+	float Nscale = 0.3f;
+	float Sscale = 0.34f;
 };
 
