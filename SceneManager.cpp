@@ -41,16 +41,16 @@ void SceneManager::Update(float dt)
                 option.Reset();
                 current = SceneType::Option_Scene;
             }
-            else if (title.GoCredit())
-            {
-                title.StopBGM();
-                //Ç±Ç±Ç…ÅZÅZ.Reset()Ç∆Init()
+            //else if (title.GoCredit())
+            //{
+            //    title.StopBGM();
+            //    //Ç±Ç±Ç…ÅZÅZ.Reset()Ç∆Init()
 
-                credit.Init();
-                credit.Reset();
+            //    credit.Init();
+            //    credit.Reset();
 
-                current = SceneType::Credit_Scene;
-            }
+            //    current = SceneType::Credit_Scene;
+            //}
             //else if (title.GoTutorial())
             //{
             //    title.StopBGM();

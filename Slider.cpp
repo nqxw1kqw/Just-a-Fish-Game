@@ -20,6 +20,16 @@ void Slider::SetValue(float setValue)
 
 	if (value < minValue) value = minValue;
 	else if (value > maxValue) value = maxValue;
+
+    if (boxHandle == -1)
+    {
+        boxHandle = LoadGraph(L"./Data/Image/Box.png");
+    }
+    
+    if (boxFrameHandle == -1)
+    {
+        boxFrameHandle = LoadGraph(L"./Data/Image/Frame.png");
+    }
 }
 
 void Slider::SetMaxValue(float setMaxValue)
@@ -195,7 +205,7 @@ void Slider::Update(int mousePosX, int mousePosY, bool isClick)
 
 void Slider::Draw()
 {
-	DrawBox(
+	/*DrawBox(
 		position.x - backSize.x, position.y - backSize.y,
 		position.x + backSize.x, position.y + backSize.y,
 		backColor, true);
@@ -204,7 +214,16 @@ void Slider::Draw()
 	DrawBox(
 		position.x - backSize.x + 1, position.y - backSize.y + 1, 
 		handlePosition.x - 1, position.y + backSize.y - 1,
-		fillColor, true);
+		fillColor, true);*/
+
+
+    DrawExtendGraph(position.x - backSize.x + 1, position.y - backSize.y + 1,
+        handlePosition.x - 1, position.y + backSize.y - 1,
+        boxHandle, true);
+
+    DrawExtendGraph(position.x - backSize.x, position.y - backSize.y,
+        position.x + backSize.x, position.y + backSize.y, boxFrameHandle, TRUE);
+
 
 
 	if (GetHandleEnabled()) {

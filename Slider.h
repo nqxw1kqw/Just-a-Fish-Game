@@ -67,6 +67,9 @@ private:
 	int backColor;
 	int fillColor;
 
+	int boxFrameHandle = -1;
+	int boxHandle = -1;
+
 	bool handleEnabled;
 
 	VECTOR position;
